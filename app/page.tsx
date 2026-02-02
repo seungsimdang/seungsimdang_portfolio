@@ -1,65 +1,110 @@
-import Image from "next/image";
+"use client";
+
+import { HeroSection } from "@/components/HeroSection";
+import { ProjectCard } from "@/components/ProjectCard";
+import { AboutSection } from "@/components/AboutSection";
+import { BlogPreview } from "@/components/BlogPreview";
+import { Button } from "@/components/Button";
 
 export default function Home() {
+  const projects = [
+    {
+      title: "bizz buzz",
+      category: "Personal Project",
+      year: "2023",
+      bgColor: "rgb(255, 98, 0)",
+      textColor: "rgb(0, 0, 0)",
+      href: "/work/bizz-buzz",
+    },
+    {
+      title: "aquaflow",
+      category: "Branding and Identity",
+      year: "2023",
+      bgColor: "rgb(255, 255, 255)",
+      textColor: "rgb(31, 0, 255)",
+      href: "/work/aquaflow",
+    },
+    {
+      title: "snackify",
+      category: "UI/UX",
+      year: "2023",
+      bgColor: "rgb(46, 53, 56)",
+      textColor: "rgb(179, 255, 203)",
+      href: "/work/snackify",
+    },
+    {
+      title: "zengo",
+      category: "Personal Project",
+      year: "2023",
+      bgColor: "rgb(255, 221, 0)",
+      textColor: "rgb(61, 59, 84)",
+      href: "/work/zengo",
+    },
+    {
+      title: "roverride",
+      category: "Branding and Identity",
+      year: "2023",
+      bgColor: "rgb(51, 51, 51)",
+      textColor: "rgb(148, 148, 148)",
+      href: "/work/roverride",
+    },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="w-full min-h-screen bg-black text-white">
+      {/* Hero Section */}
+      <HeroSection />
+
+      {/* Projects Section */}
+      <section className="w-full max-w-[1920px] mx-auto container-padding section-spacing">
+        <div className="flex flex-col gap-12 md:gap-24 lg:gap-36">
+          {projects.map((project, index) => (
+            <ProjectCard key={index} {...project} />
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </section>
+
+      {/* About Section */}
+      <AboutSection />
+
+      {/* Blog Posts Section */}
+      <section className="w-full max-w-[1920px] mx-auto container-padding section-spacing">
+        <div className="flex flex-col gap-12 md:gap-16 lg:gap-20">
+          <div className="flex items-center gap-2.5">
+            <span className="text-small whitespace-nowrap">
+              .three latest notes
+            </span>
+            <div className="flex-1 h-px bg-white/25" />
+          </div>
+
+          <div className="space-y-6 md:space-y-8">
+            <BlogPreview
+              title="Starting and Growing a Career in Web Design"
+              date="Apr 8, 2022"
+              href="/blog/starting-career-web-design"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+
+          {/* Button Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
+            <div className="hidden lg:block lg:col-span-5" />
+            <div className="lg:col-span-3 flex justify-center md:justify-end">
+              <Button href="/blog">visit blog</Button>
+            </div>
+            <div className="hidden lg:block lg:col-span-4" />
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="w-full max-w-[1920px] mx-auto container-padding section-spacing">
+        <div className="text-center py-16 md:py-24 lg:py-32">
+          <h2 className="text-h2 mb-6 md:mb-8">Let&apos;s work together</h2>
+          <Button href="/contact" variant="primary">
+            Get in touch
+          </Button>
+        </div>
+      </section>
+    </main>
   );
 }
