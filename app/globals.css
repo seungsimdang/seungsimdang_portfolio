@@ -87,14 +87,82 @@ body {
 
 /* Container padding responsive */
 .container-padding {
-  padding-left: clamp(1rem, 5vw, 4rem);
-  padding-right: clamp(1rem, 5vw, 4rem);
+  padding-left: clamp(1.5rem, 5vw, 7.5rem);
+  padding-right: clamp(1.5rem, 5vw, 7.5rem);
+}
+
+/* Responsive breakpoints from Framer */
+/* Desktop: 1440px - padding 120px */
+/* Laptop: 1024px - padding 80px */
+/* Tablet: 810px - padding 48px */
+/* Phone: 390px - padding 24px */
+
+@media (min-width: 1440px) {
+  .container-padding {
+    padding-left: 7.5rem; /* 120px */
+    padding-right: 7.5rem;
+  }
+}
+
+@media (max-width: 1439px) and (min-width: 1024px) {
+  .container-padding {
+    padding-left: 5rem; /* 80px */
+    padding-right: 5rem;
+  }
+}
+
+@media (max-width: 1023px) and (min-width: 810px) {
+  .container-padding {
+    padding-left: 3rem; /* 48px */
+    padding-right: 3rem;
+  }
+}
+
+@media (max-width: 809px) {
+  .container-padding {
+    padding-left: 1.5rem; /* 24px */
+    padding-right: 1.5rem;
+  }
 }
 
 /* Section spacing */
 .section-spacing {
-  padding-top: clamp(3rem, 8vw, 6rem);
-  padding-bottom: clamp(3rem, 8vw, 6rem);
+  padding-top: clamp(5rem, 10vw, 11.25rem);
+  padding-bottom: clamp(5rem, 10vw, 11.25rem);
+}
+
+/* Gap spacing from Framer layout */
+/* Desktop: 180px */
+/* Laptop: 160px */
+/* Tablet: 120px */
+/* Phone: 80px */
+
+@media (min-width: 1440px) {
+  .section-spacing {
+    padding-top: 11.25rem; /* 180px */
+    padding-bottom: 11.25rem;
+  }
+}
+
+@media (max-width: 1439px) and (min-width: 1024px) {
+  .section-spacing {
+    padding-top: 10rem; /* 160px */
+    padding-bottom: 10rem;
+  }
+}
+
+@media (max-width: 1023px) and (min-width: 810px) {
+  .section-spacing {
+    padding-top: 7.5rem; /* 120px */
+    padding-bottom: 7.5rem;
+  }
+}
+
+@media (max-width: 809px) {
+  .section-spacing {
+    padding-top: 5rem; /* 80px */
+    padding-bottom: 5rem;
+  }
 }
 
 /* Smooth scroll */
