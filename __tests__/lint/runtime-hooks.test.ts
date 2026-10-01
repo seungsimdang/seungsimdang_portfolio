@@ -151,6 +151,21 @@ for (const tool of [".claude", ".codex"]) {
       rmSync(fixture, { recursive: true, force: true });
     }
   });
+  test(`${tool} best practice 안내 훅이 키워드에만 조건부 지시를 추가하고 차단하지 않는다`, () => {
+    for (const prompt of [
+      "pre-push에서 e2e 돌리는 게 Best Practice야?",
+      "베스트 프랙티스가 뭐야",
+    ]) {
+      const result = run(tool, "require-single-best-practice", { prompt });
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("권장안 하나");
+    }
+    const other = run(tool, "require-single-best-practice", {
+      prompt: "pre-push 설정 보여줘",
+    });
+    expect(other.status).toBe(0);
+    expect(other.stdout).toBe("");
+  });
   test(`${tool} 원인 설명 안내 훅이 실행을 차단하지 않는다`, () => {
     const result = run(tool, "require-why-explanation", {
       prompt: "왜 변경했어?",

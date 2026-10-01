@@ -43,3 +43,8 @@
 
 - 로컬 훅은 빠른 검사만 두고 무거운 검사는 CI에서 최종 판정하는 일반 권장에 맞춰 `.husky/pre-push`에서 `pnpm build`·`pnpm test:e2e` 제거.
 - CI가 모든 push에서 같은 빌드·E2E를 이미 실행해 로컬 실행은 중복이었음. 전체 로컬 확인이 필요하면 `pnpm verify` 사용.
+
+## 2026-10-01 - best practice 질문 안내 훅 추가
+
+- 사용자가 best practice를 물을 때 권장안 하나만 첫 문장에 답하도록 Claude·Codex UserPromptSubmit 훅(`require-single-best-practice.sh`) 추가.
+- 질문 여부와 준수 여부는 셸 패턴으로 판정할 수 없어 차단형 Stop 훅은 제외. 키워드로 1차 필터 후 조건부 지시만 주입하고 질문 판단은 응답 모델에 위임.
