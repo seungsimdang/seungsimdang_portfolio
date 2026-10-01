@@ -10,6 +10,10 @@
           {
             "type": "command",
             "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/require-single-best-practice.sh'"
+          },
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/require-feasibility-verdict.sh'"
           }
         ]
       }
