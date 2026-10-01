@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "entry": ["scripts/*.mjs", "__tests__/lint/*.test.ts"],
+  "project": [
+    "src/**/*.{ts,tsx,css}",
+    "scripts/*.mjs",
+    "tests/**/*.ts",
+    "__tests__/**/*.ts",
+    "*.{ts,mjs}"
+  ]
+}

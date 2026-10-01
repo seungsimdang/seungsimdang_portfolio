@@ -1,0 +1,192 @@
+@import "tailwindcss" source("../");
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --green: hsl(148, 100%, 50%);
+  --white-25: rgba(255, 255, 255, 0.25);
+  --white-50: rgba(255, 255, 255, 0.5);
+}
+
+@theme inline {
+  --spacing: 1px;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --container-content: 1920px;
+  --container-heading: 1200px;
+  --spacing-header: 92px;
+  --spacing-project-info: 200px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Typography styles from Framer */
+.text-h1 {
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+
+.text-h2 {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.35;
+  letter-spacing: -0.042em;
+  font-weight: 500;
+}
+
+.text-h3 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.75;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+
+.text-body {
+  font-size: 1rem;
+  line-height: 1.75;
+  letter-spacing: -0.025em;
+  font-weight: 400;
+}
+
+.text-small {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  letter-spacing: 0;
+  font-weight: 300;
+}
+
+/* Container padding responsive */
+.container-padding {
+  padding-left: clamp(1.5rem, 5vw, 7.5rem);
+  padding-right: clamp(1.5rem, 5vw, 7.5rem);
+}
+
+/* Responsive breakpoints from Framer */
+/* Desktop: 1440px - padding 120px */
+/* Laptop: 1024px - padding 80px */
+/* Tablet: 810px - padding 48px */
+/* Phone: 390px - padding 24px */
+
+@media (min-width: 1440px) {
+  .container-padding {
+    padding-left: 7.5rem; /* 120px */
+    padding-right: 7.5rem;
+  }
+}
+
+@media (max-width: 1439px) and (min-width: 1024px) {
+  .container-padding {
+    padding-left: 5rem; /* 80px */
+    padding-right: 5rem;
+  }
+}
+
+@media (max-width: 1023px) and (min-width: 810px) {
+  .container-padding {
+    padding-left: 3rem; /* 48px */
+    padding-right: 3rem;
+  }
+}
+
+@media (max-width: 809px) {
+  .container-padding {
+    padding-left: 1.5rem; /* 24px */
+    padding-right: 1.5rem;
+  }
+}
+
+/* Section spacing */
+.section-spacing {
+  padding-top: clamp(5rem, 10vw, 11.25rem);
+  padding-bottom: clamp(5rem, 10vw, 11.25rem);
+}
+
+/* Gap spacing from Framer layout */
+/* Desktop: 180px */
+/* Laptop: 160px */
+/* Tablet: 120px */
+/* Phone: 80px */
+
+@media (min-width: 1440px) {
+  .section-spacing {
+    padding-top: 11.25rem; /* 180px */
+    padding-bottom: 11.25rem;
+  }
+}
+
+@media (max-width: 1439px) and (min-width: 1024px) {
+  .section-spacing {
+    padding-top: 10rem; /* 160px */
+    padding-bottom: 10rem;
+  }
+}
+
+@media (max-width: 1023px) and (min-width: 810px) {
+  .section-spacing {
+    padding-top: 7.5rem; /* 120px */
+    padding-bottom: 7.5rem;
+  }
+}
+
+@media (max-width: 809px) {
+  .section-spacing {
+    padding-top: 5rem; /* 80px */
+    padding-bottom: 5rem;
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}

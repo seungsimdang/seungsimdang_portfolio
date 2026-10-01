@@ -1,22 +1,7 @@
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
 allowBuilds:
   sharp: false
-minimumReleaseAgeExclude:
-  - '@next/env@16.3.8'
-  - '@next/swc-darwin-arm64@16.3.8'
-  - '@next/swc-darwin-x64@16.3.8'
-  - '@next/swc-linux-arm64-gnu@16.3.8'
-  - '@next/swc-linux-arm64-musl@16.3.8'
-  - '@next/swc-linux-x64-gnu@16.3.8'
-  - '@next/swc-linux-x64-musl@16.3.8'
-  - '@next/swc-win32-arm64-msvc@16.3.8'
-  - '@next/swc-win32-x64-msvc@16.3.8'
-  - next@16.3.8
-  - '@biomejs/biome@2.5.15'
-  - '@biomejs/cli-darwin-arm64@2.5.15'
-  - '@biomejs/cli-darwin-x64@2.5.15'
-  - '@biomejs/cli-linux-arm64-musl@2.5.15'
-  - '@biomejs/cli-linux-arm64@2.5.15'
-  - '@biomejs/cli-linux-x64-musl@2.5.15'
-  - '@biomejs/cli-linux-x64@2.5.15'
-  - '@biomejs/cli-win32-arm64@2.5.15'
-  - '@biomejs/cli-win32-x64@2.5.15'
+trustPolicyExclude:
+  # semver 6 계열의 provenance 부재와 major 교차 비교 충돌: pnpm/pnpm#10202
+  - semver@6.3.1

@@ -1,0 +1,4 @@
+interface:
+  display_name: "웹 프로젝트 스캐폴딩"
+  short_description: "웹 앱 기반 구조와 선택형 AI 작업 하네스를 함께 구성하는 스킬"
+  default_prompt: "$scaffold-web-project로 새 웹 프로젝트와 작업 하네스를 구성해줘."

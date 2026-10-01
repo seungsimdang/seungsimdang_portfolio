@@ -1,0 +1,392 @@
+{
+  "version": 2,
+  "roles": [
+    {
+      "name": "backend-developer",
+      "description": "DB 구조 설계, 서버 API 구현, 백엔드 비즈니스 로직 작성이 필요할 때 호출한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "high"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Write, Edit, Glob, Grep, Bash",
+        "effort": "medium"
+      }
+    },
+    {
+      "name": "bug-fixer",
+      "description": "결함 위치 분석 결과를 기반으로 코드를 직접 수정하고 수정 요약을 작성할 때 호출한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "high"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Write, Edit, Glob, Grep, Bash",
+        "effort": "medium"
+      }
+    },
+    {
+      "name": "bug-localizer",
+      "description": "버그 리포트를 기반으로 코드베이스에서 결함 위치를 탐지하고 근본 원인을 분석할 때 호출한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "xhigh"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Grep, Glob, Write",
+        "effort": "medium"
+      }
+    },
+    {
+      "name": "bug-reporter",
+      "description": "사용자의 자연어 버그 설명을 구조화된 버그 리포트로 변환할 때 호출한다. 중복 확인, 심각도 분류, 재현 단계 작성을 담당한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "medium"
+      },
+      "claude": {
+        "model": "haiku",
+        "tools": "Read, Write, Glob, Grep"
+      }
+    },
+    {
+      "name": "code-reviewer",
+      "description": "구현된 코드의 로직 정확성, 가독성, 코드 품질을 검토할 때 호출한다. 구현 완료 후 변경된 파일을 대상으로 실행한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "high"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Glob, Grep, Write, Bash",
+        "effort": "medium"
+      }
+    },
+    {
+      "name": "designer",
+      "description": "UX/UI 디자인 명세, 컴포넌트 구조 정의, 사용자 흐름 설계가 필요할 때 호출한다. task-team-orchestrator의 지시를 받아 요구사항 기반 디자인 명세를 작성한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "high"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Write, Glob",
+        "effort": "medium"
+      }
+    },
+    {
+      "name": "devops-engineer",
+      "description": "CI/CD 파이프라인 설계, 빌드 자동화, 배포 설정이 필요할 때 호출한다. 배포 실행은 반드시 사람 승인 후에만 진행한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "high"
+      },
+      "claude": {
+        "model": "haiku",
+        "tools": "Read, Write, Edit, Glob, Grep, Bash"
+      }
+    },
+    {
+      "name": "frontend-developer",
+      "description": "UI 컴포넌트 구현, 비즈니스 로직 작성, Next.js 페이지 및 React 컴포넌트 개발이 필요할 때 호출한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "high"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Write, Edit, Glob, Grep, Bash",
+        "effort": "medium"
+      }
+    },
+    {
+      "name": "postmortem-agent",
+      "description": "처리 완료된 버그의 패턴을 분석하고 재발 방지 문서를 생성할 때 호출한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "medium"
+      },
+      "claude": {
+        "model": "haiku",
+        "tools": "Read, Write, Glob"
+      }
+    },
+    {
+      "name": "project-manager",
+      "description": "새 기능 요청, 요구사항 정의, 기획 설계, 스펙 문서화가 필요할 때 호출한다. task-team-orchestrator의 지시를 받아 요구사항을 작성하고 feedback-inbox 반영도 담당한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "high"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Write, Glob, WebSearch",
+        "effort": "medium"
+      }
+    },
+    {
+      "name": "qa-engineer",
+      "description": "테스트 계획 수립, 테스트 케이스 작성, 테스트 실행 및 결과 보고가 필요할 때 호출한다. 구현 완료 후 또는 위험한 중간 산출물이 완료된 직후 실행한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "high"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Write, Glob, Grep, Bash",
+        "effort": "medium"
+      }
+    },
+    {
+      "name": "security-reviewer",
+      "description": "코드베이스의 보안 취약점 탐지, 인증/인가 검토, 보안 정책 준수 확인이 필요할 때 호출한다.",
+      "codex": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "xhigh"
+      },
+      "claude": {
+        "model": "sonnet",
+        "tools": "Read, Glob, Grep, Write",
+        "effort": "medium"
+      }
+    }
+  ],
+  "skills": [
+    "task-team-orchestrator",
+    "bug-team-orchestrator",
+    "git-commit",
+    "cross-agent-handoff",
+    "harness-lab",
+    "scaffold-web-project"
+  ],
+  "files": [
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/backend-developer.md",
+      "output": ".claude/agents/backend-developer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/bug-fixer.md",
+      "output": ".claude/agents/bug-fixer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/bug-localizer.md",
+      "output": ".claude/agents/bug-localizer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/bug-reporter.md",
+      "output": ".claude/agents/bug-reporter.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/code-reviewer.md",
+      "output": ".claude/agents/code-reviewer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/designer.md",
+      "output": ".claude/agents/designer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/devops-engineer.md",
+      "output": ".claude/agents/devops-engineer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/frontend-developer.md",
+      "output": ".claude/agents/frontend-developer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/postmortem-agent.md",
+      "output": ".claude/agents/postmortem-agent.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/project-manager.md",
+      "output": ".claude/agents/project-manager.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/qa-engineer.md",
+      "output": ".claude/agents/qa-engineer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/agents/security-reviewer.md",
+      "output": ".claude/agents/security-reviewer.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/backend-developer.toml",
+      "output": ".codex/agents/backend-developer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/bug-fixer.toml",
+      "output": ".codex/agents/bug-fixer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/bug-localizer.toml",
+      "output": ".codex/agents/bug-localizer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/bug-reporter.toml",
+      "output": ".codex/agents/bug-reporter.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/code-reviewer.toml",
+      "output": ".codex/agents/code-reviewer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/designer.toml",
+      "output": ".codex/agents/designer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/devops-engineer.toml",
+      "output": ".codex/agents/devops-engineer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/frontend-developer.toml",
+      "output": ".codex/agents/frontend-developer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/postmortem-agent.toml",
+      "output": ".codex/agents/postmortem-agent.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/project-manager.toml",
+      "output": ".codex/agents/project-manager.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/qa-engineer.toml",
+      "output": ".codex/agents/qa-engineer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.codex/agents/security-reviewer.toml",
+      "output": ".codex/agents/security-reviewer.toml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/task-team-orchestrator/SKILL.md",
+      "output": ".claude/skills/task-team-orchestrator/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/bug-team-orchestrator/SKILL.md",
+      "output": ".claude/skills/bug-team-orchestrator/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/git-commit/SKILL.md",
+      "output": ".claude/skills/git-commit/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/cross-agent-handoff/SKILL.md",
+      "output": ".claude/skills/cross-agent-handoff/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/harness-lab/SKILL.md",
+      "output": ".claude/skills/harness-lab/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/harness-lab/references/agent-team-design.md",
+      "output": ".claude/skills/harness-lab/references/agent-team-design.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/harness-lab/references/examples.md",
+      "output": ".claude/skills/harness-lab/references/examples.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/harness-lab/references/harness-design-workflow.md",
+      "output": ".claude/skills/harness-lab/references/harness-design-workflow.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/harness-lab/references/orchestrator-artifacts-template.md",
+      "output": ".claude/skills/harness-lab/references/orchestrator-artifacts-template.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/harness-lab/references/skill-authoring-guide.md",
+      "output": ".claude/skills/harness-lab/references/skill-authoring-guide.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/harness-lab/references/testing-qa-evolution.md",
+      "output": ".claude/skills/harness-lab/references/testing-qa-evolution.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/scaffold-web-project/SKILL.md",
+      "output": ".claude/skills/scaffold-web-project/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/scaffold-web-project/agents/openai.yaml",
+      "output": ".claude/skills/scaffold-web-project/agents/openai.yaml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/scaffold-web-project/references/harness.md",
+      "output": ".claude/skills/scaffold-web-project/references/harness.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/scaffold-web-project/references/packages.md",
+      "output": ".claude/skills/scaffold-web-project/references/packages.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.claude/skills/scaffold-web-project/references/project-layout.md",
+      "output": ".claude/skills/scaffold-web-project/references/project-layout.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/task-team-orchestrator/SKILL.md",
+      "output": ".agents/skills/task-team-orchestrator/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/bug-team-orchestrator/SKILL.md",
+      "output": ".agents/skills/bug-team-orchestrator/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/git-commit/SKILL.md",
+      "output": ".agents/skills/git-commit/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/cross-agent-handoff/SKILL.md",
+      "output": ".agents/skills/cross-agent-handoff/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/harness-lab/SKILL.md",
+      "output": ".agents/skills/harness-lab/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/harness-lab/references/agent-team-design.md",
+      "output": ".agents/skills/harness-lab/references/agent-team-design.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/harness-lab/references/examples.md",
+      "output": ".agents/skills/harness-lab/references/examples.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/harness-lab/references/harness-design-workflow.md",
+      "output": ".agents/skills/harness-lab/references/harness-design-workflow.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/harness-lab/references/orchestrator-artifacts-template.md",
+      "output": ".agents/skills/harness-lab/references/orchestrator-artifacts-template.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/harness-lab/references/skill-authoring-guide.md",
+      "output": ".agents/skills/harness-lab/references/skill-authoring-guide.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/harness-lab/references/testing-qa-evolution.md",
+      "output": ".agents/skills/harness-lab/references/testing-qa-evolution.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/scaffold-web-project/SKILL.md",
+      "output": ".agents/skills/scaffold-web-project/SKILL.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/scaffold-web-project/agents/openai.yaml",
+      "output": ".agents/skills/scaffold-web-project/agents/openai.yaml"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/scaffold-web-project/references/harness.md",
+      "output": ".agents/skills/scaffold-web-project/references/harness.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/scaffold-web-project/references/packages.md",
+      "output": ".agents/skills/scaffold-web-project/references/packages.md"
+    },
+    {
+      "source": "docs/agent-harness/templates/.agents/skills/scaffold-web-project/references/project-layout.md",
+      "output": ".agents/skills/scaffold-web-project/references/project-layout.md"
+    }
+  ]
+}
