@@ -42,7 +42,7 @@ pnpm harness:test
 검사 배치 기준은 `docs/agent-rules/enforcement-placement.md`를 따른다. `pnpm install`의 prepare로 Husky를 설치한다.
 
 - pre-commit: 작성자 → lint-staged → staged 하네스 동기화 → Knip → React Doctor → Vitest 하네스 검사.
-- pre-push: 타입 → Biome → 하네스 동기화 → Vitest 하네스 검사 → 빌드 → Playwright E2E.
+- pre-push: 타입 → Biome → 하네스 동기화 → Vitest 하네스 검사. 빌드·Playwright E2E는 CI(`.github/workflows/ci.yml`)가 모든 push에서 실행하므로 로컬 훅에서 제외한다.
 - Claude·Codex 런타임 훅은 각 도구의 원본 등록 구조를 유지한다. 동기화 안내는 이 저장소의 생성 원본·결과 검사에 연결한다. 안내 훅은 실행을 차단하지 않는다.
 
 lint-staged는 `src/`·`tests/e2e/`의 staged 소스에서 대시와 임시 산출물 참조를 검사한다. 검사기의 검색 패턴과 검사기 테스트의 의도적인 위반 예시는 앱 소스 위반으로 취급하지 않는다. `__tests__/lint/`는 실제 검사 명령의 통과·차단과 전체 앱 소스 불변식을 확인한다.
