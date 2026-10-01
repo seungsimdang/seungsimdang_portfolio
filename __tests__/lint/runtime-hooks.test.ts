@@ -68,6 +68,40 @@ for (const tool of [".claude", ".codex"]) {
       }).status,
     ).toBe(0);
   });
+  test(`${tool} 주석 줄바꿈 훅이 문장 중간 줄바꿈을 차단하고 한 줄 한 문장을 허용한다`, () => {
+    const write = (content: string) =>
+      run(tool, "block-comment-line-wrap", {
+        tool_name: "Write",
+        tool_input: { file_path: "src/app/page.tsx", content },
+      }).status;
+    expect(
+      write("// 첫 문장 요약함\n// 두 번째 문장 설명함\nconst a = 1;"),
+    ).toBe(0);
+    expect(write("/**\n * 첫 문장 요약함\n * 두 번째 문장 설명함\n */")).toBe(
+      0,
+    );
+    expect(write("// 캐시 키는\n// 세션과 경로로 구성함")).toBe(2);
+    expect(write("// Keeps the cache\n// warm between requests.")).toBe(2);
+    expect(write("// 수정함. 다음 단계 진행함")).toBe(2);
+    expect(write("/*\n첫 줄 설명함\n*/")).toBe(2);
+    const shell = (content: string) =>
+      run(tool, "block-comment-line-wrap", {
+        tool_name: "Write",
+        tool_input: { file_path: ".claude/hooks/sample.sh", content },
+      }).status;
+    expect(shell("#!/bin/sh\n# 첫 문장 요약함\n# 두 번째 문장 설명함")).toBe(0);
+    expect(shell("#!/bin/sh\n# 커밋 메시지를\n# 검사함")).toBe(2);
+    expect(shell("#!/bin/sh\n# 커밋 메시지를 검사한다.")).toBe(2);
+    expect(
+      run(tool, "block-comment-line-wrap", {
+        tool_name: "Write",
+        tool_input: {
+          file_path: "__tests__/lint/sample.test.ts",
+          content: "// 캐시 키는\n// 세션과 경로로 구성함",
+        },
+      }).status,
+    ).toBe(0);
+  });
   test(`${tool} 런타임 안전 훅이 파괴적 명령과 잘못된 에이전트 실행을 차단한다`, () => {
     expect(
       run(tool, "git-safety-guard", {
