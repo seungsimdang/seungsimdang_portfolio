@@ -45,7 +45,12 @@ export default function BlogPage() {
         <div className="flex items-end justify-between">
           <h1 className="text-h1 max-w-[1200px]">notes</h1>
           <div className="w-9 h-9 opacity-50">
-            <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 36 36"
+              fill="none"
+              className="w-full h-full"
+            >
               <circle cx="18" cy="18" r="18" fill="currentColor" />
             </svg>
           </div>
@@ -76,8 +81,8 @@ export default function BlogPage() {
           </div>
 
           <div className="space-y-6 md:space-y-8">
-            {allPosts.map((post, index) => (
-              <BlogPreview key={index} {...post} />
+            {allPosts.map((post) => (
+              <BlogPreview key={post.href} {...post} />
             ))}
           </div>
         </div>

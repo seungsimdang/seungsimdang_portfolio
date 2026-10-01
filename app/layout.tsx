@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { Navbar } from "@/components/Navbar";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Nick - Product Design Partner",
-  description: "A product design partner with focus on no-code websites, software interfaces, and interactive experiences",
+  description:
+    "A product design partner with focus on no-code websites, software interfaces, and interactive experiences",
 };
 
 export default function RootLayout({

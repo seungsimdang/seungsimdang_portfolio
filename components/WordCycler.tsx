@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useId } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 interface WordCyclerProps {
   words: string[];
@@ -26,7 +26,10 @@ export function WordCycler({
   const [displayedIndex, setDisplayedIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const filteredWords = words.filter((w) => w && w.trim() !== "");
+  const filteredWords = useMemo(
+    () => words.filter((w) => w && w.trim() !== ""),
+    [words],
+  );
 
   // Measure dimensions
   useEffect(() => {
@@ -69,7 +72,7 @@ export function WordCycler({
       window.removeEventListener("resize", measureWithClasses);
       resizeObserver.disconnect();
     };
-  }, [instanceId, filteredWords.join(","), className]);
+  }, [instanceId, filteredWords, className]);
 
   // Word cycling timer
   useEffect(() => {
@@ -89,7 +92,13 @@ export function WordCycler({
     }, interval * 1000);
 
     return () => clearInterval(timer);
-  }, [filteredWords.length, interval, animationDuration, instanceId, isAnimating]);
+  }, [
+    filteredWords.length,
+    interval,
+    animationDuration,
+    instanceId,
+    isAnimating,
+  ]);
 
   if (filteredWords.length === 0) return null;
 

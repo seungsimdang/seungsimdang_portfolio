@@ -27,7 +27,8 @@ export function Footer() {
         <div className="space-y-4">
           <h3 className="text-2xl font-medium">Nick</h3>
           <p className="text-small opacity-50">
-            Product design partner focused on creating meaningful digital experiences
+            Product design partner focused on creating meaningful digital
+            experiences
           </p>
         </div>
 

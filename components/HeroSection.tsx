@@ -39,6 +39,7 @@ export function HeroSection() {
           </div>
           <div className="hidden md:block absolute -right-2 md:-right-4 -bottom-2 md:-bottom-4 w-6 h-6 md:w-9 md:h-9 opacity-50">
             <svg
+              aria-hidden="true"
               viewBox="0 0 36 36"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"

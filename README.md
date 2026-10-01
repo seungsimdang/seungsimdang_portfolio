@@ -1,22 +1,27 @@
 # Nick's Portfolio - Product Design Partner
 
-Framer 프로젝트를 기반으로 구현한 완전한 반응형 포트폴리오 웹사이트입니다.
+Framer 디자인을 바탕으로 작성된 Next.js 포트폴리오 프로젝트입니다. 기존 디자인 정보를 유지하면서 개발·검증 환경과 AI 작업 규칙을 구성했습니다.
 
 ## 📋 프로젝트 개요
 
-이 프로젝트는 Framer에서 디자인된 포트폴리오를 Next.js와 TypeScript로 완전히 재구현한 것입니다. Framer의 레이아웃 구조, 스타일 시스템, 그리고 반응형 디자인을 충실히 따릅니다.
+Framer에서 디자인된 포트폴리오를 Next.js와 TypeScript로 구현한 저장소입니다. 아래 Framer 노드, 브레이크포인트와 스타일 정보는 기존 참조 자료를 유지한 것입니다. 이번 스캐폴딩에서는 Framer 원본과의 시각적 일치를 검증하지 않았습니다.
 
 ## 🛠 기술 스택
 
-- **Framework**: Next.js 16.1.6 (App Router)
-- **Language**: TypeScript 5
-- **Styling**: Tailwind CSS 4
-- **UI Library**: React 19.2.3
+- **Framework**: Next.js 16.3.8 (App Router)
+- **Language**: TypeScript 7.0.2
+- **Styling**: Tailwind CSS 4.3.3
+- **UI Library**: React 19.3.0
 - **Build Tool**: Turbopack
+- **Package Manager**: pnpm 11.18.0
+- **Lint / Format**: Biome 2.5.15
+- **Browser Test**: Playwright 1.63.0
+
+Next.js·React·Tailwind의 Context7 문서를 확인하고 npm registry의 `latest` stable 버전을 적용했습니다. 실제 의존성은 `package.json`과 `pnpm-lock.yaml`로 관리합니다. ESLint는 Biome으로 교체했습니다.
 
 ## 📱 반응형 디자인
 
-Framer 프로젝트의 4개 브레이크포인트를 완벽하게 구현:
+기존 Framer 참조의 4개 브레이크포인트:
 
 - **Desktop (≥1440px)**: 패딩 120px, 간격 180px
 - **Laptop (1024px - 1439px)**: 패딩 80px, 간격 160px
@@ -105,6 +110,13 @@ seungsimdang_portfolio/
 ├── package.json
 ├── tsconfig.json
 ├── next.config.ts
+├── biome.json                 # 정적 검사와 포맷
+├── playwright.config.ts       # 프로덕션 앱 브라우저 테스트
+├── tests/e2e/                 # 페이지·탐색·404 스모크 테스트
+├── AGENTS.md                  # AI 작업 시작점
+├── docs/agent-rules/          # 구조·검증·Git 규칙
+├── artifacts/scaffolding/    # 스캐폴딩 결과
+├── .github/workflows/ci.yml  # 설치·검사·빌드·E2E
 └── README.md
 ```
 
@@ -131,16 +143,18 @@ seungsimdang_portfolio/
 
 ## 🚀 시작하기
 
+Node.js 22.13 이상과 pnpm 11.18.0을 사용합니다. 이번 로컬 검증 환경은 Node.js 26.5.1입니다. 기본 앱은 환경변수나 외부 서비스 자격증명을 요구하지 않습니다. `.env.example`에는 안내만 있습니다.
+
 ### 설치
 
 ```bash
-npm install
+pnpm install --frozen-lockfile
 ```
 
 ### 개발 서버 실행
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 결과를 확인하세요.
@@ -148,14 +162,36 @@ npm run dev
 ### 빌드
 
 ```bash
-npm run build
+pnpm build
 ```
 
 ### 프로덕션 실행
 
 ```bash
-npm start
+pnpm start
 ```
+
+## 개발 검사와 작업 흐름
+
+```bash
+pnpm check                 # Biome 린트·포맷·import 검사
+pnpm lint                  # 린트만 실행
+pnpm format                # 포맷 적용
+pnpm type-check            # Next.js route 타입 생성 + TypeScript 검사
+pnpm build
+pnpm exec playwright install chromium  # 최초 브라우저 설치
+pnpm test:e2e
+# 설치와 브라우저 준비 후 전체 검증
+pnpm verify
+```
+
+E2E는 빌드된 앱을 `http://127.0.0.1:3100`에서 직접 시작합니다. `/`, `/projects`, `/about`, `/blog`, `/contact`, 내부 탐색, 404와 WordCycler 텍스트 순환을 데스크톱·모바일 Chromium에서 확인합니다. 해당 포트가 비어 있어야 합니다. CI는 lockfile 설치 → 정적 검사 → 타입 검사 → 빌드 → Chromium 설치 → E2E 순서입니다.
+
+현재 문의 폼은 콘솔 출력만 수행하며 이메일 전송은 연결되지 않았습니다. 프로젝트·블로그 상세 URL의 구현과 외부 소셜 링크는 이 스모크 테스트의 검증 대상이 아닙니다.
+
+AI 작업은 [AGENTS.md](AGENTS.md)와 [공용 규칙](docs/agent-rules/README.md)에서 시작합니다. 기본은 단일 실행 흐름이며 인증·DB·서버 상태 관리와 역할별 에이전트는 추가하지 않았습니다. 구성 결정, 검사 결과와 미검증 항목은 [스캐폴딩 결과](artifacts/scaffolding/summary.md)에 기록합니다.
+
+참고 문서: [Next.js 설치](https://nextjs.org/docs/app/getting-started/installation), [React 업그레이드](https://react.dev/blog/2024/04/25/react-19-upgrade-guide), [Tailwind 업그레이드](https://tailwindcss.com/docs/upgrade-guide), [Biome 시작하기](https://biomejs.dev/guides/getting-started/). 설치된 Next.js 문서는 `node_modules/next/dist/docs/`에서도 읽을 수 있습니다.
 
 ## 🎨 스타일 가이드
 

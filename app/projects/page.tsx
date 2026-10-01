@@ -1,7 +1,7 @@
 "use client";
 
-import { ProjectCard } from "@/components/ProjectCard";
 import { Button } from "@/components/Button";
+import { ProjectCard } from "@/components/ProjectCard";
 
 export default function ProjectsPage() {
   const projects = [
@@ -12,7 +12,8 @@ export default function ProjectsPage() {
       bgColor: "rgb(255, 98, 0)",
       textColor: "rgb(0, 0, 0)",
       href: "/work/bizz-buzz",
-      description: "A social media platform for entrepreneurs to network and collaborate",
+      description:
+        "A social media platform for entrepreneurs to network and collaborate",
     },
     {
       title: "aquaflow",
@@ -53,8 +54,14 @@ export default function ProjectsPage() {
   ];
 
   const clients = [
-    "Google", "Meta", "Apple", "Amazon",
-    "Microsoft", "Netflix", "Spotify", "Uber"
+    "Google",
+    "Meta",
+    "Apple",
+    "Amazon",
+    "Microsoft",
+    "Netflix",
+    "Spotify",
+    "Uber",
   ];
 
   return (
@@ -64,7 +71,12 @@ export default function ProjectsPage() {
         <div className="flex items-end justify-between">
           <h1 className="text-h1 max-w-[1200px]">projects</h1>
           <div className="w-9 h-9 opacity-50">
-            <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 36 36"
+              fill="none"
+              className="w-full h-full"
+            >
               <circle cx="18" cy="18" r="18" fill="currentColor" />
             </svg>
           </div>
@@ -75,8 +87,8 @@ export default function ProjectsPage() {
       <section className="w-full max-w-[1920px] mx-auto container-padding">
         <div className="flex justify-center">
           <p className="text-h2 text-center w-3/4">
-            I help startups and series A—D teams to establish a strong connection
-            between their product and customers
+            I help startups and series A—D teams to establish a strong
+            connection between their product and customers
           </p>
         </div>
       </section>
@@ -90,9 +102,9 @@ export default function ProjectsPage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-            {clients.map((client, index) => (
+            {clients.map((client) => (
               <div
-                key={index}
+                key={client}
                 className="flex items-center justify-center h-16 md:h-20 opacity-50 hover:opacity-100 transition-opacity"
               >
                 <span className="text-lg md:text-xl font-medium">{client}</span>
@@ -102,7 +114,12 @@ export default function ProjectsPage() {
 
           <div className="flex justify-end">
             <div className="w-9 h-9 opacity-50">
-              <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 36 36"
+                fill="none"
+                className="w-full h-full"
+              >
                 <circle cx="18" cy="18" r="18" fill="currentColor" />
               </svg>
             </div>
@@ -113,18 +130,28 @@ export default function ProjectsPage() {
       {/* Projects Section */}
       <section className="w-full max-w-[1920px] mx-auto container-padding section-spacing">
         <div className="space-y-32 md:space-y-40 lg:space-y-48">
-          {projects.map((project, index) => (
-            <div key={index} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {projects.map((project) => (
+            <div
+              key={project.href}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+            >
               <div className="lg:col-span-7">
                 <ProjectCard {...project} className="h-[60vh] lg:h-[75vh]" />
               </div>
               <div className="lg:col-span-1" />
               <div className="lg:col-span-4 flex flex-col justify-between min-h-[200px]">
                 <div className="sticky top-32">
-                  <p className="text-small opacity-70 mb-8">{project.description}</p>
+                  <p className="text-small opacity-70 mb-8">
+                    {project.description}
+                  </p>
                   <div className="flex justify-end">
                     <div className="w-9 h-9 opacity-50">
-                      <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 36 36"
+                        fill="none"
+                        className="w-full h-full"
+                      >
                         <circle cx="18" cy="18" r="18" fill="currentColor" />
                       </svg>
                     </div>

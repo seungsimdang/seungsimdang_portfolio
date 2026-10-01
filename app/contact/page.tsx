@@ -16,7 +16,7 @@ export default function ContactPage() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -38,7 +38,12 @@ export default function ContactPage() {
         <div className="flex items-end justify-between">
           <h1 className="text-h1 max-w-[1200px]">say hello</h1>
           <div className="w-9 h-9 opacity-50">
-            <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 36 36"
+              fill="none"
+              className="w-full h-full"
+            >
               <circle cx="18" cy="18" r="18" fill="currentColor" />
             </svg>
           </div>
@@ -49,8 +54,8 @@ export default function ContactPage() {
       <section className="w-full max-w-[1920px] mx-auto container-padding">
         <div className="flex justify-center">
           <p className="text-h2 text-center w-3/4">
-            let&apos;s collaborate. feel free to drop me a line about your project
-            or follow me on social networks
+            let&apos;s collaborate. feel free to drop me a line about your
+            project or follow me on social networks
           </p>
         </div>
       </section>
@@ -125,9 +130,9 @@ export default function ContactPage() {
           <div className="lg:col-span-4">
             <div className="flex flex-col justify-between h-full">
               <div className="space-y-8 md:space-y-12">
-                {socialLinks.map((social, index) => (
+                {socialLinks.map((social) => (
                   <a
-                    key={index}
+                    key={social.platform}
                     href={`https://${social.platform}.com/${social.handle.slice(1)}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -150,7 +155,12 @@ export default function ContactPage() {
 
               <div className="flex justify-end mt-12">
                 <div className="w-9 h-9 opacity-50">
-                  <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 36 36"
+                    fill="none"
+                    className="w-full h-full"
+                  >
                     <circle cx="18" cy="18" r="18" fill="currentColor" />
                   </svg>
                 </div>
