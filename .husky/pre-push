@@ -1,0 +1,7 @@
+set -eu
+pnpm type-check
+pnpm check
+pnpm harness:check
+pnpm harness:test
+pnpm build
+pnpm test:e2e

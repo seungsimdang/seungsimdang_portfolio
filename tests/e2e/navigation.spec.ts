@@ -7,7 +7,7 @@ for (const [path, heading] of [
   ["/blog", "notes"],
   ["/contact", "say hello"],
 ]) {
-  test(`${path} renders`, async ({ page }) => {
+  test(`${path} 페이지가 정상적으로 표시된다`, async ({ page }) => {
     const response = await page.goto(path);
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
@@ -17,7 +17,7 @@ for (const [path, heading] of [
   });
 }
 
-test("navigation opens the contact form", async ({ page }) => {
+test("내비게이션에서 문의 페이지와 입력 필드를 연다", async ({ page }) => {
   await page.goto("/");
   await page
     .getByRole("navigation")
@@ -29,13 +29,13 @@ test("navigation opens the contact form", async ({ page }) => {
   await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
 });
 
-test("unknown route shows 404", async ({ page }) => {
+test("없는 경로에서 오류 화면과 상태 코드를 표시한다", async ({ page }) => {
   const response = await page.goto("/scaffold-missing-page");
   expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "oops…" })).toBeVisible();
 });
 
-test("hero words continue cycling", async ({ page }) => {
+test("첫 화면의 단어가 계속 순환한다", async ({ page }) => {
   await page.goto("/");
   const currentWord = page
     .getByRole("heading", { level: 1 })

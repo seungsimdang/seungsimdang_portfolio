@@ -1,9 +1,13 @@
-# 공용 규칙
+# 공용 에이전트 규칙
 
-작업 시작 시 README와 관련 구현을 먼저 읽는다. 필요한 규칙만 추가로 읽는다.
+Claude와 Codex는 코드·문서·Git 작업 전에 이 폴더에서 현재 작업과 관련된 규칙을 읽는다. 이 문서는 공용 규칙의 단일 원본이며, 도구별 권한·Hook·Agent 설정은 `.claude/`, `.codex/`에 둔다.
 
-- 코드 추가·수정: [프로젝트 구조](project-structure.md)
-- 구현 검증·결과 보고: [검증 기준](verification.md)
-- 변경 정리·커밋·푸시: [Git 안전 규칙](git-safety.md)
-
-이 디렉터리가 공용 정책의 원본이다. 특정 모델, 운영체제 명령이나 MCP 서버를 필수 조건으로 두지 않는다. 접근할 수 없는 자료와 실행하지 못한 검사는 먼저 명시한다.
+| 규칙 | 읽는 시점 |
+| --- | --- |
+| `nextjs.md` | Next.js 코드 또는 설정을 수정하기 전. 최신 API는 `node_modules/next/dist/docs/`도 함께 확인한다. |
+| `project-structure.md` | 파일 배치, import, 네이밍, 주석 규칙을 판단할 때 |
+| `react-query.md` | TanStack Query, SSR hydration, API 데이터 흐름을 수정할 때 |
+| `tailwind.md` | 스타일, 디자인 토큰, 반응형 UI를 수정할 때 |
+| `enforcement-placement.md` | 검사 로직을 Hook, 테스트, 린트 중 어디에 둘지 판단할 때 |
+| `branch-strategy.md` | 브랜치, worktree, 병합 작업 전 |
+| `git-safety.md` | Git 명령, 병렬 Agent, worktree 작업 전 |

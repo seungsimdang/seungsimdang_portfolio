@@ -1,5 +1,15 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "plugins": [
+    {
+      "path": "./plugins/korean-test-titles.grit",
+      "includes": [
+        "tests/**/*.spec.*",
+        "tests/**/*.test.*",
+        "__tests__/**/*.test.ts"
+      ]
+    }
+  ],
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,15 +17,18 @@
   },
   "files": {
     "includes": [
-      "app/**",
-      "components/**",
       "tests/**",
       "*.ts",
       "*.mjs",
       "package.json",
       "tsconfig.json",
       "biome.json",
-      "!!**/next-env.d.ts"
+      "!!**/next-env.d.ts",
+      "scripts/**",
+      "docs/agent-harness/manifest.json",
+      "knip.json",
+      "src/**",
+      "__tests__/**"
     ]
   },
   "formatter": {

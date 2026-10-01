@@ -1,0 +1,7 @@
+set -eu
+sh scripts/check-commit-identity.sh
+pnpm lint:staged
+sh scripts/check-agent-harness-sync.sh
+pnpm knip
+pnpm react-doctor:staged
+pnpm harness:test

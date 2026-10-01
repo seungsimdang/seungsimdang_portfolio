@@ -1,0 +1,176 @@
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { expect, test } from "vitest";
+
+const run = (tool: string, hook: string, input: object, cwd = process.cwd()) =>
+  spawnSync("sh", [resolve(tool, "hooks", `${hook}.sh`)], {
+    cwd,
+    input: JSON.stringify(input),
+    encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd },
+  });
+
+for (const tool of [".claude", ".codex"]) {
+  test(`${tool} 커밋 훅이 정상 메시지를 허용하고 금지 트레일러와 종결어미를 차단한다`, () => {
+    expect(
+      run(tool, "block-attribution-trailers", {
+        tool_input: { command: 'git commit -m "fix: 탐색 수정"' },
+      }).status,
+    ).toBe(0);
+    for (const trailer of ["Co-Authored-By", "Claude-Session"]) {
+      expect(
+        run(tool, "block-attribution-trailers", {
+          tool_input: {
+            command: `git commit -m "fix: 탐색 수정\n\n${trailer}: sample"`,
+          },
+        }).status,
+      ).toBe(2);
+    }
+    expect(
+      run(tool, "enforce-commit-msg-style", {
+        tool_input: { command: 'git commit -m "fix: 탐색 수정"' },
+      }).status,
+    ).toBe(0);
+    expect(
+      run(tool, "enforce-commit-msg-style", {
+        tool_input: { command: 'git commit -m "fix: 탐색을 수정했다"' },
+      }).status,
+    ).toBe(2);
+  });
+  test(`${tool} 소스 대시 훅이 앱 위반을 차단하고 정상 소스를 허용한다`, () => {
+    expect(
+      run(tool, "block-em-dash-in-source", {
+        tool_name: "Write",
+        tool_input: {
+          file_path: "src/app/page.tsx",
+          content: 'export const value = "정상";',
+        },
+      }).status,
+    ).toBe(0);
+    expect(
+      run(tool, "block-em-dash-in-source", {
+        tool_name: "Write",
+        tool_input: {
+          file_path: "src/app/page.tsx",
+          content: 'export const value = "bad — text";',
+        },
+      }).status,
+    ).toBe(2);
+    expect(
+      run(tool, "block-em-dash-in-source", {
+        tool_name: "Write",
+        tool_input: {
+          file_path: "__tests__/lint/sample.test.ts",
+          content: 'const sample = "bad — text";',
+        },
+      }).status,
+    ).toBe(0);
+  });
+  test(`${tool} 런타임 안전 훅이 파괴적 명령과 잘못된 에이전트 실행을 차단한다`, () => {
+    expect(
+      run(tool, "git-safety-guard", {
+        tool_input: { command: "git reset --hard" },
+      }).status,
+    ).toBe(2);
+    expect(
+      run(tool, "block-fork-spawn", { tool_input: { subagent_type: "fork" } })
+        .status,
+    ).toBe(2);
+    expect(
+      run(tool, "block-fork-spawn", {
+        tool_input: { subagent_type: "qa-engineer" },
+      }).status,
+    ).toBe(0);
+    expect(run(tool, "orchestrator-no-worktree", {}).status).toBe(2);
+    expect(
+      run(tool, "orchestrator-no-worktree", { agent_id: "implementation" })
+        .status,
+    ).toBe(0);
+    const fixture = mkdtempSync(join(tmpdir(), "portfolio-hooks-"));
+    try {
+      spawnSync("git", ["init", "-q"], { cwd: fixture });
+      writeFileSync(join(fixture, "dirty.txt"), "changed");
+      expect(
+        run(
+          tool,
+          "require-isolation-when-dirty",
+          { tool_input: { subagent_type: "frontend-developer" } },
+          fixture,
+        ).status,
+      ).toBe(2);
+      expect(
+        run(
+          tool,
+          "require-isolation-when-dirty",
+          {
+            tool_input: {
+              subagent_type: "frontend-developer",
+              isolation: "worktree",
+            },
+          },
+          fixture,
+        ).status,
+      ).toBe(0);
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+    }
+  });
+  test(`${tool} 원인 설명 안내 훅이 실행을 차단하지 않는다`, () => {
+    const result = run(tool, "require-why-explanation", {
+      prompt: "왜 변경했어?",
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("판단 근거");
+  });
+}
+
+test("클로드 전용 훅이 리뷰 누락과 영어 응답을 검출한다", () => {
+  expect(
+    run(".claude", "require-coderabbit-run", {
+      tool_name: "Write",
+      tool_input: {
+        file_path: "artifacts/task-team/code-review-1.md",
+        content: "# 검토 결과",
+      },
+    }).status,
+  ).toBe(2);
+  expect(
+    run(".claude", "require-coderabbit-run", {
+      tool_name: "Write",
+      tool_input: {
+        file_path: "artifacts/task-team/code-review-1.md",
+        content: "## CodeRabbit 교차검토\n미실행: 인증 실패",
+      },
+    }).status,
+  ).toBe(0);
+  const stop = run(".claude", "require-korean-response", {
+    last_assistant_message:
+      "This response describes the complete implementation and verification results in English.",
+  });
+  expect(JSON.parse(stop.stdout).decision).toBe("block");
+  expect(
+    run(".claude", "require-korean-response", {
+      last_assistant_message: "검증 결과를 확인했습니다.",
+    }).stdout.trim(),
+  ).toBe("");
+  const fixture = mkdtempSync(join(tmpdir(), "portfolio-review-hooks-"));
+  try {
+    const directory = join(fixture, "artifacts/task-team");
+    mkdirSync(directory, { recursive: true });
+    for (const number of [1, 2, 3])
+      writeFileSync(join(directory, `code-review-${number}.md`), "review");
+    const review = run(
+      ".claude",
+      "confirm-repeated-review",
+      { tool_input: { subagent_type: "code-reviewer" } },
+      fixture,
+    );
+    expect(
+      JSON.parse(review.stdout).hookSpecificOutput.permissionDecision,
+    ).toBe("ask");
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});

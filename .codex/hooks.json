@@ -1,0 +1,75 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/require-why-explanation.sh'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/block-attribution-trailers.sh'"
+          },
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/enforce-commit-msg-style.sh'"
+          },
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/git-safety-guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "EnterWorktree",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/orchestrator-no-worktree.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/require-isolation-when-dirty.sh'"
+          },
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/block-fork-spawn.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/block-em-dash-in-source.sh'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/check-agent-harness-sync.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

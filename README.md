@@ -8,16 +8,19 @@ Framer에서 디자인된 포트폴리오를 Next.js와 TypeScript로 구현한 
 
 ## 🛠 기술 스택
 
-- **Framework**: Next.js 16.3.8 (App Router)
+- **Framework**: Next.js 16.3.6 (App Router)
 - **Language**: TypeScript 7.0.2
 - **Styling**: Tailwind CSS 4.3.3
 - **UI Library**: React 19.3.0
 - **Build Tool**: Turbopack
 - **Package Manager**: pnpm 11.18.0
-- **Lint / Format**: Biome 2.5.15
+- **Lint / Format**: Biome 2.5.14
+- **Unit Test**: Vitest 5.0.1
 - **Browser Test**: Playwright 1.63.0
+- **Git Hooks**: Husky 9.1.7, lint-staged 17.5.1
+- **Code Audit**: Knip 6.38.0, React Doctor 0.9.14
 
-Next.js·React·Tailwind의 Context7 문서를 확인하고 npm registry의 `latest` stable 버전을 적용했습니다. 실제 의존성은 `package.json`과 `pnpm-lock.yaml`로 관리합니다. ESLint는 Biome으로 교체했습니다.
+의존성은 출시 후 7일을 충족한 안정 버전을 사용하며 `package.json`과 `pnpm-lock.yaml`로 관리합니다.
 
 ## 📱 반응형 디자인
 
@@ -83,41 +86,49 @@ Next.js·React·Tailwind의 Context7 문서를 확인하고 npm registry의 `lat
 
 ## 📁 디렉토리 구조
 
-```
+```text
 seungsimdang_portfolio/
-├── app/
-│   ├── layout.tsx              # Root 레이아웃 (Navbar + Footer)
-│   ├── page.tsx                # Home 페이지
-│   ├── globals.css             # 글로벌 스타일 + 반응형 CSS
-│   ├── projects/
-│   │   └── page.tsx            # Projects 페이지
-│   ├── about/
-│   │   └── page.tsx            # About 페이지
-│   ├── blog/
-│   │   └── page.tsx            # Blog 페이지
-│   ├── contact/
-│   │   └── page.tsx            # Contact 페이지
-│   └── not-found.tsx           # 404 페이지
-├── components/
-│   ├── WordCycler.tsx          # 텍스트 순환 애니메이션
-│   ├── ProjectCard.tsx         # 프로젝트 카드
-│   ├── Button.tsx              # 버튼 컴포넌트
-│   ├── HeroSection.tsx         # 히어로 섹션
-│   ├── AboutSection.tsx        # About 섹션
-│   ├── BlogPreview.tsx         # 블로그 미리보기
-│   ├── Navbar.tsx              # 네비게이션 바
-│   └── Footer.tsx              # 푸터
-├── package.json
-├── tsconfig.json
-├── next.config.ts
-├── biome.json                 # 정적 검사와 포맷
-├── playwright.config.ts       # 프로덕션 앱 브라우저 테스트
-├── tests/e2e/                 # 페이지·탐색·404 스모크 테스트
-├── AGENTS.md                  # AI 작업 시작점
-├── docs/agent-rules/          # 구조·검증·Git 규칙
-├── artifacts/scaffolding/    # 스캐폴딩 결과
-├── .github/workflows/ci.yml  # 설치·검사·빌드·E2E
-└── README.md
+├── .agents/skills/                  # Codex 업무 절차
+├── .claude/                         # Claude 역할·스킬·런타임 훅
+├── .codex/                          # Codex 역할·런타임 훅
+├── .github/workflows/ci.yml         # CI 검사
+├── .husky/                          # 커밋·푸시 검사
+├── __tests__/lint/                  # Vitest 하네스·소스·제목 규칙 검사
+├── artifacts/                       # 작업 기록
+├── docs/                            # 공용 규칙·인계·하네스 원본
+├── plugins/                         # Biome 한글 테스트 제목 검사
+├── public/                          # 디자인 자산
+├── scripts/                         # 생성·동기화·정책 검사
+├── src/                             # 앱 소스
+│   ├── app/                         # 페이지·레이아웃·전역 CSS
+│   │   ├── about/page.tsx
+│   │   ├── blog/page.tsx
+│   │   ├── contact/page.tsx
+│   │   ├── projects/page.tsx
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── not-found.tsx
+│   │   └── page.tsx
+│   └── components/
+│       ├── common/                  # 섹션·카드·텍스트 애니메이션
+│       ├── layout/                  # navbar.tsx·footer.tsx
+│       └── ui/                      # button.tsx
+├── tests/e2e/                       # Playwright 브라우저 테스트
+├── AGENTS.md                        # Codex 진입 문서
+├── CLAUDE.md                        # Claude 진입 문서
+├── README.md                        # 프로젝트 안내
+├── biome.json                       # 린트·포맷
+├── knip.json                        # 미사용 코드·의존성 검사
+├── lint-staged.config.mjs           # staged 검사
+├── next.config.ts                   # Next.js 설정
+├── package.json                     # 의존성·명령
+├── playwright.config.ts             # 브라우저 테스트 설정
+├── pnpm-lock.yaml                   # 의존성 잠금
+├── pnpm-workspace.yaml              # 설치 정책
+├── postcss.config.mjs               # PostCSS 설정
+├── tsconfig.json                    # TypeScript 설정
+└── vitest.config.ts                 # Vitest 탐색 설정
 ```
 
 ## 🎯 주요 기능
@@ -143,7 +154,7 @@ seungsimdang_portfolio/
 
 ## 🚀 시작하기
 
-Node.js 22.13 이상과 pnpm 11.18.0을 사용합니다. 이번 로컬 검증 환경은 Node.js 26.5.1입니다. 기본 앱은 환경변수나 외부 서비스 자격증명을 요구하지 않습니다. `.env.example`에는 안내만 있습니다.
+Node.js 22.22.1 이상과 pnpm 11.18.0을 사용합니다. lint-staged의 최소 Node 버전도 충족하도록 설정했습니다. 이번 로컬 검증 환경은 Node.js 26.5.1입니다. 기본 앱은 환경변수나 외부 서비스 자격증명을 요구하지 않습니다. `.env.example`에는 안내만 있습니다.
 
 ### 설치
 
@@ -165,6 +176,8 @@ pnpm dev
 pnpm build
 ```
 
+프로덕션 빌드는 Turbopack을 사용합니다. 로컬 검증·pre-push·CI에서 같은 빌드 명령을 실행합니다.
+
 ### 프로덕션 실행
 
 ```bash
@@ -174,6 +187,10 @@ pnpm start
 ## 개발 검사와 작업 흐름
 
 ```bash
+pnpm harness:check         # 역할·스킬 원본과 양쪽 생성 파일 검사
+pnpm harness:test          # Vitest 하네스·소스·제목 규칙 검사
+pnpm knip                  # 사용하지 않는 코드·의존성 검사
+pnpm react-doctor          # 전체 React 진단
 pnpm check                 # Biome 린트·포맷·import 검사
 pnpm lint                  # 린트만 실행
 pnpm format                # 포맷 적용
@@ -185,11 +202,13 @@ pnpm test:e2e
 pnpm verify
 ```
 
-E2E는 빌드된 앱을 `http://127.0.0.1:3100`에서 직접 시작합니다. `/`, `/projects`, `/about`, `/blog`, `/contact`, 내부 탐색, 404와 WordCycler 텍스트 순환을 데스크톱·모바일 Chromium에서 확인합니다. 해당 포트가 비어 있어야 합니다. CI는 lockfile 설치 → 정적 검사 → 타입 검사 → 빌드 → Chromium 설치 → E2E 순서입니다.
+E2E는 빌드된 앱을 `http://127.0.0.1:3100`에서 직접 시작합니다. `/`, `/projects`, `/about`, `/blog`, `/contact`, 내부 탐색, 404와 WordCycler 텍스트 순환을 데스크톱·모바일 Chromium에서 확인합니다. 해당 포트가 비어 있어야 합니다. CI는 lockfile 설치 → 하네스 동기화 → 정적 검사 → 타입 검사 → 빌드 → Chromium 설치 → E2E 순서입니다.
 
 현재 문의 폼은 콘솔 출력만 수행하며 이메일 전송은 연결되지 않았습니다. 프로젝트·블로그 상세 URL의 구현과 외부 소셜 링크는 이 스모크 테스트의 검증 대상이 아닙니다.
 
-AI 작업은 [AGENTS.md](AGENTS.md)와 [공용 규칙](docs/agent-rules/README.md)에서 시작합니다. 기본은 단일 실행 흐름이며 인증·DB·서버 상태 관리와 역할별 에이전트는 추가하지 않았습니다. 구성 결정, 검사 결과와 미검증 항목은 [스캐폴딩 결과](artifacts/scaffolding/summary.md)에 기록합니다.
+AI 작업은 [AGENTS.md](AGENTS.md), Claude는 [CLAUDE.md](CLAUDE.md)에서 시작합니다. 역할·스킬·훅과 생성 절차는 [하네스 안내](docs/agent-harness/README.md)를 참조합니다.
+
+테스트 제목의 설명은 한글로 작성합니다. `plugins/korean-test-titles.grit`를 Biome에 연결해 `pnpm check`·커밋 훅·CI에서 검사합니다. 경로를 넣는 템플릿은 허용하며, 영문 태그는 제목 대신 Playwright의 별도 tag에 둡니다.
 
 참고 문서: [Next.js 설치](https://nextjs.org/docs/app/getting-started/installation), [React 업그레이드](https://react.dev/blog/2024/04/25/react-19-upgrade-guide), [Tailwind 업그레이드](https://tailwindcss.com/docs/upgrade-guide), [Biome 시작하기](https://biomejs.dev/guides/getting-started/). 설치된 Next.js 문서는 `node_modules/next/dist/docs/`에서도 읽을 수 있습니다.
 

@@ -11,26 +11,41 @@
     "format": "biome format --write .",
     "type-check": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
-    "verify": "pnpm check && pnpm type-check && pnpm build && pnpm test:e2e"
+    "verify": "pnpm harness:check && pnpm harness:test && pnpm knip && pnpm check && pnpm type-check && pnpm build && pnpm test:e2e",
+    "harness:sync": "node scripts/sync-agent-harness.mjs --write",
+    "harness:check": "node scripts/sync-agent-harness.mjs --check",
+    "harness:test": "vitest run --config __tests__/lint/vitest.lint.config.ts",
+    "prepare": "husky",
+    "lint:staged": "lint-staged --relative --concurrent false",
+    "knip": "knip",
+    "react-doctor": "react-doctor --verbose --yes --no-telemetry",
+    "react-doctor:staged": "sh scripts/check-react-doctor-staged.sh",
+    "test": "vitest run"
   },
   "dependencies": {
-    "next": "16.3.8",
+    "next": "16.3.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.15",
-    "@playwright/test": "^1.63.0",
-    "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.6.3",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2"
+    "@biomejs/biome": "2.5.14",
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "husky": "9.1.7",
+    "knip": "6.38.0",
+    "lint-staged": "17.5.1",
+    "react-doctor": "0.9.14",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
   },
   "packageManager": "pnpm@11.18.0",
   "engines": {
-    "node": ">=22.13.0",
+    "node": ">=22.22.1",
     "pnpm": ">=11 <12"
-  }
+  },
+  "type": "module"
 }
