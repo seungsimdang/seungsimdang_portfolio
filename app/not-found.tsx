@@ -10,7 +10,12 @@ export default function NotFound() {
         <div className="flex items-end justify-between">
           <h1 className="text-h1 max-w-[1200px]">oops…</h1>
           <div className="w-9 h-9 opacity-50">
-            <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 36 36"
+              fill="none"
+              className="w-full h-full"
+            >
               <circle cx="18" cy="18" r="18" fill="currentColor" />
             </svg>
           </div>
@@ -26,7 +31,12 @@ export default function NotFound() {
             <span className="text-h1">4</span>
           </div>
           <div className="absolute -bottom-8 -right-8 w-9 h-9 opacity-50">
-            <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 36 36"
+              fill="none"
+              className="w-full h-full"
+            >
               <circle cx="18" cy="18" r="18" fill="currentColor" />
             </svg>
           </div>
@@ -37,7 +47,8 @@ export default function NotFound() {
       <section className="w-full max-w-[1920px] mx-auto container-padding">
         <div className="flex justify-center">
           <p className="text-h3 text-center max-w-2xl opacity-70">
-            The page you&apos;re looking for doesn&apos;t exist or has been moved.
+            The page you&apos;re looking for doesn&apos;t exist or has been
+            moved.
           </p>
         </div>
       </section>
@@ -51,7 +62,12 @@ export default function NotFound() {
           </div>
           <div className="lg:col-span-4 flex justify-center lg:justify-end">
             <div className="w-9 h-9 opacity-50">
-              <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 36 36"
+                fill="none"
+                className="w-full h-full"
+              >
                 <circle cx="18" cy="18" r="18" fill="currentColor" />
               </svg>
             </div>

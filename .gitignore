@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scaffold
+!.env.example
+/playwright-report/
+/test-results/
+/.pnpm-store/
+
+# agent scratch files
+/artifacts/archive/
+/artifacts/scaffolding/
+
+/.claude/worktrees/
+/.codex/worktrees/

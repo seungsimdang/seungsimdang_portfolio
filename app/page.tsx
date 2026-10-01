@@ -1,10 +1,10 @@
 "use client";
 
-import { HeroSection } from "@/components/HeroSection";
-import { ProjectCard } from "@/components/ProjectCard";
 import { AboutSection } from "@/components/AboutSection";
 import { BlogPreview } from "@/components/BlogPreview";
 import { Button } from "@/components/Button";
+import { HeroSection } from "@/components/HeroSection";
+import { ProjectCard } from "@/components/ProjectCard";
 
 export default function Home() {
   const projects = [
@@ -58,8 +58,8 @@ export default function Home() {
       {/* Projects Section */}
       <section className="w-full max-w-[1920px] mx-auto container-padding section-spacing">
         <div className="flex flex-col gap-12 md:gap-24 lg:gap-36">
-          {projects.map((project, index) => (
-            <ProjectCard key={index} {...project} />
+          {projects.map((project) => (
+            <ProjectCard key={project.href} {...project} />
           ))}
         </div>
       </section>
