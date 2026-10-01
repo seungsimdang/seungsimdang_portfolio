@@ -1,6 +1,5 @@
 #!/bin/sh
-# PreToolUse(Agent) 훅: 구현자 subagent를 isolation 없이 스폰하려는데 저장소가
-# dirty하면 프로젝트 공용 Git 안전 규칙에 따라 차단한다.
+# PreToolUse(Agent) 훅: 구현자 subagent를 isolation 없이 스폰하려는데 저장소가 dirty하면 프로젝트 공용 Git 안전 규칙에 따라 차단
 
 input=$(cat)
 subagent_type=$(printf '%s' "$input" | jq -r '.tool_input.subagent_type // empty' 2>/dev/null)

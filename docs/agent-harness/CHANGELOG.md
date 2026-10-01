@@ -30,3 +30,11 @@
 결과와 한계는 `artifacts/work/2026-10-01-harness-restore/summary.md` 및 `verification.md` 참조.
 
 경로 별칭 플러그인의 누락을 최종 원본 비교에서 발견해 추가 승인 후 복구했다. 설치 검증에서 TypeScript 7 peer 충돌이 확인되어 별도 승인 후 Vite 내장 `resolve.tsconfigPaths`로 전환했다. 별칭으로 실제 Button 모듈을 import·호출하는 검증을 유지한다.
+
+## 2026-10-01 - 여러 줄 주석 줄바꿈 기준 강제
+
+- SemBr·Google 스타일 가이드 조사 후 "한 줄 한 문장, 문장 중간 줄바꿈 금지, 길이 상한 없음, 블록 주석 `*` 정렬" 기준을 `docs/agent-rules/project-structure.md`에 추가.
+- 공용 검사기 `scripts/check-comment-line-breaks.mjs`를 Claude·Codex PreToolUse(Edit|Write) 훅과 lint-staged에 연결. 훅은 편집 범위만 검사해 기존 위반이 무관한 편집을 막지 않음.
+- `__tests__/lint/runtime-hooks.test.ts`에 통과·차단 입력 검증 추가. 존재하지 않던 `comment-style.test.ts` 참조를 실제 검사 위치로 정정.
+- 사용자 요청으로 검사 범위를 하네스 스크립트(`scripts/`, `.claude/hooks/`, `.codex/hooks/`)와 셸 `#` 주석까지 확대. 기존 훅·스크립트 주석은 문구 유지, 줄바꿈만 한 줄 한 문장으로 일괄 정리.
+- 사용자 요청으로 주석 종결어미 규칙을 같은 검사기에 추가해 하네스 스크립트까지 확대. 기존 훅·스크립트 주석의 `~다` 종결을 명사형으로 정리하고, 문장이 중간에 끊겨 있던 `enforce-commit-msg-style.sh`의 "- 커밋 메시지" 조각 제거.

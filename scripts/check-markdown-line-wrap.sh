@@ -1,5 +1,5 @@
 #!/bin/sh
-# lint-staged 훅: Markdown 본문의 문단 중간 임의 줄바꿈을 검사한다.
+# lint-staged 훅: Markdown 본문의 문단 중간 임의 줄바꿈을 검사
 
 MD_LINE_WRAP_CHECK='
 function is_blank(s,   t) { t = s; gsub(/^[ \t]+|[ \t]+$/, "", t); return (t == "") }
@@ -24,7 +24,7 @@ BEGIN { in_fm = 0; in_fence = 0; prev_kind = 0; ln = 0 }
 
 violations=""
 for file in "$@"; do
-  # lint-staged의 다른 작업과 병렬 실행돼도 항상 커밋할 index 내용을 검사한다.
+  # lint-staged의 다른 작업과 병렬 실행돼도 항상 커밋할 index 내용을 검사
   hit=$(git show ":$file" 2>/dev/null | awk "$MD_LINE_WRAP_CHECK" || true)
   if [ -n "$hit" ]; then
     violations="${violations}${file}:${hit}\n"

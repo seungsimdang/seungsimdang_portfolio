@@ -1,7 +1,6 @@
 #!/bin/sh
-# PreToolUse(Edit|Write) 훅: src/, __tests__/ 하위 소스 파일에 em dash(—)를 쓰려는
-# Edit/Write를 커밋 이전, 작성 시점에 차단한다. 커밋 시점 검사는
-# scripts/check-em-dash-in-source.sh(lint-staged)가 이미 담당한다.
+# PreToolUse(Edit|Write) 훅: src/, __tests__/ 하위 소스 파일에 em dash(—)를 쓰려는 Edit/Write를 커밋 이전, 작성 시점에 차단
+# 커밋 시점 검사는 scripts/check-em-dash-in-source.sh(lint-staged)가 이미 담당
 
 input=$(cat)
 tool_name=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)

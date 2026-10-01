@@ -1,6 +1,5 @@
 #!/bin/sh
-# PreToolUse(Agent) 훅: code-reviewer/security-reviewer 스폰 시 같은 종류의 번호 리뷰 파일이
-# artifacts/task-team/에 이미 3개 이상이면 사용자 확인(ask) 요청.
+# PreToolUse(Agent) 훅: code-reviewer/security-reviewer 스폰 시 같은 종류의 번호 리뷰 파일이 artifacts/task-team/에 이미 3개 이상이면 사용자 확인(ask) 요청.
 
 input=$(cat)
 agent_type=$(printf '%s' "$input" | jq -r '.tool_input.subagent_type // empty' 2>/dev/null)
