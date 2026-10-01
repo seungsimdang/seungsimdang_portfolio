@@ -1,5 +1,5 @@
 #!/bin/sh
-# PreToolUse(Agent) 훅: subagent_type "fork" 스폰을 차단한다.
+# PreToolUse(Agent) 훅: subagent_type "fork" 스폰을 차단
 
 input=$(cat)
 subagent_type=$(printf '%s' "$input" | jq -r '.tool_input.subagent_type // empty' 2>/dev/null)

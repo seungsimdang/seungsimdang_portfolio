@@ -1,17 +1,12 @@
 #!/bin/sh
-# PreToolUse(Bash) 훅: 프로젝트 공용 Git 안전 규칙을 대화 중 다짐이 아니라 기계적으로 강제한다.
+# PreToolUse(Bash) 훅: 프로젝트 공용 Git 안전 규칙을 대화 중 다짐이 아니라 기계적으로 강제
 #
 # 차단 대상:
-#   1) 파괴적 명령: git reset --hard, git clean(-f/-d/-x), git branch -D,
-#      git checkout -- .(경로 미지정)
+#   1) 파괴적 명령: git reset --hard, git clean(-f/-d/-x), git branch -D, git checkout -- .(경로 미지정)
 #   2) bare git stash / git stash pop - worktree 간 공유 스택이라 다른 세션 것을 건드릴 수 있음
-#   3) 메인 체크아웃(worktree 아님)에서 브랜치 생성(git checkout -b / git switch -c) -
-#      이미 다른 worktree/브랜치가 있으면(다른 세션이 쓰고 있을 가능성) `Agent(isolation:"worktree")`
-#      로 격리 스폰하게 한다(subagent가 스스로 `EnterWorktree`를 호출하는 경로는 막혀 있다).
+#   3) 메인 체크아웃(worktree 아님)에서 브랜치 생성(git checkout -b / git switch -c) - 이미 다른 worktree/브랜치가 있으면(다른 세션이 쓰고 있을 가능성) `Agent(isolation:"worktree")`로 격리 스폰하게 함(subagent가 스스로 `EnterWorktree`를 호출하는 경로는 막혀 있음)
 #
-# 이 훅을 우회해야 하는 정당한 사유(예: 사용자가 직접 승인한 destructive 작업)가 있으면,
-# 사용자가 터미널에서 `!<command>`로 직접 실행하거나(에이전트의 Bash 도구를 거치지 않음),
-# 이 훅을 일시적으로 settings.json에서 제거한다.
+# 이 훅을 우회해야 하는 정당한 사유(예: 사용자가 직접 승인한 destructive 작업)가 있으면, 사용자가 터미널에서 `!<command>`로 직접 실행하거나(에이전트의 Bash 도구를 거치지 않음), 이 훅을 일시적으로 settings.json에서 제거
 
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
