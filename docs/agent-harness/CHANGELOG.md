@@ -38,3 +38,8 @@
 - `__tests__/lint/runtime-hooks.test.ts`에 통과·차단 입력 검증 추가. 존재하지 않던 `comment-style.test.ts` 참조를 실제 검사 위치로 정정.
 - 사용자 요청으로 검사 범위를 하네스 스크립트(`scripts/`, `.claude/hooks/`, `.codex/hooks/`)와 셸 `#` 주석까지 확대. 기존 훅·스크립트 주석은 문구 유지, 줄바꿈만 한 줄 한 문장으로 일괄 정리.
 - 사용자 요청으로 주석 종결어미 규칙을 같은 검사기에 추가해 하네스 스크립트까지 확대. 기존 훅·스크립트 주석의 `~다` 종결을 명사형으로 정리하고, 문장이 중간에 끊겨 있던 `enforce-commit-msg-style.sh`의 "- 커밋 메시지" 조각 제거.
+
+## 2026-10-01 - pre-push에서 빌드·E2E 제외
+
+- 로컬 훅은 빠른 검사만 두고 무거운 검사는 CI에서 최종 판정하는 일반 권장에 맞춰 `.husky/pre-push`에서 `pnpm build`·`pnpm test:e2e` 제거.
+- CI가 모든 push에서 같은 빌드·E2E를 이미 실행해 로컬 실행은 중복이었음. 전체 로컬 확인이 필요하면 `pnpm verify` 사용.

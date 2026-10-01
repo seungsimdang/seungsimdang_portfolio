@@ -176,7 +176,7 @@ pnpm dev
 pnpm build
 ```
 
-프로덕션 빌드는 Turbopack을 사용합니다. 로컬 검증·pre-push·CI에서 같은 빌드 명령을 실행합니다.
+프로덕션 빌드는 Turbopack을 사용합니다. 로컬 검증(`pnpm verify`)과 CI에서 같은 빌드 명령을 실행합니다. 빌드와 E2E는 pre-push에서 실행하지 않습니다.
 
 ### 프로덕션 실행
 
