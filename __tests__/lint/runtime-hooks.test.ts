@@ -166,6 +166,18 @@ for (const tool of [".claude", ".codex"]) {
     expect(other.status).toBe(0);
     expect(other.stdout).toBe("");
   });
+  test(`${tool} 가능 여부 안내 훅이 키워드에만 조건부 지시를 추가하고 차단하지 않는다`, () => {
+    for (const prompt of ["훅으로 강제할 수 있어?", "이거 가능해?"]) {
+      const result = run(tool, "require-feasibility-verdict", { prompt });
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("가능합니다");
+    }
+    const other = run(tool, "require-feasibility-verdict", {
+      prompt: "pre-push 설정 보여줘",
+    });
+    expect(other.status).toBe(0);
+    expect(other.stdout).toBe("");
+  });
   test(`${tool} 원인 설명 안내 훅이 실행을 차단하지 않는다`, () => {
     const result = run(tool, "require-why-explanation", {
       prompt: "왜 변경했어?",

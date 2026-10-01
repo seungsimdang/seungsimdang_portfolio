@@ -48,3 +48,8 @@
 
 - 사용자가 best practice를 물을 때 권장안 하나만 첫 문장에 답하도록 Claude·Codex UserPromptSubmit 훅(`require-single-best-practice.sh`) 추가.
 - 질문 여부와 준수 여부는 셸 패턴으로 판정할 수 없어 차단형 Stop 훅은 제외. 키워드로 1차 필터 후 조건부 지시만 주입하고 질문 판단은 응답 모델에 위임.
+
+## 2026-10-01 - 가능 여부 질문 안내 훅 추가
+
+- 사용자가 가능 여부를 물을 때 첫 문장에 가능/불가능을 명시하도록 Claude·Codex UserPromptSubmit 훅(`require-feasibility-verdict.sh`) 추가.
+- best practice 훅과 같은 이유로 차단형 Stop 훅은 제외하고 키워드 1차 필터 + 조건부 지시만 주입.
