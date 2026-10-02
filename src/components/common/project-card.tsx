@@ -44,7 +44,7 @@ export function ProjectCard({
         </>
       )}
       <div className="relative z-10 w-full h-full flex flex-col justify-end p-32 md:p-48 lg:p-64">
-        <h3 className="text-4xl md:text-5xl lg:text-6xl font-medium mb-16">
+        <h3 className="text-4xl md:text-5xl lg:text-6xl font-medium mb-16 break-keep text-balance">
           {title}
         </h3>
         <div
