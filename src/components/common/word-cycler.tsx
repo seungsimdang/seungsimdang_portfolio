@@ -53,6 +53,8 @@ export function WordCycler({
     };
 
     measureWithClasses();
+    // 웹폰트 로드 후 글자 높이 재측정
+    document.fonts.ready.then(measureWithClasses);
 
     const resizeObserver = new ResizeObserver(measureWithClasses);
     if (containerRef.current?.parentElement) {
