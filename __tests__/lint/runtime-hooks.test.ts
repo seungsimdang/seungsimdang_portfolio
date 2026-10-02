@@ -38,6 +38,29 @@ for (const tool of [".claude", ".codex"]) {
         tool_input: { command: 'git commit -m "fix: 탐색을 수정했다"' },
       }).status,
     ).toBe(2);
+    expect(
+      run(tool, "enforce-commit-msg-style", {
+        tool_input: {
+          command:
+            'git commit -m "fix: 탐색 수정" -m "- 캐시 정리\n- 경로 수정"',
+        },
+      }).status,
+    ).toBe(0);
+    expect(
+      run(tool, "enforce-commit-msg-style", {
+        tool_input: {
+          command:
+            'git commit -m "fix: 탐색 수정" -m "- 캐시 정리" -m "- 경로 수정"',
+        },
+      }).status,
+    ).toBe(2);
+    expect(
+      run(tool, "enforce-commit-msg-style", {
+        tool_input: {
+          command: 'git commit -m "fix: 탐색 수정" -m "- 캐시를 정리했다"',
+        },
+      }).status,
+    ).toBe(2);
   });
   test(`${tool} 소스 대시 훅이 앱 위반을 차단하고 정상 소스를 허용한다`, () => {
     expect(
