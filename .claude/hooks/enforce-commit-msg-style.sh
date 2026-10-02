@@ -7,6 +7,7 @@
 #   2. em-dash(—) 금지 - 하이픈(-)만 사용
 #   3. 본문 임의 줄바꿈 금지 - bullet이든 평문 문단이든 한 항목은 한 줄로 작성(뷰어의 자동 줄바꿈에 맡김)
 #      bullet 뒤 이어지는 줄뿐 아니라, bullet 없는 평문 문단이 여러 줄로 쪼개진 경우도 같은 문제로 함께 처리
+#   4. bullet 사이 빈 줄 금지 - bullet마다 -m을 따로 주면 git이 빈 줄을 넣으므로 본문은 -m 하나로 작성
 # 커밋 분리 기준·본문 생략 여부 같은 설계 판단은 훅으로 강제할 수 없어 제외
 
 input=$(cat)
@@ -23,7 +24,8 @@ delim=$(printf '%s\n' "$cmd" | grep -oE "<<[ 	]*['\"]?[A-Za-z_][A-Za-z0-9_]*['\"
 if [ -n "$delim" ]; then
   msg=$(printf '%s\n' "$cmd" | sed -n "/<<[ 	]*['\"]\\{0,1\\}$delim['\"]\\{0,1\\}[ 	]*\$/,/^[ 	]*$delim[ 	]*\$/p" | sed '1d;$d')
 else
-  msg=$(printf '%s\n' "$cmd" | grep -oE '\-m[ 	]+"([^"\\]|\\.)*"' | head -1 | sed -E 's/^-m[ 	]+"//; s/"$//')
+  # git은 -m마다 문단을 나누므로 모든 -m 값을 빈 줄로 이어 실제 메시지와 같게 재구성
+  msg=$(printf '%s\n' "$cmd" | grep -oE '\-m[ 	]+"([^"\\]|\\.)*"' | sed -E 's/^-m[ 	]+"//; s/"$//' | awk 'NR > 1 { print "" } { print }')
 fi
 [ -n "$msg" ] || exit 0
 
@@ -53,7 +55,19 @@ if [ -z "$fail_reason" ]; then
   fi
 fi
 
-# 3) 종결어미 금지: 요약 줄(첫 줄)과 각 bullet 줄이 "~다" 류 종결형으로 끝나면 안 됨
+# 3) bullet 사이 빈 줄 금지: bullet마다 -m을 따로 주면 git이 빈 줄을 끼워 넣어 목록이 문단으로 흩어짐
+if [ -z "$fail_reason" ]; then
+  hit=$(printf '%s\n' "$msg" | awk '
+    /^[ \t]*-[ \t]/ { if (gap && seen) { print $0; exit } seen = 1; gap = 0; next }
+    /^[ \t]*$/ { gap = 1; next }
+    { seen = 0; gap = 0 }
+  ')
+  if [ -n "$hit" ]; then
+    fail_reason="bullet 사이에 빈 줄이 있습니다: \"$hit\" (bullet마다 -m을 따로 주지 말고 본문 전체를 -m 하나에 줄바꿈으로 이어 쓰세요)"
+  fi
+fi
+
+# 4) 종결어미 금지: 요약 줄(첫 줄)과 각 bullet 줄이 "~다" 류 종결형으로 끝나면 안 됨
 if [ -z "$fail_reason" ]; then
   summary=$(printf '%s\n' "$msg" | head -1)
   bullets=$(printf '%s\n' "$msg" | grep -E '^[ \t]*-[ \t]')
