@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { TalkPreview } from "@/components/common/talk-preview";
 import { Button } from "@/components/ui/button";
 import { techTalks } from "@/constants/portfolio-data";
+
+export const metadata: Metadata = {
+  title: "talks",
+  alternates: { canonical: "/blog" },
+};
 
 export default function TalkPage() {
   return (

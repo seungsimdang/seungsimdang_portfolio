@@ -27,7 +27,7 @@ export async function generateMetadata({
   const project = projects.find((item) => item.id === id);
   if (!project) return {};
   return {
-    title: `${project.title} | ${profileData.name}`,
+    title: project.title,
     description: project.summary,
     alternates: { canonical: `/work/${id}` },
     openGraph: {

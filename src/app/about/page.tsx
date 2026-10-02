@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { profileData } from "@/constants/portfolio-data";
+
+export const metadata: Metadata = {
+  title: "about",
+  alternates: { canonical: "/about" },
+};
 
 export default function AboutPage() {
   return (

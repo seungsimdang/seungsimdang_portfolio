@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { ProjectCard } from "@/components/common/project-card";
 import { Button } from "@/components/ui/button";
 import { profileData, projects } from "@/constants/portfolio-data";
 import { projectCardTheme } from "@/constants/project-card-theme";
+
+export const metadata: Metadata = {
+  title: "projects",
+  alternates: { canonical: "/projects" },
+};
 
 export default function ProjectsPage() {
   return (
