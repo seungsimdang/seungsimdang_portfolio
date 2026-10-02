@@ -6,6 +6,7 @@ interface ButtonProps {
   children: React.ReactNode;
   href: string;
   variant?: "primary" | "secondary";
+  external?: boolean;
   className?: string;
 }
 
@@ -13,6 +14,7 @@ export function Button({
   children,
   href,
   variant = "primary",
+  external = false,
   className = "",
 }: ButtonProps) {
   const baseStyles =
@@ -29,8 +31,19 @@ export function Button({
     <Link
       href={href}
       className={`${baseStyles} ${variantStyles[variant]} ${className}`}
+      {...(external && { target: "_blank", rel: "noopener noreferrer" })}
     >
-      {children}
+      {external ? (
+        <>
+          {children}
+          <span aria-hidden="true" className="ml-8">
+            ↗
+          </span>
+          <span className="sr-only">(opens in a new tab)</span>
+        </>
+      ) : (
+        children
+      )}
     </Link>
   );
 }
