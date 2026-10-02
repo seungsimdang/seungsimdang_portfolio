@@ -20,8 +20,7 @@ export default function ContactPage() {
       <section className="w-full max-w-content mx-auto container-padding">
         <div className="flex justify-center">
           <p className="text-h2 text-center w-full md:w-3/4 break-keep">
-            채용이나 협업 제안은 이메일로 보내 주세요. 작업 기록은 GitHub에서
-            확인하실 수 있습니다.
+            함께 일할 기회를 기다립니다.
           </p>
         </div>
       </section>
