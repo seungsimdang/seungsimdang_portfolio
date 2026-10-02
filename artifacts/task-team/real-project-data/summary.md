@@ -46,8 +46,10 @@
 
 - Safari·Firefox 화면 미검증(Chromium만)
 - 폰트 로딩 지연 구간의 WordCycler 순간 흔들림 미측정
-- `/projects` 1440px의 "SEMT 제품 관리 시스템" 제목 한 글자 고아 줄(`text-wrap: balance` 검토)
 - 보안 3차 리뷰는 13개 파일을 위험 API grep으로만 확인
-- `block-attribution-trailers.sh`에 candanta 문구 잔존, `git-commit` 스킬의 pre-commit 단계 설명이 실제 `.husky/pre-commit`과 다름
-- 정리 대기: 로컬 브랜치 `worktree-agent-a6b13aba1b9863679`(재작성 전 커밋을 가리켜 `-d` 불가), 백업 태그
-- `develop`·`main` 병합은 사용자 지시 대기
+
+## 사이클 마무리 중 처리
+
+- 카드 제목 한 글자 고아 줄: `break-keep text-balance` 적용 (f003ce9)
+- `block-attribution-trailers.sh` candanta 문구 정리, `git-commit` 스킬 pre-commit 단계 설명을 실제 `.husky/pre-commit`과 일치 (00ffab1)
+- 백업 태그 삭제, 사용자 지시로 `develop`에 병합
