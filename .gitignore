@@ -52,3 +52,6 @@ next-env.d.ts
 
 /.claude/worktrees/
 /.codex/worktrees/
+
+# QA 화면 캡처는 재실행으로 다시 생성
+artifacts/task-team/*/qa-screens/
