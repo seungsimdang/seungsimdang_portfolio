@@ -1,13 +1,13 @@
 ---
 name: git-commit
 description: >
-  candanta 저장소에서 git 커밋을 생성하기 직전 메인 세션·orchestrator가 직접 호출하는 작업 매뉴얼
+  이 저장소에서 git 커밋을 생성하기 직전 메인 세션·orchestrator가 직접 호출하는 작업 매뉴얼
   (커밋 메시지 형식, Co-Authored-By 트레일러 금지, 커밋 분리 기준, pre-commit 훅 통과 조건).
   Task Team/Bug Team subagent는 코드 수정과 산출물 작성만 담당하고 git commit을 직접 실행하지
   않으므로 이 Skill을 호출하지 않는다 - 호출 주체는 항상 orchestrator·메인 세션이다.
 ---
 
-# 커밋 컨벤션 (candanta)
+# 커밋 컨벤션 (seungsimdang_portfolio)
 
 메인 세션·orchestrator가 git 커밋을 생성할 때 따르는 공통 규칙.
 
@@ -29,12 +29,12 @@ description: >
 ```
 
 - **type**: `feat`, `fix`, `docs`, `chore`, `refactor`, `test` 중 하나.
-- **scope**: 선택. 영향 범위를 나타내는 도메인/영역. 이 저장소에서 자주 쓰는 값: `auth`, `proxy`, `api`, `db`, `axios`, `market`, `portfolio`, `allocation`, `risk`, `dashboard`, `ci`, `deps`. 여러 도메인에 걸친 광범위한 변경이면 생략한다.
+- **scope**: 선택. 영향 범위를 나타내는 도메인/영역. 이 저장소에서 자주 쓰는 값: `portfolio`(앱 화면·데이터), `ci`, `deps`. 여러 도메인에 걸친 광범위한 변경이면 생략한다.
 - **종결어미**: 요약 줄과 본문 bullet 모두 완결형(`~했다`, `~한다`) 대신 명사형/비종결 구절로 작성한다 (예: `~ 추가`, `~ 구현`, `~ 교체`, `~ 수정`). CLAUDE.md 주석 규칙과 동일하다.
 - **em-dash(`—`) 금지**: 요약 줄과 본문 모두 하이픈(`-`)만 쓴다.
 - **본문**: 자명한 변경이면 생략한다. 설계 판단의 이유, 트레이드오프, 알려진 제약처럼 diff만 봐서는 알 수 없는 내용이 있을 때만 쓴다.
   - 항목이 2개 이상이면 문단으로 잇지 않고 `-` bullet으로 구분한다.
-  - **bullet이든 bullet 없는 평문 문단이든, 한 항목(줄)은 반드시 하나의 물리적 줄로 쓴다.** 글자 수나 가독성을 이유로 중간에 줄바꿈을 넣지 않는다 - 터미널/뷰어가 알아서 자동 줄바꿈한다. `.claude/hooks/enforce-commit-msg-style.sh`가 요약 줄 다음에 빈 줄 없이 이어지면서 bullet 시작이 아닌 줄을 전부 위반으로 차단한다.
+  - **bullet이든 bullet 없는 평문 문단이든, 한 항목(줄)은 반드시 하나의 물리적 줄로 쓴다.** 글자 수나 가독성을 이유로 중간에 줄바꿈을 넣지 않는다 - 터미널/뷰어가 알아서 자동 줄바꿈한다. `.claude/hooks/enforce-commit-msg-style.sh`가 요약 줄 다음에 빈 줄 없이 이어지면서 bullet 시작이 아닌 줄을 전부 위반으로 차단한다. bullet 사이 빈 줄도 같은 훅이 차단한다.
     - ❌ (틀린 예 - heredoc 안에서 사람이 임의로 줄을 나눔):
       ```
       - execution_method/proposal_status enum 축소 시 삭제 대상 값을 가진 기존 행을
@@ -44,6 +44,25 @@ description: >
       ```
       - execution_method/proposal_status enum 축소 시 삭제 대상 값을 가진 기존 행을 정리하는 UPDATE 없이 바로 캐스팅해 실패
       ```
+
+### 명령 작성법
+
+- 메시지 전체(요약 줄 + 빈 줄 + 본문)를 **`-m` 하나**에 heredoc으로 넣는다. git은 `-m`마다 사이에 빈 줄을 넣으므로 bullet마다 `-m`을 따로 주면 bullet 사이에 빈 줄이 생겨 목록이 문단으로 흩어진다.
+- 커밋 명령은 다른 heredoc(`cat >> file <<'EOF'` 등)과 같은 Bash 호출에 섞지 않고 단독으로 실행한다.
+  - ✅ (올바른 예):
+    ```bash
+    git commit -m "$(cat <<'EOF'
+    fix(portfolio): 모바일 카드 높이 정리
+
+    - 카드 최소 높이를 콘텐츠 기준으로 교체
+    - 상세 페이지 하단 여백 축소
+    EOF
+    )"
+    ```
+  - ❌ (틀린 예 - bullet 사이에 빈 줄이 생김):
+    ```bash
+    git commit -m "fix(portfolio): 모바일 카드 높이 정리" -m "- 카드 최소 높이 교체" -m "- 하단 여백 축소"
+    ```
 
 ## 트레일러
 
