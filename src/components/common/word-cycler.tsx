@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface WordCyclerProps {
   words: string[];
@@ -9,15 +9,12 @@ interface WordCyclerProps {
   className?: string;
 }
 
-const mountedIds = new Set<string>();
-
 export function WordCycler({
   words,
   interval = 2,
   animationDuration = 0.3,
   className = "",
 }: WordCyclerProps) {
-  const instanceId = useId();
   const containerRef = useRef<HTMLSpanElement>(null);
   const [dimensions, setDimensions] = useState({
     width: "auto",
@@ -33,9 +30,6 @@ export function WordCycler({
 
   // Measure dimensions
   useEffect(() => {
-    mountedIds.clear();
-    mountedIds.add(instanceId);
-
     const measureWithClasses = () => {
       const container = containerRef.current;
       if (!container || filteredWords.length === 0) return;
@@ -68,25 +62,22 @@ export function WordCycler({
     window.addEventListener("resize", measureWithClasses);
 
     return () => {
-      mountedIds.delete(instanceId);
       window.removeEventListener("resize", measureWithClasses);
       resizeObserver.disconnect();
     };
-  }, [instanceId, filteredWords, className]);
+  }, [filteredWords, className]);
 
   // Word cycling timer
   useEffect(() => {
     if (filteredWords.length <= 1) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (!mountedIds.has(instanceId)) return;
 
     const wordTimer = setInterval(() => {
-      if (!mountedIds.has(instanceId)) return;
       setIsAnimating(true);
     }, interval * 1000);
 
     return () => clearInterval(wordTimer);
-  }, [filteredWords.length, interval, instanceId]);
+  }, [filteredWords.length, interval]);
 
   useEffect(() => {
     if (!isAnimating) return;
