@@ -7,7 +7,11 @@
     ],
     "ask": [
       "Edit(/.agents/**)",
-      "Edit(/.claude/**)",
+      "Edit(/.claude/agents/**)",
+      "Edit(/.claude/hooks/**)",
+      "Edit(/.claude/skills/**)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
       "Edit(/.codex/**)",
       "Edit(/AGENTS.md)",
       "Edit(/CLAUDE.md)",
