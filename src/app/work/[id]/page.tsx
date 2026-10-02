@@ -82,7 +82,7 @@ function TradeoffRow({ tradeoff }: { tradeoff: Experience["tradeoff"] }) {
 
 function ExperienceSection({ experience }: { experience: Experience }) {
   return (
-    <section className="w-full max-w-content mx-auto container-padding section-spacing">
+    <section className="w-full max-w-content mx-auto container-padding py-48 md:py-64 lg:py-80">
       <div className="space-y-48 md:space-y-64">
         <h2 className="text-h3 break-keep">{experience.title}</h2>
         <div className="space-y-24 md:space-y-32">
@@ -115,7 +115,7 @@ export default async function WorkPage({ params }: WorkPageProps) {
 
   return (
     <div className="w-full min-h-screen bg-black text-white">
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
+      <section className="w-full max-w-content mx-auto container-padding pt-80 md:pt-120 lg:pt-160 pb-48 md:pb-64 lg:pb-80">
         <div className="space-y-32 md:space-y-48">
           <Link
             href="/projects"
@@ -149,18 +149,6 @@ export default async function WorkPage({ params }: WorkPageProps) {
               </Button>
             </div>
           )}
-          <div className="flex justify-end">
-            <div className="w-36 h-36 opacity-50">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 36 36"
-                fill="none"
-                className="w-full h-full"
-              >
-                <circle cx="18" cy="18" r="18" fill="currentColor" />
-              </svg>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -168,7 +156,7 @@ export default async function WorkPage({ params }: WorkPageProps) {
         <ExperienceSection key={experience.title} experience={experience} />
       ))}
 
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
+      <section className="w-full max-w-content mx-auto container-padding pb-48 md:pb-64 lg:pb-80">
         <div className="text-center py-64 md:py-96 lg:py-128">
           <h2 className="text-h2 mb-24 md:mb-32">Let&apos;s work together</h2>
           <Button href="/contact" variant="primary">
