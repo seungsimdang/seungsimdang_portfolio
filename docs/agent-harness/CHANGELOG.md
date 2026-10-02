@@ -53,3 +53,11 @@
 
 - 사용자가 가능 여부를 물을 때 첫 문장에 가능/불가능을 명시하도록 Claude·Codex UserPromptSubmit 훅(`require-feasibility-verdict.sh`) 추가.
 - best practice 훅과 같은 이유로 차단형 Stop 훅은 제외하고 키워드 1차 필터 + 조건부 지시만 주입.
+
+## 2026-10-02 - git-commit 명령 작성법 명시
+
+- 결과 규칙(bullet 구분·한 항목 한 줄)만 있고 `-m` 사용법이 없어 bullet마다 `-m`을 따로 준 커밋 5개에 빈 줄이 생긴 문제로 `git-commit` 스킬에 "명령 작성법" 추가. 메시지 전체를 `-m` 하나의 heredoc으로 쓰는 올바른 예·틀린 예 포함.
+- 훅만 강제하던 bullet 사이 빈 줄 금지를 명세에도 명시해 명세·훅 불일치 해소.
+- 커밋 명령을 다른 heredoc과 같은 Bash 호출에 섞지 않는 수칙 추가. 훅이 앞선 `cat >> file <<'EOF'`를 커밋 메시지로 오인해 차단한 사례 2건 대응이며, 근본 수정은 훅의 heredoc 추출 범위 한정으로 별도 반영.
+- Codex 템플릿의 `.Codex/` 경로를 실제 추적 경로 `.codex/hooks/`, `docs/agent-rules/git-safety.md`로 정정.
+- 스킬 설명·제목·scope 목록에 남아 있던 candanta 저장소 내용을 이 저장소 기준(`portfolio`, `ci`, `deps`)으로 정리.
