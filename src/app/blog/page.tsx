@@ -1,9 +1,9 @@
-import { BlogPreview } from "@/components/common/blog-preview";
 import { PageHeader } from "@/components/common/page-header";
+import { TalkPreview } from "@/components/common/talk-preview";
 import { Button } from "@/components/ui/button";
 import { techTalks } from "@/constants/portfolio-data";
 
-export default function BlogPage() {
+export default function TalkPage() {
   return (
     <div className="w-full min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -19,7 +19,7 @@ export default function BlogPage() {
 
           <div className="space-y-24 md:space-y-32">
             {techTalks.map((talk) => (
-              <BlogPreview key={talk.id} {...talk} detailed />
+              <TalkPreview key={talk.id} {...talk} detailed />
             ))}
           </div>
         </div>

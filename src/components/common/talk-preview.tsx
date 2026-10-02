@@ -1,6 +1,6 @@
 import { ExternalLink } from "@/components/common/external-link";
 
-interface BlogPreviewProps {
+interface TalkPreviewProps {
   title: string;
   date: string;
   venue: string;
@@ -11,7 +11,7 @@ interface BlogPreviewProps {
   className?: string;
 }
 
-export function BlogPreview({
+export function TalkPreview({
   title,
   date,
   venue,
@@ -20,7 +20,7 @@ export function BlogPreview({
   link,
   detailed = false,
   className = "",
-}: BlogPreviewProps) {
+}: TalkPreviewProps) {
   return (
     <article
       className={`border-b border-white/10 pb-24 space-y-12 md:space-y-16 ${className}`}

@@ -1,14 +1,14 @@
 import { AboutSection } from "@/components/common/about-section";
-import { BlogPreview } from "@/components/common/blog-preview";
 import { HeroSection } from "@/components/common/hero-section";
 import { ProjectCard } from "@/components/common/project-card";
+import { TalkPreview } from "@/components/common/talk-preview";
 import { Button } from "@/components/ui/button";
 import { projects, techTalks } from "@/constants/portfolio-data";
 import { projectCardTheme } from "@/constants/project-card-theme";
 
 export default function Home() {
   return (
-    <main className="w-full min-h-screen bg-black text-white">
+    <div className="w-full min-h-screen bg-black text-white">
       {/* Hero Section */}
       <HeroSection />
 
@@ -42,7 +42,7 @@ export default function Home() {
 
           <div className="space-y-24 md:space-y-32">
             {techTalks.map((talk) => (
-              <BlogPreview key={talk.id} {...talk} />
+              <TalkPreview key={talk.id} {...talk} />
             ))}
           </div>
 
@@ -66,6 +66,6 @@ export default function Home() {
           </Button>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

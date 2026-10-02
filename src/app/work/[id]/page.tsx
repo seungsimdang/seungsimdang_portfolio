@@ -14,6 +14,8 @@ interface WorkPageProps {
 const bodyClassName =
   "text-body whitespace-pre-line break-keep break-words min-w-0";
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return projects.map((project) => ({ id: project.id }));
 }
@@ -27,6 +29,15 @@ export async function generateMetadata({
   return {
     title: `${project.title} | ${profileData.name}`,
     description: project.summary,
+    alternates: { canonical: `/work/${id}` },
+    openGraph: {
+      title: `${project.title} | ${profileData.name}`,
+      description: project.summary,
+      type: "article",
+      locale: "ko_KR",
+      url: `/work/${id}`,
+      ...(project.thumbnail && { images: [project.thumbnail] }),
+    },
   };
 }
 
