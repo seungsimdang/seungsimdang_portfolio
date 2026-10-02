@@ -4,12 +4,19 @@
 # 차단 대상:
 #   1) 파괴적 명령: git reset --hard, git clean(-f/-d/-x), git branch -D, git checkout -- .(경로 미지정)
 #   2) bare git stash / git stash pop - worktree 간 공유 스택이라 다른 세션 것을 건드릴 수 있음
+#   0) 프로세스 이름 기준 일괄 종료(pkill, killall) - 사용자가 띄운 dev 서버 등 다른 세션의 프로세스까지 종료함
 #   3) 메인 체크아웃(worktree 아님)에서 브랜치 생성(git checkout -b / git switch -c) - 이미 다른 worktree/브랜치가 있으면(다른 세션이 쓰고 있을 가능성) `Agent(isolation:"worktree")`로 격리 스폰하게 함(subagent가 스스로 `EnterWorktree`를 호출하는 경로는 막혀 있음)
 #
 # 이 훅을 우회해야 하는 정당한 사유(예: 사용자가 직접 승인한 destructive 작업)가 있으면, 사용자가 터미널에서 `!<command>`로 직접 실행하거나(에이전트의 Bash 도구를 거치지 않음), 이 훅을 일시적으로 settings.json에서 제거
 
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
+
+# 0) 이름 패턴 종료는 git 명령 여부와 무관하게 차단
+if printf '%s' "$cmd" | grep -qE '(^|[;&|(]\s*)(pkill|killall)\b'; then
+  echo "차단: pkill/killall 금지. 다른 세션이나 사용자가 띄운 프로세스까지 종료됩니다. 직접 띄운 서버는 포트로 지정해 종료하세요: kill \$(lsof -ti tcp:<port>)" >&2
+  exit 2
+fi
 
 # git 명령이 아니면 통과
 printf '%s' "$cmd" | grep -qE '(^|[;&|]\s*)git\b' || exit 0

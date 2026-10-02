@@ -109,6 +109,16 @@ for (const tool of [".claude", ".codex"]) {
       }).status,
     ).toBe(2);
     expect(
+      run(tool, "git-safety-guard", {
+        tool_input: { command: 'pkill -f "next-server"' },
+      }).status,
+    ).toBe(2);
+    expect(
+      run(tool, "git-safety-guard", {
+        tool_input: { command: "kill $(lsof -ti tcp:3100)" },
+      }).status,
+    ).toBe(0);
+    expect(
       run(tool, "block-fork-spawn", { tool_input: { subagent_type: "fork" } })
         .status,
     ).toBe(2);
