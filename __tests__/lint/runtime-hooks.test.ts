@@ -61,6 +61,30 @@ for (const tool of [".claude", ".codex"]) {
         },
       }).status,
     ).toBe(2);
+    expect(
+      run(tool, "enforce-commit-msg-style", {
+        tool_input: {
+          command:
+            'git commit -m "fix: 탐색 수정" -m "- 캐시 정리\n- 경로를 수정했다"',
+        },
+      }).status,
+    ).toBe(2);
+    expect(
+      run(tool, "enforce-commit-msg-style", {
+        tool_input: {
+          command:
+            "cat >> notes.md <<'EOF'\n- 작업을 완료했다\nEOF\ngit commit -m \"docs: 메모 추가\"",
+        },
+      }).status,
+    ).toBe(0);
+    expect(
+      run(tool, "enforce-commit-msg-style", {
+        tool_input: {
+          command:
+            'cat > example.md <<\'EOF\'\ngit commit -m "a" -m "- b" -m "- c"\nEOF',
+        },
+      }).status,
+    ).toBe(0);
   });
   test(`${tool} 소스 대시 훅이 앱 위반을 차단하고 정상 소스를 허용한다`, () => {
     expect(
