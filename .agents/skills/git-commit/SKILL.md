@@ -76,6 +76,6 @@ description: >
 ## 커밋 전 확인
 
 - `pnpm exec tsc --noEmit`이 통과하는 상태에서만 커밋한다.
-- pre-commit 훅(`.husky/pre-commit`)이 스테이지된 변경에 대해 실행된다: `lint-staged`(biome `--error-on-warnings`) → `knip`(전체 dead-code 검사) → `react-doctor:staged`. 훅이 통과하도록 스테이지된 코드는 biome 경고 0, 미사용 export/의존성 없음 상태여야 한다.
+- pre-commit 훅(`.husky/pre-commit`)이 스테이지된 변경에 대해 순서대로 실행된다: `check-commit-identity`(커밋 작성자 이름·이메일 확인) → `lint:staged`(biome `--error-on-warnings`, 소스 주석·em-dash·마크다운 줄바꿈 검사) → `check-agent-harness-sync`(하네스 템플릿과 생성 파일 일치) → `knip`(전체 dead-code 검사) → `react-doctor:staged` → `harness:test`(하네스·훅 린트 테스트). 훅이 통과하도록 스테이지된 코드는 biome 경고 0, 미사용 export/의존성 없음 상태여야 한다.
 - 훅 실패를 `--no-verify`로 우회하지 않는다. 우회가 필요하다고 판단되면 먼저 사용자에게 사유와 함께 승인을 구한다.
 - 병렬 worktree에서 작업 중이라면 `docs/agent-rules/git-safety.md`의 수칙을 함께 따른다.
