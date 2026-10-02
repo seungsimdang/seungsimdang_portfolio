@@ -14,6 +14,10 @@
           {
             "type": "command",
             "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/require-feasibility-verdict.sh'"
+          },
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/confirm-edit-on-report-request.sh'"
           }
         ]
       }
@@ -61,6 +65,10 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
+          {
+            "type": "command",
+            "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/confirm-edit-on-report-request.sh'"
+          },
           {
             "type": "command",
             "command": "sh '/Users/leeseunghyun/Documents/GitHub/seungsimdang_portfolio/.codex/hooks/block-em-dash-in-source.sh'"

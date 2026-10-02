@@ -115,6 +115,30 @@ for (const tool of [".claude", ".codex"]) {
       }).status,
     ).toBe(0);
   });
+  test(`${tool} 보고 전용 요청 턴의 소스 편집만 사용자 확인을 요청한다`, () => {
+    const session = `report-gate-${tool.slice(1)}-${process.pid}`;
+    const prompt = (text: string) =>
+      run(tool, "confirm-edit-on-report-request", {
+        hook_event_name: "UserPromptSubmit",
+        session_id: session,
+        prompt: text,
+      });
+    const edit = (file_path: string) =>
+      run(tool, "confirm-edit-on-report-request", {
+        hook_event_name: "PreToolUse",
+        session_id: session,
+        tool_name: "Edit",
+        tool_input: { file_path },
+      }).stdout.includes('"ask"');
+    prompt("명세 업데이트 및 훅 강제 필요한지 판단하여 보고해");
+    expect(edit("/repo/.claude/hooks/sample.sh")).toBe(true);
+    expect(edit("/repo/artifacts/task-team/report.md")).toBe(false);
+    expect(edit("/Users/u/.claude/projects/p/memory/note.md")).toBe(false);
+    prompt("검토 후 보고하고 문제 있으면 고쳐");
+    expect(edit("/repo/src/app/page.tsx")).toBe(false);
+    prompt("가능한 내용은 강제해");
+    expect(edit("/repo/src/app/page.tsx")).toBe(false);
+  });
   test(`${tool} 주석 줄바꿈 훅이 문장 중간 줄바꿈을 차단하고 한 줄 한 문장을 허용한다`, () => {
     const write = (content: string) =>
       run(tool, "block-comment-line-wrap", {

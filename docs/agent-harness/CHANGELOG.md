@@ -61,3 +61,9 @@
 - 커밋 명령을 다른 heredoc과 같은 Bash 호출에 섞지 않는 수칙 추가. 훅이 앞선 `cat >> file <<'EOF'`를 커밋 메시지로 오인해 차단한 사례 2건 대응이며, 근본 수정은 훅의 heredoc 추출 범위 한정으로 별도 반영.
 - Codex 템플릿의 `.Codex/` 경로를 실제 추적 경로 `.codex/hooks/`, `docs/agent-rules/git-safety.md`로 정정.
 - 스킬 설명·제목·scope 목록에 남아 있던 candanta 저장소 내용을 이 저장소 기준(`portfolio`, `ci`, `deps`)으로 정리.
+
+## 2026-10-02 - 보고 전용 요청의 편집 확인 훅 추가
+
+- "판단하여 보고해" 요청을 실행 지시로 잘못 읽고 훅 파일을 수정한 사례로 Claude·Codex 훅(`confirm-edit-on-report-request.sh`) 추가. UserPromptSubmit에서 판단·검토·보고 요청이면서 실행 지시가 없는 턴을 session_id별 상태로 남기고, 같은 턴의 Edit/Write/NotebookEdit는 사용자 확인(ask)을 거치게 함.
+- 키워드 판정의 오탐·미탐을 고려해 차단 대신 확인을 쓰고, artifacts·메모리·임시 파일 작성은 보고 작업의 일부라 제외.
+- Bash(sed, python, git 등)로 하는 수정은 명령 형태가 다양해 대상에서 제외하고 메모리 규칙으로만 보완. 권한 분류기 거부 시점에는 실행되는 훅 이벤트가 없어 "다른 작업은 계속하라" 안내의 오해도 메모리로만 보완.
