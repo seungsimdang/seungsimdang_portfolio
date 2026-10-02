@@ -77,6 +77,7 @@ export function WordCycler({
   // Word cycling timer
   useEffect(() => {
     if (filteredWords.length <= 1) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!mountedIds.has(instanceId)) return;
 
     const wordTimer = setInterval(() => {

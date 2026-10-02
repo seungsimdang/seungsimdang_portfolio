@@ -15,8 +15,15 @@ export interface Experience {
   }[];
 }
 
+export type ProjectId =
+  | "globber"
+  | "dpm-core"
+  | "semt"
+  | "endo-admin"
+  | "endo-report";
+
 export interface Project {
-  id: string;
+  id: ProjectId;
   title: string;
   period: string;
   role: string;
