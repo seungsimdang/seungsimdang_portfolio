@@ -25,7 +25,7 @@ export function ProjectCard({
   return (
     <Link
       href={href}
-      className={`sticky top-160 block w-full h-[90vh] rounded-lg overflow-hidden transition-transform hover:scale-[1.02] motion-reduce:transition-none motion-reduce:hover:scale-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black ${className}`}
+      className={`sticky top-160 block w-full h-[60vh] md:h-[90vh] rounded-lg overflow-hidden transition-transform hover:scale-[1.02] motion-reduce:transition-none motion-reduce:hover:scale-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black ${className}`}
       style={{
         backgroundColor: bgColor,
         color: thumbnail ? "rgb(255, 255, 255)" : textColor,
