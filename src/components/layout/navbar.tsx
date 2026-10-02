@@ -2,6 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { profileData } from "@/constants/portfolio-data";
+
+function isActive(pathname: string, href: string) {
+  if (href === "/projects") {
+    return pathname === href || pathname.startsWith("/work/");
+  }
+  return pathname === href;
+}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -10,7 +18,7 @@ export function Navbar() {
     { href: "/", label: "home" },
     { href: "/projects", label: "projects" },
     { href: "/about", label: "about" },
-    { href: "/blog", label: "blog" },
+    { href: "/blog", label: "talks" },
     { href: "/contact", label: "contact" },
   ];
 
@@ -20,18 +28,18 @@ export function Navbar() {
         <div className="flex items-center justify-between py-24">
           <Link
             href="/"
-            className="text-xl font-medium hover:opacity-70 transition-opacity"
+            className="text-xl font-medium whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity"
           >
-            Nick
+            {profileData.name}
           </Link>
 
-          <div className="flex items-center gap-32 md:gap-48">
+          <div className="flex items-center gap-16 md:gap-48">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`text-sm transition-opacity hover:opacity-100 ${
-                  pathname === link.href ? "opacity-100" : "opacity-50"
+                  isActive(pathname, link.href) ? "opacity-100" : "opacity-50"
                 }`}
               >
                 {link.label}
