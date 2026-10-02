@@ -13,19 +13,39 @@
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
-case "$cmd" in
-  *"git commit"*) ;;
-  *) exit 0 ;;
-esac
+# heredoc 본문을 셸 구문과 분리하는 함수 (shell: 본문을 뺀 실행 구문, msg: git commit 줄에서 열린 heredoc 본문)
+# 같은 명령의 다른 heredoc(cat >> file <<'EOF' 등) 본문이 커밋 메시지나 커밋 감지에 섞이지 않게 하려는 목적
+split_cmd() {
+  printf '%s\n' "$cmd" | awk -v want="$1" '
+    in_doc {
+      if ($0 ~ "^[ \t]*" delim "[ \t]*$") { in_doc = 0; if (want == "shell") print; next }
+      if (want == "msg" && is_commit) print
+      next
+    }
+    {
+      if (want == "shell") print
+      if (match($0, /<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
+        d = substr($0, RSTART, RLENGTH)
+        sub(/^<<-?[ \t]*["\047]?/, "", d); sub(/["\047]$/, "", d)
+        delim = d; in_doc = 1; is_commit = ($0 ~ /git[ \t]+commit/)
+      }
+    }'
+}
+shell=$(split_cmd shell)
 
-# 커밋 메시지 본문 추출.
-# 이 저장소의 표준 패턴(-m "$(cat <<'EOF' ... EOF)")을 우선 처리하고, heredoc이 없으면 첫 -m "..." 인자로 폴백
-delim=$(printf '%s\n' "$cmd" | grep -oE "<<[ 	]*['\"]?[A-Za-z_][A-Za-z0-9_]*['\"]?" | head -1 | sed -E "s/<<[ 	]*['\"]?([A-Za-z_][A-Za-z0-9_]*)['\"]?/\1/")
-if [ -n "$delim" ]; then
-  msg=$(printf '%s\n' "$cmd" | sed -n "/<<[ 	]*['\"]\\{0,1\\}$delim['\"]\\{0,1\\}[ 	]*\$/,/^[ 	]*$delim[ 	]*\$/p" | sed '1d;$d')
-else
-  # git은 -m마다 문단을 나누므로 모든 -m 값을 빈 줄로 이어 실제 메시지와 같게 재구성
-  msg=$(printf '%s\n' "$cmd" | grep -oE '\-m[ 	]+"([^"\\]|\\.)*"' | sed -E 's/^-m[ 	]+"//; s/"$//' | awk 'NR > 1 { print "" } { print }')
+# 문자열·heredoc 본문 속 "git commit"은 빼고 실행 구문에 git commit이 있을 때만 검사
+printf '%s\n' "$shell" | grep -qE '(^|[;&|(][ 	]*)git[ 	]+commit\b' || exit 0
+
+# 표준 패턴(-m "$(cat <<'EOF' ... EOF)")의 heredoc을 우선 사용
+msg=$(split_cmd msg)
+if [ -z "$msg" ]; then
+  # git은 -m마다 문단을 나누므로 git commit 뒤 모든 -m 값을 빈 줄로 이어 실제 메시지와 같게 재구성
+  # 따옴표 안 줄바꿈을 포함한 값까지 잡으려고 명령 전체를 한 번에 파싱
+  msg=$(printf '%s' "$shell" | perl -0ne '
+    s/^.*?\bgit\s+commit\b//s or exit;
+    my @m; push @m, $1 while /-m\s+"((?:[^"\\]|\\.)*)"/sg;
+    print join("\n\n", @m);
+  ')
 fi
 [ -n "$msg" ] || exit 0
 
