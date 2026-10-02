@@ -253,3 +253,13 @@ orchestrator 조사 결과 (2026-10-02):
 이번 사이클 요구사항:
 - 신규·변경 코드의 spacing 클래스는 모두 1px 스케일로 쓴다 (`docs/agent-rules/tailwind.md`). Tailwind 기본 스케일 감각으로 `p-4`(=4px), `gap-2`(=2px)처럼 쓰지 않는다. design-spec.md의 값은 이미 px 기준이다.
 - 이번 변경이 건드리지 않는 기존 섹션(레이아웃, nav, footer, 카드 스택, CTA, PageHeader)의 spacing은 변경 전과 동일해야 한다. QA(T09)가 변경 전후 computed style을 비교해 확인한다.
+
+## 12. R7 Pretendard 폰트 통일 (사이클 중 추가 요청)
+
+요청 원문: "그리고 프로젝트 내 모든 폰트는 Pretendard로 통일해줘. 통일 후 기존 Ui 대비 깨지는 부분 없는지 검증해"
+
+- 현재 폰트 정의는 `src/app/globals.css`의 `--font-sans` 토큰과 `body` 시스템 폰트 스택 2곳뿐이다.
+- `pretendard@1.3.9`를 정확한 버전으로 추가하고 패키지의 variable dynamic subset CSS를 import해 자체 호스팅한다. 외부 CDN은 쓰지 않는다.
+- `--font-sans`를 `"Pretendard Variable", Pretendard` 우선 스택으로 바꾸고 `body`도 같은 토큰을 쓴다. 다른 font-family 지정이 남지 않는다.
+- WordCycler는 마운트 시 글자 폭을 측정하므로 웹폰트 로드 후 재측정되어 단어가 잘리지 않아야 한다.
+- 검증: 변경 전 828e442와 변경 후를 7개 경로 × 4개 폭(390, 810, 1024, 1440)에서 캡처 비교하고, 가로 넘침·텍스트 잘림·겹침·줄바꿈으로 인한 레이아웃 붕괴가 없어야 한다. 글자 폭 차이로 인한 자연스러운 줄바꿈 변화는 허용한다.
