@@ -6,13 +6,15 @@ import "./globals.css";
 
 const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : "http://localhost:3000";
+  : "https://seungsimdang.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
-  title: `${profileData.name} - ${profileData.title}`,
+  title: {
+    default: `${profileData.name} - ${profileData.title}`,
+    template: `%s | ${profileData.name}`,
+  },
   description: profileData.description,
-  alternates: { canonical: "/" },
   openGraph: {
     title: `${profileData.name} - ${profileData.title}`,
     description: profileData.description,

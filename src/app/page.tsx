@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AboutSection } from "@/components/common/about-section";
 import { HeroSection } from "@/components/common/hero-section";
 import { ProjectCard } from "@/components/common/project-card";
@@ -5,6 +6,10 @@ import { TalkPreview } from "@/components/common/talk-preview";
 import { Button } from "@/components/ui/button";
 import { projects, techTalks } from "@/constants/portfolio-data";
 import { projectCardTheme } from "@/constants/project-card-theme";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (

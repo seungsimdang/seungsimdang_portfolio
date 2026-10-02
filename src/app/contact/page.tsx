@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { profileData } from "@/constants/portfolio-data";
 
 const cardClassName =
   "group flex items-center justify-between gap-16 p-24 border border-white/10 rounded-lg hover:border-white/30 transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-white";
+
+export const metadata: Metadata = {
+  title: "contact",
+  alternates: { canonical: "/contact" },
+};
 
 export default function ContactPage() {
   return (
