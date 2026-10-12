@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default async function AdminProfilePage() {
   await requireAdminPage();
-  const profile = await getProfile();
+  const profile = await getProfile(true);
   return (
     <>
       <AdminPageHeader title="프로필" />

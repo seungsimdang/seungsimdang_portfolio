@@ -18,15 +18,33 @@ interface AdminRouteContext<P> {
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+// NEXTAUTH_URL과 ADMIN_ALLOWED_HOSTS(쉼표 구분)의 host를 허용하고 둘 다 없으면 host 헤더만 허용함
+function allowedHosts(request: Request): string[] {
+  const extra = (process.env.ADMIN_ALLOWED_HOSTS ?? "")
+    .split(",")
+    .map((h) => h.trim())
+    .filter(Boolean);
+  if (!process.env.NEXTAUTH_URL && extra.length === 0) {
+    const host = request.headers.get("host");
+    return host ? [host] : [];
+  }
+  try {
+    const base = process.env.NEXTAUTH_URL
+      ? [new URL(process.env.NEXTAUTH_URL).host]
+      : [];
+    return [...base, ...extra];
+  } catch {
+    // NEXTAUTH_URL이 잘못된 값이면 모든 Origin을 거부함
+    return [];
+  }
+}
+
 function isSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
   try {
     // 프록시가 덧붙일 수 있는 x-forwarded-host는 신뢰하지 않고 고정 설정값 또는 host 헤더와만 비교함
-    const host = process.env.NEXTAUTH_URL
-      ? new URL(process.env.NEXTAUTH_URL).host
-      : request.headers.get("host");
-    return new URL(origin).host === host;
+    return allowedHosts(request).includes(new URL(origin).host);
   } catch {
     return false;
   }

@@ -24,8 +24,13 @@ type ExperienceRow = typeof experiences.$inferSelect;
 type TalkRow = typeof techTalks.$inferSelect;
 
 // 읽기 시점에도 http/https 스킴만 통과시키고 그 외는 제외함
-function safeHttpUrl(url: string | null | undefined): string | undefined {
+// raw가 true면 관리 폼이 DB 원값을 그대로 보여주도록 필터를 건너뜀
+function safeHttpUrl(
+  url: string | null | undefined,
+  raw = false,
+): string | undefined {
   if (!url) return undefined;
+  if (raw) return url;
   try {
     const { protocol } = new URL(url);
     return protocol === "http:" || protocol === "https:" ? url : undefined;
@@ -34,8 +39,8 @@ function safeHttpUrl(url: string | null | undefined): string | undefined {
   }
 }
 
-function toExperience(row: ExperienceRow): Experience {
-  const links = row.links.filter((l) => safeHttpUrl(l.url));
+function toExperience(row: ExperienceRow, raw: boolean): Experience {
+  const links = row.links.filter((l) => safeHttpUrl(l.url, raw));
   return {
     id: row.id,
     title: row.title,
@@ -52,7 +57,11 @@ function toExperience(row: ExperienceRow): Experience {
   };
 }
 
-function toProject(row: ProjectRow, rows: ExperienceRow[]): Project {
+function toProject(
+  row: ProjectRow,
+  rows: ExperienceRow[],
+  raw: boolean,
+): Project {
   return {
     id: row.id,
     slug: row.slug,
@@ -61,13 +70,13 @@ function toProject(row: ProjectRow, rows: ExperienceRow[]): Project {
     role: row.role,
     techStack: row.techStack,
     summary: row.summary,
-    link: safeHttpUrl(row.link),
+    link: safeHttpUrl(row.link, raw),
     thumbnail: row.thumbnail ?? undefined,
-    experiences: rows.map(toExperience),
+    experiences: rows.map((e) => toExperience(e, raw)),
   };
 }
 
-export function toTalk(row: TalkRow): TechTalk {
+export function toTalk(row: TalkRow, raw = false): TechTalk {
   return {
     id: row.id,
     slug: row.slug,
@@ -76,18 +85,21 @@ export function toTalk(row: TalkRow): TechTalk {
     venue: row.venue,
     description: row.description,
     impact: row.impact,
-    link: safeHttpUrl(row.link),
+    link: safeHttpUrl(row.link, raw),
   };
 }
 
-export function toProfile(row: typeof profile.$inferSelect): Profile {
+export function toProfile(
+  row: typeof profile.$inferSelect,
+  raw = false,
+): Profile {
   return {
     name: row.name,
     title: row.title,
     tagline: row.tagline,
     description: row.description,
     email: row.email,
-    github: row.github,
+    github: safeHttpUrl(row.github, raw),
     skills: row.skills,
   };
 }
@@ -99,7 +111,10 @@ const projectOrder = [
 ];
 
 // 프로젝트와 experiences를 쿼리 2회로 가져와 메모리에서 묶음
-export async function loadProjects(rows: ProjectRow[]): Promise<Project[]> {
+export async function loadProjects(
+  rows: ProjectRow[],
+  raw = false,
+): Promise<Project[]> {
   if (rows.length === 0) return [];
   const experienceRows = await db
     .select()
@@ -119,32 +134,33 @@ export async function loadProjects(rows: ProjectRow[]): Promise<Project[]> {
   for (const e of experienceRows) {
     byProject.set(e.projectId, [...(byProject.get(e.projectId) ?? []), e]);
   }
-  return rows.map((r) => toProject(r, byProject.get(r.id) ?? []));
+  return rows.map((r) => toProject(r, byProject.get(r.id) ?? [], raw));
 }
 
-export const getProfile = cache(async (): Promise<Profile> => {
+// 아래 조회 함수의 raw 인자는 관리 편집 화면 전용으로 링크 필터를 끔
+export const getProfile = cache(async (raw = false): Promise<Profile> => {
   const [row] = await db.select().from(profile).where(eq(profile.id, 1));
   if (!row) throw new PortfolioNotSeededError();
-  return toProfile(row);
+  return toProfile(row, raw);
 });
 
-export const listProjects = cache(async (): Promise<Project[]> => {
+export const listProjects = cache(async (raw = false): Promise<Project[]> => {
   const rows = await db
     .select()
     .from(projects)
     .orderBy(...projectOrder);
-  return loadProjects(rows);
+  return loadProjects(rows, raw);
 });
 
 // 없으면 null, DB 에러는 그대로 throw
 export const getProjectBySlug = cache(
-  async (slug: string): Promise<Project | null> => {
+  async (slug: string, raw = false): Promise<Project | null> => {
     if (!SLUG_PATTERN.test(slug)) return null;
     const rows = await db
       .select()
       .from(projects)
       .where(eq(projects.slug, slug));
-    const [project] = await loadProjects(rows);
+    const [project] = await loadProjects(rows, raw);
     return project ?? null;
   },
 );
@@ -157,7 +173,7 @@ export const listProjectSlugs = cache(async (): Promise<string[]> => {
   return rows.map((r) => r.slug);
 });
 
-export const listTechTalks = cache(async (): Promise<TechTalk[]> => {
+export const listTechTalks = cache(async (raw = false): Promise<TechTalk[]> => {
   const rows = await db
     .select()
     .from(techTalks)
@@ -166,5 +182,5 @@ export const listTechTalks = cache(async (): Promise<TechTalk[]> => {
       asc(techTalks.createdAt),
       asc(techTalks.id),
     );
-  return rows.map(toTalk);
+  return rows.map((row) => toTalk(row, raw));
 });

@@ -43,25 +43,27 @@ export default async function ContactPage() {
                 </span>
               </a>
             </li>
-            <li>
-              <a
-                href={profile.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cardClassName}
-              >
-                <div className="space-y-4 min-w-0">
-                  <p className="text-small opacity-50">github</p>
-                  <p className="text-lg md:text-2xl break-all group-hover:opacity-70 transition-opacity">
-                    {profile.github.replace("https://", "")}
-                  </p>
-                </div>
-                <span aria-hidden="true" className="opacity-50">
-                  ↗
-                </span>
-                <span className="sr-only">(opens in a new tab)</span>
-              </a>
-            </li>
+            {profile.github && (
+              <li>
+                <a
+                  href={profile.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cardClassName}
+                >
+                  <div className="space-y-4 min-w-0">
+                    <p className="text-small opacity-50">github</p>
+                    <p className="text-lg md:text-2xl break-all group-hover:opacity-70 transition-opacity">
+                      {profile.github.replace("https://", "")}
+                    </p>
+                  </div>
+                  <span aria-hidden="true" className="opacity-50">
+                    ↗
+                  </span>
+                  <span className="sr-only">(opens in a new tab)</span>
+                </a>
+              </li>
+            )}
           </ul>
 
           <div className="flex justify-end">

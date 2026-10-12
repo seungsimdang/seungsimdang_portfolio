@@ -74,7 +74,7 @@ function blankToNull(value: string | undefined) {
 
 async function loadProjectById(id: string): Promise<Project> {
   const rows = await db.select().from(projects).where(eq(projects.id, id));
-  const [project] = await loadProjects(rows);
+  const [project] = await loadProjects(rows, true);
   if (!project) throw new NotFoundError();
   return project;
 }
@@ -86,7 +86,7 @@ export async function updateProfile(input: ProfileInput): Promise<Profile> {
     .where(eq(profile.id, 1))
     .returning();
   if (!row) throw new PortfolioNotSeededError();
-  return toProfile(row);
+  return toProfile(row, true);
 }
 
 export async function createProject(
@@ -206,7 +206,7 @@ export async function createTalk(input: TalkCreateInput): Promise<TechTalk> {
       })
       .returning();
     if (!row) throw new Error("insert returned no row");
-    return toTalk(row);
+    return toTalk(row, true);
   } catch (error) {
     if (getPgErrorCode(error) === PG_UNIQUE_VIOLATION) {
       throw new SlugConflictError();
@@ -225,7 +225,7 @@ export async function updateTalk(
     .where(eq(techTalks.slug, slug))
     .returning();
   if (!row) throw new NotFoundError();
-  return toTalk(row);
+  return toTalk(row, true);
 }
 
 export async function deleteTalk(slug: string): Promise<void> {

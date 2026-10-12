@@ -11,7 +11,9 @@ export function Footer({ profile }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    { name: "GitHub", href: profile.github, external: true },
+    ...(profile.github
+      ? [{ name: "GitHub", href: profile.github, external: true }]
+      : []),
     { name: "Email", href: `mailto:${profile.email}`, external: false },
   ];
 

@@ -4,7 +4,7 @@ export interface Profile {
   tagline: string;
   description: string;
   email: string;
-  github: string;
+  github?: string;
   skills: string[];
 }
 

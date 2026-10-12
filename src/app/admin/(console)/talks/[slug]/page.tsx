@@ -20,7 +20,7 @@ export default async function AdminEditTalkPage({
 }: EditTalkPageProps) {
   await requireAdminPage();
   const [{ slug }, { saved }] = await Promise.all([params, searchParams]);
-  const talk = (await listTechTalks()).find((item) => item.slug === slug);
+  const talk = (await listTechTalks(true)).find((item) => item.slug === slug);
   if (!talk) notFound();
   return (
     <>

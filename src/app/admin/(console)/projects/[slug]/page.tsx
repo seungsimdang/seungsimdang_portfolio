@@ -20,7 +20,7 @@ export default async function AdminEditProjectPage({
 }: EditProjectPageProps) {
   await requireAdminPage();
   const [{ slug }, { saved }] = await Promise.all([params, searchParams]);
-  const project = await getProjectBySlug(slug);
+  const project = await getProjectBySlug(slug, true);
   if (!project) notFound();
   return (
     <>

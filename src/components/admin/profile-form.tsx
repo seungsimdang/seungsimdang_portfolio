@@ -22,7 +22,11 @@ interface ProfileDraft {
 }
 
 function toDraft(profile: Profile): ProfileDraft {
-  return { ...profile, skills: toStringItems(profile.skills) };
+  return {
+    ...profile,
+    github: profile.github ?? "",
+    skills: toStringItems(profile.skills),
+  };
 }
 
 function toInput(draft: ProfileDraft) {
