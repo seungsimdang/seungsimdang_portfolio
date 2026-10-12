@@ -4,12 +4,17 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "vitest";
 
+// pre-commit 안에서는 GIT_DIR 등이 설정돼 임시 저장소 대신 실제 저장소를 가리키므로 제거
+const env = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")),
+) as NodeJS.ProcessEnv;
+
 const run = (tool: string, hook: string, input: object, cwd = process.cwd()) =>
   spawnSync("sh", [resolve(tool, "hooks", `${hook}.sh`)], {
     cwd,
     input: JSON.stringify(input),
     encoding: "utf8",
-    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd },
+    env: { ...env, CLAUDE_PROJECT_DIR: cwd },
   });
 
 for (const tool of [".claude", ".codex"]) {
@@ -205,7 +210,7 @@ for (const tool of [".claude", ".codex"]) {
     ).toBe(0);
     const fixture = mkdtempSync(join(tmpdir(), "portfolio-hooks-"));
     try {
-      spawnSync("git", ["init", "-q"], { cwd: fixture });
+      spawnSync("git", ["init", "-q"], { cwd: fixture, env });
       writeFileSync(join(fixture, "dirty.txt"), "changed");
       expect(
         run(
@@ -230,6 +235,40 @@ for (const tool of [".claude", ".codex"]) {
       ).toBe(0);
     } finally {
       rmSync(fixture, { recursive: true, force: true });
+    }
+  });
+  test(`${tool} 새 브랜치 생성은 브랜치 수와 무관하고 살아 있는 worktree에만 차단된다`, () => {
+    const repo = mkdtempSync(join(tmpdir(), "portfolio-branch-"));
+    const git = (...args: string[]) =>
+      spawnSync("git", args, { cwd: repo, env });
+    const create = () =>
+      run(
+        tool,
+        "git-safety-guard",
+        { tool_input: { command: "git switch -c feature/next" } },
+        repo,
+      ).status;
+    try {
+      git("init", "-q");
+      git(
+        "-c",
+        "user.name=t",
+        "-c",
+        "user.email=t@t",
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        "init",
+      );
+      for (const name of ["a", "b", "c", "d", "e"]) git("branch", name);
+      expect(create()).toBe(0);
+      git("worktree", "add", "-q", join(repo, "wt"), "a");
+      expect(create()).toBe(2);
+      rmSync(join(repo, "wt"), { recursive: true, force: true });
+      expect(create()).toBe(0);
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
     }
   });
   test(`${tool} best practice 안내 훅이 키워드에만 조건부 지시를 추가하고 차단하지 않는다`, () => {
