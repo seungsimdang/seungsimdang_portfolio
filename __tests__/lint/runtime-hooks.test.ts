@@ -390,6 +390,16 @@ test("AskUserQuestion 직접 입력 답변 뒤 같은 응답의 재질문을 차
     expect(decide(prompt, answer("best practice가 뭔데?"))).toBe("deny");
     expect(decide(prompt, answer("지원, DB 공유"))).toBe("allow");
     expect(decide(answer("best practice가 뭔데?"), prompt)).toBe("allow");
+    // 줄이 4095바이트를 넘고 라벨의 한글이 읽기 경계에 걸려도 선택지 답변은 허용
+    const padded = (pad: string) => ({ pad, ...answer("미지원") });
+    const start =
+      Buffer.from(JSON.stringify(padded(""))).indexOf('"label":"미지원"') +
+      Buffer.byteLength('"label":"미');
+    for (const shift of [0, 1, 2]) {
+      expect(decide(prompt, padded("a".repeat(4093 - start + shift)))).toBe(
+        "allow",
+      );
+    }
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }
