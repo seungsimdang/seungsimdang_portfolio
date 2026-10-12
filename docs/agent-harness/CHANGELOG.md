@@ -72,3 +72,7 @@
 
 - Codex 템플릿에 남아 있던 `.Codex/` 경로(`.Codex/rules/`, `.Codex/agents/*.md`, `.Codex/skills/`, `.Codex/worktrees/`)를 실제 경로 `docs/agent-rules/`, `.codex/agents/*.toml`, `.agents/skills/`, `.codex/worktrees/`로 정정. `.Codex/settings.json`(`worktree.baseRef`)은 Codex에 대응 설정이 없어 커밋 후 push 경로로 안내.
 - 규칙을 `docs/agent-rules/`로 옮긴 뒤 Claude는 `@README.md` 색인만 자동 로드하고 본문은 직접 열어야 읽던 문제로 `.claude/rules/`에 심볼릭 링크 추가. `nextjs`·`react-query`·`tailwind`는 `paths:`로 해당 경로 파일을 다룰 때만 로드.
+
+## 2026-10-12 - 한국어 응답 훅 오탐 수정
+
+- `require-korean-response.sh`가 한국어 문장 속 영문 식별자(kebab-case, camelCase, 한글 조사가 붙은 이름)를 비율 계산에서 빼고 영문 글자 기준을 40자에서 20자로 낮춤. Skill·파일 이름이 많은 짧은 한국어 문장을 영어로 오판해 턴을 막고, 짧은 영어 문장은 놓치던 문제.
