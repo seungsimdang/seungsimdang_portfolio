@@ -1,3 +1,8 @@
+---
+paths:
+  - "src/**/*.{tsx,css}"
+---
+
 # Tailwind CSS 핵심 규칙
 
 Tailwind **v4**. 설정은 `tailwind.config.*`가 아니라 `src/app/globals.css`의 `@theme` / `@theme inline` 블록에 있다.
