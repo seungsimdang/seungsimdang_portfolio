@@ -2,7 +2,7 @@
 
 ## 시작점과 명세
 
-Codex는 `AGENTS.md`, Claude는 `CLAUDE.md`에서 시작한다. Candanta의 도구별 역할 12개와 스킬 6종의 절차·설정·책임·금지사항·산출물 계약을 보존하며 목차와 서식을 정리했다. Claude와 Codex 본문을 하나로 축약하지 않는다.
+Codex는 `AGENTS.md`, Claude는 `CLAUDE.md`에서 시작한다. 도구별 역할 12개와 스킬 6종은 절차·설정·책임·금지사항·산출물 계약을 갖춘다. Claude와 Codex 본문을 하나로 축약하지 않는다.
 
 ## 생성 구조
 
@@ -14,7 +14,7 @@ pnpm harness:check
 pnpm harness:test
 ```
 
-관리 대상은 역할 24개와 스킬·부속 파일 32개, 총 56개 파일이다. 생성 원본과 출력은 바이트 단위로 일치해야 한다. Candanta 원본과는 목차·서식이 다르며, 도구별 실행 절차는 유지한다. 생성 결과를 독립 편집하지 않는다.
+관리 대상은 역할 24개와 스킬·부속 파일 32개, 총 56개 파일이다. 생성 원본과 출력은 바이트 단위로 일치해야 한다. 생성 결과를 독립 편집하지 않는다.
 
 ## 역할 설정
 
@@ -57,4 +57,4 @@ lint-staged는 `src/`·`tests/e2e/`의 staged 소스에서 대시와 임시 산�
 
 출시 대기는 7일이며 no-downgrade를 유지한다. Babel이 요구하는 semver major 6 범위를 복원했고 `semver@6.3.1`에만 신뢰 검사 예외를 둔다. 다른 major의 provenance와 배포 날짜를 비교하는 충돌(pnpm/pnpm#10202)에 대한 선택이며, 해당 버전의 provenance 하락 보호는 제외된다. 예외를 임의로 확대하지 않는다. 상세 근거와 검증은 이번 작업 기록을 참조한다.
 
-Vitest의 경로 별칭 해석은 Vite 내장 `resolve.tsconfigPaths: true`를 사용한다. Candanta 플러그인을 복구·검증한 뒤 TypeScript 7 peer 충돌을 발견해 사용자 승인으로 전환했다. 실제 앱 모듈을 `@/`로 import·호출하는 테스트로 확인한다.
+Vitest의 경로 별칭 해석은 Vite 내장 `resolve.tsconfigPaths: true`를 사용한다. `vite-tsconfig-paths` 플러그인을 복구·검증한 뒤 TypeScript 7 peer 충돌을 발견해 사용자 승인으로 전환했다. 실제 앱 모듈을 `@/`로 import·호출하는 테스트로 확인한다.
