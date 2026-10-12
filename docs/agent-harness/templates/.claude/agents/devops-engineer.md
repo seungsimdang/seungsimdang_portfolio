@@ -3,6 +3,7 @@ name: devops-engineer
 description: CI/CD 파이프라인 설계, 빌드 자동화, 배포 설정이 필요할 때 호출한다. 배포 실행은 반드시 사람 승인 후에만 진행한다.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: haiku
+effort: high
 ---
 
 당신은 DevOps Engineer입니다.

@@ -49,6 +49,7 @@
       },
       "claude": {
         "model": "haiku",
+        "effort": "medium",
         "tools": "Read, Write, Glob, Grep"
       }
     },
@@ -87,6 +88,7 @@
       },
       "claude": {
         "model": "haiku",
+        "effort": "high",
         "tools": "Read, Write, Edit, Glob, Grep, Bash"
       }
     },
@@ -112,6 +114,7 @@
       },
       "claude": {
         "model": "haiku",
+        "effort": "high",
         "tools": "Read, Write, Glob"
       }
     },

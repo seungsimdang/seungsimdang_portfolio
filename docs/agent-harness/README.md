@@ -23,12 +23,12 @@ pnpm harness:test
 | backend-developer | gpt-6-luna | high | sonnet | medium | Read, Write, Edit, Glob, Grep, Bash |
 | bug-fixer | gpt-6-luna | high | sonnet | medium | Read, Write, Edit, Glob, Grep, Bash |
 | bug-localizer | gpt-6-luna | xhigh | sonnet | medium | Read, Grep, Glob, Write |
-| bug-reporter | gpt-6-luna | medium | haiku | 원본 필드 없음 | Read, Write, Glob, Grep |
+| bug-reporter | gpt-6-luna | medium | haiku | medium | Read, Write, Glob, Grep |
 | code-reviewer | gpt-6-luna | high | sonnet | medium | Read, Glob, Grep, Write, Bash |
 | designer | gpt-6-luna | high | sonnet | medium | Read, Write, Glob |
-| devops-engineer | gpt-6-luna | high | haiku | 원본 필드 없음 | Read, Write, Edit, Glob, Grep, Bash |
+| devops-engineer | gpt-6-luna | high | haiku | high | Read, Write, Edit, Glob, Grep, Bash |
 | frontend-developer | gpt-6-luna | high | sonnet | medium | Read, Write, Edit, Glob, Grep, Bash |
-| postmortem-agent | gpt-6-luna | medium | haiku | 원본 필드 없음 | Read, Write, Glob |
+| postmortem-agent | gpt-6-luna | medium | haiku | high | Read, Write, Glob |
 | project-manager | gpt-6-luna | high | sonnet | medium | Read, Write, Glob, WebSearch |
 | qa-engineer | gpt-6-luna | high | sonnet | medium | Read, Write, Glob, Grep, Bash |
 | security-reviewer | gpt-6-luna | xhigh | sonnet | medium | Read, Glob, Grep, Write |
