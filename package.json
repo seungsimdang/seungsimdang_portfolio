@@ -11,7 +11,7 @@
     "format": "biome format --write .",
     "type-check": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
-    "verify": "pnpm harness:check && pnpm harness:test && pnpm knip && pnpm check && pnpm type-check && pnpm build && pnpm test:e2e",
+    "verify": "pnpm harness:check && pnpm harness:test && pnpm knip && pnpm check && pnpm type-check && pnpm test:e2e:local",
     "harness:sync": "node scripts/sync-agent-harness.mjs --write",
     "harness:check": "node scripts/sync-agent-harness.mjs --check",
     "harness:test": "vitest run --config __tests__/lint/vitest.lint.config.ts",
@@ -23,7 +23,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx --env-file-if-exists=.env.local src/db/seed.ts"
+    "db:seed:e2e": "tsx --env-file-if-exists=.env.local tests/e2e/fixtures/seed.ts",
+    "test:e2e:local": "sh scripts/run-e2e-local.sh"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",

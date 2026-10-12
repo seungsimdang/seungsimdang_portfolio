@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { profileData, projects, techTalks } from "../../src/db/seed-data";
+import { profileData, projects, techTalks } from "./fixtures/portfolio";
 
 const siteSuffix = profileData.name;
 
@@ -29,7 +29,7 @@ for (const project of projects) {
   });
 }
 
-for (const path of ["/work/unknown", "/work/kbhc"]) {
+for (const path of ["/work/unknown"]) {
   test(`${path} 는 404 화면을 표시한다`, async ({ page }) => {
     const response = await page.goto(path);
     expect(response?.status()).toBe(404);
@@ -55,7 +55,7 @@ test("카드를 눌러 상세 페이지로 이동한다", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(first.title);
 });
 
-for (const path of ["/work/globber", "/blog", "/contact", "/"]) {
+for (const path of [`/work/${projects[0].id}`, "/blog", "/contact", "/"]) {
   test(`${path} 의 외부 링크는 새 탭과 noopener noreferrer를 사용한다`, async ({
     page,
   }) => {

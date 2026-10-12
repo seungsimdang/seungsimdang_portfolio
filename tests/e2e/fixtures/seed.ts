@@ -1,18 +1,21 @@
-// 일회성 초기 데이터 입력 스크립트
-// 실행: pnpm db:seed (로컬은 .env.local의 DATABASE_URL 사용)
-// 다른 환경: DATABASE_URL=<연결 문자열> pnpm db:seed
+// e2e 테스트 DB에 fixture 데이터를 넣는 스크립트
+// 실행: pnpm db:seed:e2e (.env.local의 E2E_DATABASE_URL 사용, DATABASE_URL은 읽지 않음)
 // 접속 호스트명을 출력하고 y 입력을 받아야 진행하며 --yes로 확인을 생략
 // 행이 하나라도 있는 테이블은 건너뛰므로 재실행해도 기존 데이터를 덮어쓰지 않음
-// Production seed 검증 후 이 파일, seed-data.ts, db:seed 스크립트는 함께 제거 예정
 import { createInterface } from "node:readline/promises";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { experiences, profile, projects, techTalks } from "./schema/portfolio";
+import {
+  experiences,
+  profile,
+  projects,
+  techTalks,
+} from "../../../src/db/schema/portfolio";
 import {
   profileData,
   projects as seedProjects,
   techTalks as seedTalks,
-} from "./seed-data";
+} from "./portfolio";
 
 async function confirm(hostname: string) {
   if (process.argv.includes("--yes")) return true;
@@ -23,14 +26,14 @@ async function confirm(hostname: string) {
 }
 
 async function main() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL이 설정되지 않음");
+  const url = process.env.E2E_DATABASE_URL;
+  if (!url) throw new Error("E2E_DATABASE_URL이 설정되지 않음");
 
   let hostname: string;
   try {
     hostname = new URL(url).hostname;
   } catch {
-    throw new Error("DATABASE_URL 형식이 올바르지 않음");
+    throw new Error("E2E_DATABASE_URL 형식이 올바르지 않음");
   }
   console.log(`대상 호스트: ${hostname}`);
   if (!(await confirm(hostname))) {

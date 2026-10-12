@@ -36,7 +36,7 @@
 - GitHub OAuth App 생성(로컬·Production 콜백 `/api/auth/callback/github`), `GITHUB_ID`·`GITHUB_SECRET`
 - `.env.local`과 Vercel에 `NEXTAUTH_SECRET`, `NEXTAUTH_URL`(Production 필수), `ADMIN_GITHUB_ID`, 필요 시 `ADMIN_ALLOWED_HOSTS`
 - Vercel Production·Preview에 `DATABASE_URL` (정적 생성이 빌드 시 DB 조회)
-- GitHub Actions `ci.yml`의 `pnpm build`·`pnpm test:e2e`가 `DATABASE_URL` 없이 실패. Secret 등록과 ci.yml env 주입 필요(미반영)
+- GitHub Actions Secret `E2E_DATABASE_URL`(Neon `e2e` 브랜치의 `e2e` 데이터베이스) 등록. `ci.yml`의 build·e2e 단계가 이 값을 `DATABASE_URL`로 주입하며, 미등록 시 CI 빌드 실패
 
 ## 미검증 (수동 확인 필요)
 
@@ -47,8 +47,13 @@
 
 ## 후속 항목 (백로그)
 
-- `seed-data.ts`·`seed.ts` 제거 시 `tests/e2e/real-project-data.spec.ts` 기대값 출처 대체
 - e2e에 admin 시나리오(미인증 리다이렉트, 401, noindex) 추가
 - CI에 `pnpm test`(단위 테스트) 단계 없음
 - `docs/agent-rules`의 axios `HttpStatusCode` 전제와 이 저장소의 `HttpStatus` 상수 불일치
 - CSP `script-src` 미설정
+
+## 사이클 후 사용자 결정 (2026-10-12)
+
+- `seed-data.ts`: Production DB 전체 필드 일치 확인 후 삭제. e2e는 Neon `e2e` 브랜치의 `e2e` 데이터베이스와 `tests/e2e/fixtures/portfolio.ts` fixture로 검사(`pnpm db:seed:e2e`, `pnpm test:e2e:local`)
+- 후속 사이클 대상: 썸네일 admin 파일 업로드(Vercel Blob), slug 변경 허용(리다이렉트 없음), Vercel 빌드 시 마이그레이션 자동 적용
+- 유지: Preview admin 로그인 미지원

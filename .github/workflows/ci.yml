@@ -21,5 +21,9 @@ jobs:
       - run: pnpm check
       - run: pnpm type-check
       - run: pnpm build
+        env:
+          DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
+        env:
+          DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
