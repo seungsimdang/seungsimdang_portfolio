@@ -9,6 +9,14 @@ const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const TALK_DATE_PATTERN = /^\d{4}\.(0[1-9]|1[0-2])$/;
 const THUMBNAIL_PATTERN = /^\/images\/[A-Za-z0-9._/-]+$/;
 
+// 순서 변경 요청의 slug 상한이자 프로젝트·발표 각각의 생성 개수 상한
+export const ORDER_SLUGS_MAX = LIST_MAX * 2;
+
+// 쓰기 검증과 공개 읽기 필터가 같은 규칙을 쓰도록 공유
+export function isValidThumbnail(value: string): boolean {
+  return THUMBNAIL_PATTERN.test(value) && !value.includes("..");
+}
+
 const shortText = z
   .string()
   .trim()
@@ -69,7 +77,7 @@ const thumbnail = z
   .trim()
   .max(URL_MAX, `${URL_MAX}자 이하로 입력해 주세요`)
   .refine(
-    (v) => v === "" || (THUMBNAIL_PATTERN.test(v) && !v.includes("..")),
+    (v) => v === "" || isValidThumbnail(v),
     "/images/ 로 시작하는 경로만 입력할 수 있습니다",
   )
   .optional();
@@ -150,7 +158,7 @@ export const orderInputSchema = z.strictObject({
   slugs: z
     .array(slugSchema)
     .min(1, "1개 이상 필요합니다")
-    .max(LIST_MAX * 2)
+    .max(ORDER_SLUGS_MAX)
     .refine((v) => new Set(v).size === v.length, "중복된 항목이 있습니다"),
 });
 

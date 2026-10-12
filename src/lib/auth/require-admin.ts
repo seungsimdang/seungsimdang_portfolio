@@ -17,7 +17,7 @@ export async function requireAdmin(): Promise<AdminGuardResult> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { ok: false, status: HttpStatus.Unauthorized };
   const githubId = session.user.githubId;
-  if (!isAllowedGithubId(githubId) || !githubId) {
+  if (!githubId || !isAllowedGithubId(githubId)) {
     return { ok: false, status: HttpStatus.Forbidden };
   }
   return { ok: true, githubId };

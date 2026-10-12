@@ -3,6 +3,7 @@ import { HttpStatus } from "@/constants/http-status";
 import { ApiError, apiErrors } from "@/lib/api/api-error";
 import { fail } from "@/lib/api/response";
 import {
+  LimitExceededError,
   NotFoundError,
   OrderMismatchError,
   SlugConflictError,
@@ -82,6 +83,8 @@ export function adminRoute<
       if (error instanceof NotFoundError) return fail(apiErrors.notFound());
       if (error instanceof OrderMismatchError)
         return fail(apiErrors.orderMismatch());
+      if (error instanceof LimitExceededError)
+        return fail(apiErrors.limitExceeded());
       if (error instanceof PortfolioNotSeededError)
         return fail(apiErrors.notSeeded());
       console.error(

@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { HttpStatus } from "@/constants/http-status";
 import { adminRequest } from "@/lib/admin-client/admin-request";
-import { useAdminForm } from "@/lib/admin-client/use-admin-form";
+import {
+  describeAuthFailure,
+  useAdminForm,
+} from "@/lib/admin-client/use-admin-form";
 import { validateWith } from "@/lib/admin-client/validate";
 import {
   talkCreateInputSchema,
@@ -87,7 +90,9 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
       router.push("/admin/talks?deleted=1");
       return null;
     }
-    return "삭제하지 못했습니다. 다시 시도하세요.";
+    return (
+      describeAuthFailure(result) ?? "삭제하지 못했습니다. 다시 시도하세요."
+    );
   }
 
   return (

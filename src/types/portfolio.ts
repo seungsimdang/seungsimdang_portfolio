@@ -4,6 +4,7 @@ export interface Profile {
   tagline: string;
   description: string;
   email: string;
+  // DB 컬럼은 필수이나 읽기 시 http/https가 아닌 값은 제외되어 없을 수 있음
   github?: string;
   skills: string[];
 }

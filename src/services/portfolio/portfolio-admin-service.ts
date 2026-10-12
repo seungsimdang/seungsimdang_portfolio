@@ -8,13 +8,14 @@ import {
   projects,
   techTalks,
 } from "@/db/schema/portfolio";
-import type {
-  ExperienceInput,
-  ProfileInput,
-  ProjectCreateInput,
-  ProjectUpdateInput,
-  TalkCreateInput,
-  TalkUpdateInput,
+import {
+  type ExperienceInput,
+  ORDER_SLUGS_MAX,
+  type ProfileInput,
+  type ProjectCreateInput,
+  type ProjectUpdateInput,
+  type TalkCreateInput,
+  type TalkUpdateInput,
 } from "@/schemas/portfolio.schema";
 import type { Profile, Project, TechTalk } from "@/types/portfolio";
 import {
@@ -24,9 +25,33 @@ import {
   toTalk,
 } from "./portfolio-service";
 
-export class SlugConflictError extends Error {}
-export class NotFoundError extends Error {}
-export class OrderMismatchError extends Error {}
+export class SlugConflictError extends Error {
+  constructor() {
+    super("slug 중복");
+    this.name = "SlugConflictError";
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor() {
+    super("대상 없음");
+    this.name = "NotFoundError";
+  }
+}
+
+export class OrderMismatchError extends Error {
+  constructor() {
+    super("순서 목록 불일치");
+    this.name = "OrderMismatchError";
+  }
+}
+
+export class LimitExceededError extends Error {
+  constructor() {
+    super("생성 개수 상한 초과");
+    this.name = "LimitExceededError";
+  }
+}
 
 const PG_UNIQUE_VIOLATION = "23505";
 const PG_FOREIGN_KEY_VIOLATION = "23503";
@@ -89,9 +114,17 @@ export async function updateProfile(input: ProfileInput): Promise<Profile> {
   return toProfile(row, true);
 }
 
+// 순서 변경 요청이 항상 통과하도록 생성 개수에 같은 상한을 둠
+async function assertBelowLimit(table: typeof projects | typeof techTalks) {
+  if ((await db.$count(table)) >= ORDER_SLUGS_MAX) {
+    throw new LimitExceededError();
+  }
+}
+
 export async function createProject(
   input: ProjectCreateInput,
 ): Promise<Project> {
+  await assertBelowLimit(projects);
   const id = crypto.randomUUID();
   const statements: BatchItem<"pg">[] = [
     db.insert(projects).values({
@@ -197,6 +230,7 @@ export async function reorderProjects(slugs: string[]): Promise<void> {
 }
 
 export async function createTalk(input: TalkCreateInput): Promise<TechTalk> {
+  await assertBelowLimit(techTalks);
   try {
     const [row] = await db
       .insert(techTalks)

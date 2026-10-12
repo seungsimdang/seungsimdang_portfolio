@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { HttpStatus } from "@/constants/http-status";
 import { adminRequest } from "@/lib/admin-client/admin-request";
 import { moveItem } from "@/lib/admin-client/draft";
+import { describeAuthFailure } from "@/lib/admin-client/use-admin-form";
 import { AdminButton } from "./admin-button";
 import { ConfirmDialog } from "./confirm-dialog";
 
@@ -56,10 +57,14 @@ export function SortableList({
     setItems(next);
     setBusy(true);
     setError("");
-    const result = await adminRequest("PUT", `/api/admin/${label.order}`, {
-      slugs: next.map((item) => item.slug),
-    });
-    setBusy(false);
+    let result: Awaited<ReturnType<typeof adminRequest>>;
+    try {
+      result = await adminRequest("PUT", `/api/admin/${label.order}`, {
+        slugs: next.map((item) => item.slug),
+      });
+    } finally {
+      setBusy(false);
+    }
     if (result.ok) {
       setMessage(
         `${previous[index].title}을 ${index + delta + 1}번째로 이동했습니다.`,
@@ -68,11 +73,10 @@ export function SortableList({
     }
     setItems(previous);
     setError(
-      result.status === HttpStatus.Unauthorized
-        ? "세션이 만료되었습니다. 다시 로그인하세요."
-        : result.code === "ORDER_MISMATCH"
+      describeAuthFailure(result) ??
+        (result.code === "ORDER_MISMATCH"
           ? "다른 곳에서 목록이 변경되었습니다. 새로고침한 뒤 다시 시도하세요."
-          : "순서를 저장하지 못했습니다. 잠시 후 다시 시도하세요.",
+          : "순서를 저장하지 못했습니다. 잠시 후 다시 시도하세요."),
     );
   }
 
@@ -88,9 +92,9 @@ export function SortableList({
       headingRef.current?.focus();
       return null;
     }
-    return result.status === HttpStatus.Unauthorized
-      ? "세션이 만료되었습니다. 다시 로그인하세요."
-      : "삭제하지 못했습니다. 다시 시도하세요.";
+    return (
+      describeAuthFailure(result) ?? "삭제하지 못했습니다. 다시 시도하세요."
+    );
   }
 
   if (items.length === 0) {

@@ -13,10 +13,27 @@ export interface Notice {
 }
 
 const SAVE_FAILED = "저장하지 못했습니다. 잠시 후 다시 시도하세요.";
+const SAVED_MESSAGE = "저장했습니다. 공개 페이지에 반영되었습니다.";
+const SESSION_EXPIRED = "세션이 만료되었습니다. 다시 로그인하세요.";
+const FORBIDDEN_MESSAGE = "권한이 없습니다.";
+const FORBIDDEN_ORIGIN_MESSAGE = "요청 출처가 허용되지 않습니다.";
+
+type AdminFailure = Extract<AdminResult<unknown>, { ok: false }>;
+
+// 목록 순서 변경과 삭제처럼 알림 구조가 필요 없는 경로의 401/403 문구
+export function describeAuthFailure(result: AdminFailure): string | null {
+  if (result.status === HttpStatus.Unauthorized) return SESSION_EXPIRED;
+  if (result.status === HttpStatus.Forbidden) {
+    return result.code === "FORBIDDEN_ORIGIN"
+      ? FORBIDDEN_ORIGIN_MESSAGE
+      : FORBIDDEN_MESSAGE;
+  }
+  return null;
+}
 
 // 저장 실패 응답을 화면용 알림과 필드 오류로 변환
 function describeFailure(
-  result: Extract<AdminResult<unknown>, { ok: false }>,
+  result: AdminFailure,
   listHref: string,
 ): { notice: Notice; fieldErrors: Record<string, string> } {
   const fieldErrors = { ...result.fieldErrors };
@@ -35,8 +52,14 @@ function describeFailure(
     };
   }
   if (result.status === HttpStatus.Forbidden) {
+    // 출처 거부는 계정 문제가 아니므로 로그아웃을 유도하지 않음
+    const originDenied = result.code === "FORBIDDEN_ORIGIN";
     return {
-      notice: { tone: "error", message: "권한이 없습니다.", signOut: true },
+      notice: {
+        tone: "error",
+        message: originDenied ? FORBIDDEN_ORIGIN_MESSAGE : FORBIDDEN_MESSAGE,
+        signOut: !originDenied,
+      },
       fieldErrors,
     };
   }
@@ -56,6 +79,15 @@ function describeFailure(
         tone: "error",
         message:
           "포트폴리오 데이터가 초기화되지 않았습니다. seed 실행 후 다시 시도하세요.",
+      },
+      fieldErrors,
+    };
+  }
+  if (result.code === "LIMIT_EXCEEDED") {
+    return {
+      notice: {
+        tone: "error",
+        message: "더 만들 수 없습니다. 기존 항목을 삭제한 뒤 다시 시도하세요.",
       },
       fieldErrors,
     };
@@ -215,5 +247,3 @@ export function useAdminForm<D, I, R>({
     submit,
   };
 }
-
-const SAVED_MESSAGE = "저장했습니다. 공개 페이지에 반영되었습니다.";

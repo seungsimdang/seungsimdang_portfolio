@@ -8,6 +8,7 @@ import {
   projects,
   techTalks,
 } from "@/db/schema/portfolio";
+import { isValidThumbnail } from "@/schemas/portfolio.schema";
 import type { Experience, Profile, Project, TechTalk } from "@/types/portfolio";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -37,6 +38,15 @@ function safeHttpUrl(
   } catch {
     return undefined;
   }
+}
+
+// 쓰기 스키마와 같은 /images/ 경로 규칙을 읽기 시점에도 적용함
+function safeThumbnail(
+  thumbnail: string | null | undefined,
+  raw: boolean,
+): string | undefined {
+  if (!thumbnail) return undefined;
+  return raw || isValidThumbnail(thumbnail) ? thumbnail : undefined;
 }
 
 function toExperience(row: ExperienceRow, raw: boolean): Experience {
@@ -71,7 +81,7 @@ function toProject(
     techStack: row.techStack,
     summary: row.summary,
     link: safeHttpUrl(row.link, raw),
-    thumbnail: row.thumbnail ?? undefined,
+    thumbnail: safeThumbnail(row.thumbnail, raw),
     experiences: rows.map((e) => toExperience(e, raw)),
   };
 }

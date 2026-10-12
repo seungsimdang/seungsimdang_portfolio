@@ -43,6 +43,12 @@ export const apiErrors = {
       HttpStatus.Conflict,
       "목록이 변경되었습니다. 새로고침 후 다시 시도해 주세요",
     ),
+  limitExceeded: () =>
+    new ApiError(
+      "LIMIT_EXCEEDED",
+      HttpStatus.Conflict,
+      "더 이상 만들 수 없습니다. 기존 항목을 삭제한 뒤 다시 시도해 주세요",
+    ),
   notSeeded: () =>
     new ApiError(
       "NOT_SEEDED",
