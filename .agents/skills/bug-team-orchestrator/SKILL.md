@@ -37,10 +37,10 @@ Bug Reporter, Bug Localizer, Bug Fixer, Postmortem Agent로 구성된 Bug Team�
 
 | 팀원 | Agent 파일 | 역할 |
 |------|-----------|------|
-| bug-reporter | `.Codex/agents/bug-reporter.md` | 중복 확인, 심각도 분류, 티켓 생성 |
-| bug-localizer | `.Codex/agents/bug-localizer.md` | 결함 위치 탐지, 근본 원인 분석 |
-| bug-fixer | `.Codex/agents/bug-fixer.md` | 근본 원인 기반 코드 수정, 수정 요약 작성 |
-| postmortem-agent | `.Codex/agents/postmortem-agent.md` | 패턴 분석, 재발 방지, 피드백 생성 |
+| bug-reporter | `.codex/agents/bug-reporter.toml` | 중복 확인, 심각도 분류, 티켓 생성 |
+| bug-localizer | `.codex/agents/bug-localizer.toml` | 결함 위치 탐지, 근본 원인 분석 |
+| bug-fixer | `.codex/agents/bug-fixer.toml` | 근본 원인 기반 코드 수정, 수정 요약 작성 |
+| postmortem-agent | `.codex/agents/postmortem-agent.toml` | 패턴 분석, 재발 방지, 피드백 생성 |
 
 ## Task 등록 계약
 
@@ -61,11 +61,11 @@ Bug Reporter, Bug Localizer, Bug Fixer, Postmortem Agent로 구성된 Bug Team�
 5. T02(bug-localizer): 티켓을 받아 코드베이스를 탐색하고 결함 위치를 저장한다.
 6. `TaskGet`으로 T02 완료를 확인한 뒤 T03를 시작한다.
 7. T03(bug-fixer): `localize-{id}.md`의 수정 방향을 기반으로 실제 코드를 수정한다.
-   - **T03 시작 전 orchestrator는 `.Codex/rules/git-safety.md`의 사전 확인(`git branch -a`, `git worktree list`)을 거친다.** 처리 중인 버그가 하나뿐이어도, 저장소에 다른 브랜치/worktree 흔적이 있으면 orchestrator는 bug-fixer를 `Agent(subagent_type: "bug-fixer", isolation: "worktree", name: "bug-fix-{id}", ...)`로 스폰해 자신만의 worktree에서 작업하게 한다. bug-fixer subagent는 `EnterWorktree`를 직접 호출하지 않는다(관리형/child 세션에서 실패). 여러 버그를 동시에 처리해 T03이 병렬 실행되는 경우도 예외 없이 이 규칙을 따르며, 동일 파일을 수정 대상으로 하는 버그끼리는 순차 실행한다.
-   - 격리 worktree는 `origin/HEAD`에서 분기되므로, 미푸시 산출물이 필요하면 `.Codex/settings.json`의 `worktree.baseRef: "head"` 설정 여부를 먼저 확인한다(없으면 커밋 후 push).
+   - **T03 시작 전 orchestrator는 `docs/agent-rules/git-safety.md`의 사전 확인(`git branch -a`, `git worktree list`)을 거친다.** 처리 중인 버그가 하나뿐이어도, 저장소에 다른 브랜치/worktree 흔적이 있으면 orchestrator는 bug-fixer를 `Agent(subagent_type: "bug-fixer", isolation: "worktree", name: "bug-fix-{id}", ...)`로 스폰해 자신만의 worktree에서 작업하게 한다. bug-fixer subagent는 `EnterWorktree`를 직접 호출하지 않는다(관리형/child 세션에서 실패). 여러 버그를 동시에 처리해 T03이 병렬 실행되는 경우도 예외 없이 이 규칙을 따르며, 동일 파일을 수정 대상으로 하는 버그끼리는 순차 실행한다.
+   - 격리 worktree는 `origin/HEAD`에서 분기되므로, 미푸시 산출물이 필요하면 먼저 커밋 후 push한다(Codex에는 Claude의 `worktree.baseRef` 설정이 없다).
    - 수정 범위가 예상보다 크거나 판단이 필요하면 orchestrator에게 알리고 사람 확인을 받는다.
    - 빌드·타입 검증을 실행하고 결과를 `fix-{id}.md`에 기록한다. 커밋은 하지 않는다 - orchestrator가 병합·커밋한다.
-   - worktree에서 작업한 경우 orchestrator가 그 worktree의 브랜치를 작업 브랜치로 병합한 뒤, fixer의 완료 보고를 그대로 믿지 말고 직접 `git status`/`git diff`와 `pnpm type-check`, `pnpm exec vitest run`으로 재검증한다. 실패 시 "무관해 보인다"로 넘기지 않고 근본 원인을 확인한다(에러 경로에 `.Codex/worktrees/`가 보이면 정리 안 된 다른 worktree의 오염 여부부터 확인). 재검증 후 `git worktree remove`로 정리한다(변경이 없던 worktree는 Codex가 자동 정리).
+   - worktree에서 작업한 경우 orchestrator가 그 worktree의 브랜치를 작업 브랜치로 병합한 뒤, fixer의 완료 보고를 그대로 믿지 말고 직접 `git status`/`git diff`와 `pnpm type-check`, `pnpm exec vitest run`으로 재검증한다. 실패 시 "무관해 보인다"로 넘기지 않고 근본 원인을 확인한다(에러 경로에 `.codex/worktrees/`가 보이면 정리 안 된 다른 worktree의 오염 여부부터 확인). 재검증 후 `git worktree remove`로 정리한다(변경이 없던 worktree는 Codex가 자동 정리).
 8. `TaskGet`으로 T03 완료를 확인한 뒤 T04를 시작한다.
 9. T04(postmortem-agent): 티켓, 결함 분석, 수정 요약을 읽고 포스트모텀을 작성한다.
    - 이전 포스트모텀에서 유사 패턴이 있는지 확인한다.
@@ -87,9 +87,9 @@ Bug Reporter, Bug Localizer, Bug Fixer, Postmortem Agent로 구성된 Bug Team�
 - T03에서 빌드·타입 검증 실패 시: 실패 원인을 분석하고 재수정 1회 시도 → 해결 불가 시 사용자 보고.
 - 팀원 1명 실패 시: `SendMessage`로 원인 파악 → 1회 재시도 → 실패 시 사용자 보고.
 - Critical 버그 발견 시: 즉시 orchestrator에게 알리고 사용자에게 심각도와 영향 범위를 보고한다.
-- 여러 버그를 동시에 처리해 T03-fix가 병렬 실행될 때: orchestrator가 각 fixer를 `Agent(... isolation: "worktree" ...)`로 격리 스폰하고, 동일 파일을 수정 대상으로 하는 버그끼리는 순차 실행한다. **이때 `Agent` 호출을 같은 메시지에 묶지 말고 별도 메시지로 하나씩 디스패치한다** - 같은 base 브랜치로 동시에 여러 `isolation: "worktree"` 호출을 보내면 `git worktree add` 경합으로 한쪽이 메인 체크아웃에서 조용히 작업하도록 폴백될 수 있다(`.Codex/rules/git-safety.md` 참고). 각 호출은 즉시 반환되므로 나눠 보내도 이후 fixer들은 그대로 병렬로 작업하며, 스폰 직후 `git worktree list`/`git branch --show-current`로 각 worktree가 기대한 커밋에서 분기됐는지 확인한다. 병렬 실행 후 orchestrator는 각 worktree 브랜치를 작업 브랜치로 병합하며, 병합 충돌 시 임의로 한쪽을 선택하지 않고 충돌 파일과 각 변경을 사람에게 보고한다. 병합 후에는 각 fixer의 자기 보고를 그대로 믿지 말고 직접 `git status`/`git diff`와 `pnpm type-check`, `pnpm exec vitest run`으로 재검증한다.
+- 여러 버그를 동시에 처리해 T03-fix가 병렬 실행될 때: orchestrator가 각 fixer를 `Agent(... isolation: "worktree" ...)`로 격리 스폰하고, 동일 파일을 수정 대상으로 하는 버그끼리는 순차 실행한다. **이때 `Agent` 호출을 같은 메시지에 묶지 말고 별도 메시지로 하나씩 디스패치한다** - 같은 base 브랜치로 동시에 여러 `isolation: "worktree"` 호출을 보내면 `git worktree add` 경합으로 한쪽이 메인 체크아웃에서 조용히 작업하도록 폴백될 수 있다(`docs/agent-rules/git-safety.md` 참고). 각 호출은 즉시 반환되므로 나눠 보내도 이후 fixer들은 그대로 병렬로 작업하며, 스폰 직후 `git worktree list`/`git branch --show-current`로 각 worktree가 기대한 커밋에서 분기됐는지 확인한다. 병렬 실행 후 orchestrator는 각 worktree 브랜치를 작업 브랜치로 병합하며, 병합 충돌 시 임의로 한쪽을 선택하지 않고 충돌 파일과 각 변경을 사람에게 보고한다. 병합 후에는 각 fixer의 자기 보고를 그대로 믿지 말고 직접 `git status`/`git diff`와 `pnpm type-check`, `pnpm exec vitest run`으로 재검증한다.
 
-orchestrator도 T03-fix 지시 전 `.Codex/rules/git-safety.md`를 Read로 확인하고, 병렬 실행 지시문에 worktree 격리 수칙을 명시적으로 포함한다.
+orchestrator도 T03-fix 지시 전 `docs/agent-rules/git-safety.md`를 Read로 확인하고, 병렬 실행 지시문에 worktree 격리 수칙을 명시적으로 포함한다.
 
 
 ## 산출물 계약
