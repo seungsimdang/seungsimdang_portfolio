@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
-import { profileData } from "@/constants/portfolio-data";
+import { getProfile } from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
   title: "about",
   alternates: { canonical: "/about" },
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const profile = await getProfile();
   return (
     <div className="w-full min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -18,7 +19,7 @@ export default function AboutPage() {
       <section className="w-full max-w-content mx-auto container-padding">
         <div className="flex justify-center">
           <p className="text-h2 text-center w-full md:w-3/4 whitespace-pre-line break-keep">
-            {profileData.tagline}
+            {profile.tagline}
           </p>
         </div>
       </section>
@@ -30,7 +31,7 @@ export default function AboutPage() {
             <h2 className="text-small whitespace-nowrap">.hello</h2>
             <div className="flex-1 h-px bg-white/25" />
           </div>
-          <p className="text-h3 break-keep">{profileData.description}</p>
+          <p className="text-h3 break-keep">{profile.description}</p>
           <div className="flex justify-end pt-32">
             <div className="w-36 h-36 opacity-50">
               <svg
@@ -55,7 +56,7 @@ export default function AboutPage() {
           </div>
 
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-32 md:gap-48">
-            {profileData.skills.map((skill) => (
+            {profile.skills.map((skill) => (
               <li
                 key={skill}
                 className="flex items-center justify-center p-32 border border-white/10 rounded-lg hover:border-white/30 transition-colors"

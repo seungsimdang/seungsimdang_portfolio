@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { profileData } from "@/constants/portfolio-data";
 
 function isActive(pathname: string, href: string) {
   if (href === "/projects") {
@@ -11,7 +10,7 @@ function isActive(pathname: string, href: string) {
   return pathname === href;
 }
 
-export function Navbar() {
+export function Navbar({ name }: { name: string }) {
   const pathname = usePathname();
 
   const links = [
@@ -30,7 +29,7 @@ export function Navbar() {
             href="/"
             className="text-xl font-medium whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity"
           >
-            {profileData.name}
+            {name}
           </Link>
 
           <div className="flex items-center gap-16 md:gap-48">

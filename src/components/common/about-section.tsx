@@ -1,9 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { profileData } from "@/constants/portfolio-data";
+import type { Profile } from "@/types/portfolio";
 
-export function AboutSection() {
+interface AboutSectionProps {
+  profile: Pick<Profile, "description">;
+}
+
+export function AboutSection({ profile }: AboutSectionProps) {
   return (
     <section className="w-full max-w-content mx-auto container-padding section-spacing">
       <div className="flex flex-col gap-48 md:gap-64 lg:gap-96">
@@ -12,7 +16,7 @@ export function AboutSection() {
             <h2 className="text-small whitespace-nowrap">.about</h2>
             <div className="flex-1 h-px bg-white/25" />
           </div>
-          <p className="text-h3 break-keep">{profileData.description}</p>
+          <p className="text-h3 break-keep">{profile.description}</p>
           <div className="flex justify-end">
             <div className="w-36 h-36 opacity-50">
               <svg

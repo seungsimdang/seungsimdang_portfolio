@@ -1,4 +1,35 @@
-import type { Project, TechTalk } from "@/types/portfolio";
+// seed 전용 원본 데이터, id는 DB의 slug로 저장됨
+interface SeedExperience {
+  title: string;
+  problem: string;
+  solution: string;
+  tradeoff: { advantages: string; disadvantages: string; rationale: string };
+  result: string;
+  learning: string;
+  links?: { label: string; url: string }[];
+}
+
+interface SeedProject {
+  id: string;
+  title: string;
+  period: string;
+  role: string;
+  techStack: string[];
+  summary: string;
+  link?: string;
+  thumbnail?: string;
+  experiences: SeedExperience[];
+}
+
+interface SeedTalk {
+  id: string;
+  title: string;
+  date: string;
+  venue: string;
+  description: string;
+  impact: string;
+  link: string;
+}
 
 export const profileData = {
   name: "이승현",
@@ -22,7 +53,7 @@ export const profileData = {
   ],
 };
 
-export const projects: Project[] = [
+export const projects: SeedProject[] = [
   {
     id: "globber",
     title: "Globber",
@@ -282,7 +313,7 @@ export const projects: Project[] = [
   },
 ];
 
-export const techTalks: TechTalk[] = [
+export const techTalks: SeedTalk[] = [
   {
     id: "mcp-llm-talk",
     title: "MCP + LLM은 프론트 개발을 대체할 수 있는가?",

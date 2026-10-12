@@ -1,9 +1,5 @@
 import { expect, test } from "@playwright/test";
-import {
-  profileData,
-  projects,
-  techTalks,
-} from "../../src/constants/portfolio-data";
+import { profileData, projects, techTalks } from "../../src/db/seed-data";
 
 const siteSuffix = profileData.name;
 

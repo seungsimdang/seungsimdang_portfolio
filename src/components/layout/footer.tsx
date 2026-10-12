@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { profileData } from "@/constants/portfolio-data";
+import type { Profile } from "@/types/portfolio";
 
-export function Footer() {
+interface FooterProps {
+  profile: Pick<Profile, "name" | "title" | "github" | "email">;
+}
+
+export function Footer({ profile }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    { name: "GitHub", href: profileData.github, external: true },
-    { name: "Email", href: `mailto:${profileData.email}`, external: false },
+    { name: "GitHub", href: profile.github, external: true },
+    { name: "Email", href: `mailto:${profile.email}`, external: false },
   ];
 
   const navLinks = [
@@ -24,8 +28,8 @@ export function Footer() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-48 md:gap-64">
         {/* Brand */}
         <div className="space-y-16">
-          <h3 className="text-2xl font-medium">{profileData.name}</h3>
-          <p className="text-small opacity-50">{profileData.title}</p>
+          <h3 className="text-2xl font-medium">{profile.name}</h3>
+          <p className="text-small opacity-50">{profile.title}</p>
         </div>
 
         {/* Navigation */}
@@ -69,7 +73,7 @@ export function Footer() {
 
       <div className="mt-64 pt-32 border-t border-white/10">
         <p className="text-small opacity-50 text-center">
-          © {currentYear} {profileData.name}. All rights reserved.
+          © {currentYear} {profile.name}. All rights reserved.
         </p>
       </div>
     </footer>

@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { TalkPreview } from "@/components/common/talk-preview";
 import { Button } from "@/components/ui/button";
-import { techTalks } from "@/constants/portfolio-data";
+import { listTechTalks } from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
   title: "talks",
   alternates: { canonical: "/blog" },
 };
 
-export default function TalkPage() {
+export default async function TalkPage() {
+  const techTalks = await listTechTalks();
   return (
     <div className="w-full min-h-screen bg-black text-white">
       {/* Hero Section */}

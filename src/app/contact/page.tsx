@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
-import { profileData } from "@/constants/portfolio-data";
+import { getProfile } from "@/services/portfolio/portfolio-service";
 
 const cardClassName =
   "group flex items-center justify-between gap-16 p-24 border border-white/10 rounded-lg hover:border-white/30 transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-white";
@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact" },
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const profile = await getProfile();
   return (
     <div className="w-full min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -30,11 +31,11 @@ export default function ContactPage() {
         <div className="space-y-48">
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-32">
             <li>
-              <a href={`mailto:${profileData.email}`} className={cardClassName}>
+              <a href={`mailto:${profile.email}`} className={cardClassName}>
                 <div className="space-y-4 min-w-0">
                   <p className="text-small opacity-50">email</p>
                   <p className="text-lg md:text-2xl break-all group-hover:opacity-70 transition-opacity">
-                    {profileData.email}
+                    {profile.email}
                   </p>
                 </div>
                 <span aria-hidden="true" className="opacity-50">
@@ -44,7 +45,7 @@ export default function ContactPage() {
             </li>
             <li>
               <a
-                href={profileData.github}
+                href={profile.github}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cardClassName}
@@ -52,7 +53,7 @@ export default function ContactPage() {
                 <div className="space-y-4 min-w-0">
                   <p className="text-small opacity-50">github</p>
                   <p className="text-lg md:text-2xl break-all group-hover:opacity-70 transition-opacity">
-                    {profileData.github.replace("https://", "")}
+                    {profile.github.replace("https://", "")}
                   </p>
                 </div>
                 <span aria-hidden="true" className="opacity-50">
