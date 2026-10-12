@@ -28,7 +28,7 @@ export default async function AdminTalksPage({ searchParams }: TalksPageProps) {
       </AdminPageHeader>
       <SortableList
         kind="talks"
-        initialMessage={deleted ? `${deleted}을 삭제했습니다.` : ""}
+        initialMessage={deleted ? "삭제했습니다." : ""}
         items={talks.map((talk) => ({
           slug: talk.slug,
           title: talk.title,

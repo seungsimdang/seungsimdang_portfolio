@@ -43,6 +43,12 @@ export const apiErrors = {
       HttpStatus.Conflict,
       "목록이 변경되었습니다. 새로고침 후 다시 시도해 주세요",
     ),
+  notSeeded: () =>
+    new ApiError(
+      "NOT_SEEDED",
+      HttpStatus.Conflict,
+      "포트폴리오 데이터가 아직 초기화되지 않았습니다",
+    ),
   internal: () =>
     new ApiError(
       "INTERNAL_ERROR",

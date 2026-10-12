@@ -11,6 +11,7 @@ export type ApiErrorCode =
   | "NOT_FOUND"
   | "SLUG_CONFLICT"
   | "ORDER_MISMATCH"
+  | "NOT_SEEDED"
   | "PAYLOAD_TOO_LARGE"
   | "UNSUPPORTED_MEDIA_TYPE"
   | "INTERNAL_ERROR";

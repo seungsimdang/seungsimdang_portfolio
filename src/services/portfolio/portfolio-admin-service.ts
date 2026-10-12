@@ -178,6 +178,8 @@ export async function deleteProject(slug: string): Promise<void> {
 }
 
 // 요청 slug 목록이 현재 전체 집합과 정확히 일치할 때만 순번 재배정
+// 일치 확인 SELECT와 batch UPDATE 사이에 다른 요청이 목록을 바꾸면 순번이 어긋날 수 있는 한계가 있음
+// 편집자가 한 명인 운영 전제로 별도 락이나 트랜잭션 격리는 두지 않음
 export async function reorderProjects(slugs: string[]): Promise<void> {
   const current = await db.select({ slug: projects.slug }).from(projects);
   assertSameSet(
@@ -234,6 +236,8 @@ export async function deleteTalk(slug: string): Promise<void> {
   if (rows.length === 0) throw new NotFoundError();
 }
 
+// 일치 확인 SELECT와 batch UPDATE 사이에 다른 요청이 목록을 바꾸면 순번이 어긋날 수 있는 한계가 있음
+// 편집자가 한 명인 운영 전제로 별도 락이나 트랜잭션 격리는 두지 않음
 export async function reorderTalks(slugs: string[]): Promise<void> {
   const current = await db.select({ slug: techTalks.slug }).from(techTalks);
   assertSameSet(

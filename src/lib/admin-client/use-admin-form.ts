@@ -50,6 +50,16 @@ function describeFailure(
       fieldErrors,
     };
   }
+  if (result.code === "NOT_SEEDED") {
+    return {
+      notice: {
+        tone: "error",
+        message:
+          "포트폴리오 데이터가 초기화되지 않았습니다. seed 실행 후 다시 시도하세요.",
+      },
+      fieldErrors,
+    };
+  }
   if (result.code === "SLUG_CONFLICT") {
     fieldErrors.slug = "이미 사용 중인 slug입니다.";
     return {
@@ -121,8 +131,23 @@ export function useAdminForm<D, I, R>({
     if (!dirty) return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
     const onClick = (event: MouseEvent) => {
+      // 뒤로가기와 router.push 이동은 click 이벤트가 없어 보호하지 못하는 한계가 있음
+      if (
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
       const anchor = (event.target as Element).closest("a[href]");
-      if (!anchor || anchor.getAttribute("target") === "_blank") return;
+      if (
+        !anchor ||
+        anchor.getAttribute("target") === "_blank" ||
+        anchor.hasAttribute("download") ||
+        anchor.getAttribute("href")?.startsWith("#")
+      )
+        return;
       if (
         !window.confirm("저장하지 않은 변경 사항이 사라집니다. 이동할까요?")
       ) {

@@ -23,7 +23,19 @@ type ProjectRow = typeof projects.$inferSelect;
 type ExperienceRow = typeof experiences.$inferSelect;
 type TalkRow = typeof techTalks.$inferSelect;
 
+// 읽기 시점에도 http/https 스킴만 통과시키고 그 외는 제외함
+function safeHttpUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const { protocol } = new URL(url);
+    return protocol === "http:" || protocol === "https:" ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function toExperience(row: ExperienceRow): Experience {
+  const links = row.links.filter((l) => safeHttpUrl(l.url));
   return {
     id: row.id,
     title: row.title,
@@ -36,7 +48,7 @@ function toExperience(row: ExperienceRow): Experience {
     },
     result: row.result,
     learning: row.learning,
-    links: row.links.length > 0 ? row.links : undefined,
+    links: links.length > 0 ? links : undefined,
   };
 }
 
@@ -49,7 +61,7 @@ function toProject(row: ProjectRow, rows: ExperienceRow[]): Project {
     role: row.role,
     techStack: row.techStack,
     summary: row.summary,
-    link: row.link ?? undefined,
+    link: safeHttpUrl(row.link),
     thumbnail: row.thumbnail ?? undefined,
     experiences: rows.map(toExperience),
   };
@@ -64,7 +76,7 @@ export function toTalk(row: TalkRow): TechTalk {
     venue: row.venue,
     description: row.description,
     impact: row.impact,
-    link: row.link,
+    link: safeHttpUrl(row.link),
   };
 }
 

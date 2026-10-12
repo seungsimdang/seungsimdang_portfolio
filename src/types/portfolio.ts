@@ -58,5 +58,5 @@ export interface TechTalk {
   venue: string;
   description: string;
   impact: string;
-  link: string;
+  link?: string;
 }

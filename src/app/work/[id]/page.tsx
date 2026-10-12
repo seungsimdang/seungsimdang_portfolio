@@ -18,13 +18,8 @@ interface WorkPageProps {
 const bodyClassName =
   "text-body whitespace-pre-line break-keep break-words min-w-0";
 
-// DB 조회 실패로 빌드가 깨지지 않도록 빈 목록으로 대체하고 미생성 slug는 첫 방문 시 렌더함
 export async function generateStaticParams() {
-  try {
-    return (await listProjectSlugs()).map((id) => ({ id }));
-  } catch {
-    return [];
-  }
+  return (await listProjectSlugs()).map((id) => ({ id }));
 }
 
 export async function generateMetadata({

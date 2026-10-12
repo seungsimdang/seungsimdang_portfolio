@@ -30,7 +30,7 @@ export default async function AdminProjectsPage({
       </AdminPageHeader>
       <SortableList
         kind="projects"
-        initialMessage={deleted ? `${deleted}을 삭제했습니다.` : ""}
+        initialMessage={deleted ? "삭제했습니다." : ""}
         items={projects.map((project) => ({
           slug: project.slug,
           title: project.title,

@@ -7,6 +7,7 @@ import {
   OrderMismatchError,
   SlugConflictError,
 } from "@/services/portfolio/portfolio-admin-service";
+import { PortfolioNotSeededError } from "@/services/portfolio/portfolio-service";
 import { requireAdmin } from "./require-admin";
 
 interface AdminRouteContext<P> {
@@ -20,9 +21,11 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 function isSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
-  const host =
-    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
   try {
+    // 프록시가 덧붙일 수 있는 x-forwarded-host는 신뢰하지 않고 고정 설정값 또는 host 헤더와만 비교함
+    const host = process.env.NEXTAUTH_URL
+      ? new URL(process.env.NEXTAUTH_URL).host
+      : request.headers.get("host");
     return new URL(origin).host === host;
   } catch {
     return false;
@@ -61,6 +64,8 @@ export function adminRoute<
       if (error instanceof NotFoundError) return fail(apiErrors.notFound());
       if (error instanceof OrderMismatchError)
         return fail(apiErrors.orderMismatch());
+      if (error instanceof PortfolioNotSeededError)
+        return fail(apiErrors.notSeeded());
       console.error(
         "admin route error:",
         error instanceof Error ? `${error.name}: ${error.message}` : "unknown",

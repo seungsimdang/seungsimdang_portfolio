@@ -84,7 +84,7 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
       `/api/admin/talks/${talk.slug}`,
     );
     if (result.ok || result.status === HttpStatus.NotFound) {
-      router.push(`/admin/talks?deleted=${encodeURIComponent(talk.title)}`);
+      router.push("/admin/talks?deleted=1");
       return null;
     }
     return "삭제하지 못했습니다. 다시 시도하세요.";

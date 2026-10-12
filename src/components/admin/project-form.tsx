@@ -119,9 +119,7 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
       `/api/admin/projects/${project.slug}`,
     );
     if (result.ok || result.status === HttpStatus.NotFound) {
-      router.push(
-        `/admin/projects?deleted=${encodeURIComponent(project.title)}`,
-      );
+      router.push("/admin/projects?deleted=1");
       return null;
     }
     return "삭제하지 못했습니다. 다시 시도하세요.";
