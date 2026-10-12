@@ -14,17 +14,29 @@ description: >
 ## 목차
 
 - [목적](#목적)
+- [실행 모드](#실행-모드)
 - [실행 모드 확인](#실행-모드-확인)
 - [Agent Team 구성](#agent-team-구성)
 - [Task 등록 계약](#task-등록-계약)
 - [Agent Team 실행 흐름](#agent-team-실행-흐름)
 - [데이터 전달](#데이터-전달)
+- [하이브리드 전환](#하이브리드-전환)
 - [실패 처리](#실패-처리)
 - [산출물 계약](#산출물-계약)
+- [테스트 프롬프트](#테스트-프롬프트)
 
 ## 목적
 
 Bug Reporter, Bug Localizer, Bug Fixer, Postmortem Agent로 구성된 Bug Team을 조율하여 버그 설명 수신부터 구조화된 리포트, 결함 위치 분석, 코드 수정, 재발 방지 포스트모텀까지 완료한다.
+
+## 실행 모드
+
+Hybrid. 티켓·원인 분석·포스트모텀은 Agent Team으로 진행하고, 코드를 수정하는 T03은 저장소에 다른 브랜치·worktree 흔적이 있으면 `Agent(isolation: "worktree")`로 격리한 Subagent로 실행한다.
+
+| Task | 실행 모드 | 진행 상태 | 결과 전달 |
+| --- | --- | --- | --- |
+| T01, T02, T04 | Agent Team | `TaskUpdate` / `TaskGet` | `SendMessage` + `artifacts/bug-team/` 파일 |
+| T03 | Subagent (다른 작업 흔적이 있으면 worktree 격리) | orchestrator가 `TaskUpdate`로 대리 갱신 | 반환값 + 수정 요약 파일, 병합 후 재검증 |
 
 ## 실행 모드 확인
 
@@ -77,6 +89,12 @@ Bug Reporter, Bug Localizer, Bug Fixer, Postmortem Agent로 구성된 Bug Team�
 - 발견 공유: `SendMessage`
 - 산출물: `artifacts/bug-team/` 파일
 
+## 하이브리드 전환
+
+- 팀 Task에서 T03 Subagent로 넘어갈 때 팀은 유지하고, 입력은 `artifacts/bug-team/` 파일 경로로 전달한다. Subagent 반환값만 믿지 않고 병합 후 재검증 결과로 판단한다.
+- Subagent가 끝나면 orchestrator가 해당 Task를 `TaskUpdate`로 완료 처리한 뒤 T04 팀원을 시작시킨다.
+- 다른 팀 구성이 필요해지면 `artifacts/bug-team/handoff.md`에 현재 상태를 남기고 `TeamDelete` 후 새 `TeamCreate`를 한다. 팀을 중첩하지 않는다.
+
 ## 실패 처리
 
 - **승인 게이트 원칙**: 이 스킬에는 T03(코드 수정) 진입 전 일반적인 사용자 승인 게이트가 없다. 아래에 명시된 경우(수정 방향 불명확, 빌드/검증 실패, Critical 버그)에만 사용자에게 확인한다. 근본 원인이 코드로 확정되고 수정 방향이 명확하면 T02 완료 직후 바로 T03으로 진행한다 - task-team-orchestrator의 T02(요구사항) 승인 게이트를 이 스킬에 유추 적용하지 않는다.
@@ -101,3 +119,13 @@ artifacts/bug-team/
   fix-{id}.md          ← bug-fixer
   postmortem-{id}.md   ← postmortem-agent
 ```
+
+## 테스트 프롬프트
+
+| 유형 | 프롬프트 | 기대 결과 |
+| --- | --- | --- |
+| 정상 | "모바일에서 프로젝트 카드 제목이 잘려" | 티켓 작성, 재현 정보가 부족하면 빠진 정보를 질문 |
+| 애매함 | "뭔가 이상해" | 화면·증상·환경을 묻고 티켓을 만들지 않음 |
+| 부분 재실행 | "포스트모텀만 다시 해줘" | 기존 티켓·분석·수정 요약을 읽고 T04만 실행 |
+| 실패 위험 | "원인은 대충 짐작되니까 바로 고쳐" | T02 원인 분석을 생략하지 않고 수정 방향을 근거와 함께 제시 |
+| 부정 | "blog 페이지에 태그 필터 추가해줘" | 이 Skill을 쓰지 않고 task-team-orchestrator로 보냄 |

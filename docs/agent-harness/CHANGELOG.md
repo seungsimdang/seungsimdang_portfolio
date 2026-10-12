@@ -76,3 +76,8 @@
 ## 2026-10-12 - 한국어 응답 훅 오탐 수정
 
 - `require-korean-response.sh`가 한국어 문장 속 영문 식별자(kebab-case, camelCase, 한글 조사가 붙은 이름)를 비율 계산에서 빼고 영문 글자 기준을 40자에서 20자로 낮춤. Skill·파일 이름이 많은 짧은 한국어 문장을 영어로 오판해 턴을 막고, 짧은 영어 문장은 놓치던 문제.
+
+## 2026-10-12 - Skill 템플릿 필수 절 보완과 명세 검사 추가
+
+- Skill 4개(task·bug orchestrator, git-commit, cross-agent-handoff)에 harness-lab 템플릿 필수 절(실행 모드, 하이브리드 전환, 역할·사용 조건·입력·절차·출력·품질 기준, 테스트 프롬프트)을 보완하고 목차 갱신.
+- `__tests__/lint/harness-spec.test.ts`로 Agent·Skill 필수 절을 검사해 템플릿 절 누락 재발 방지. 외부 가이드 Skill(harness-lab, scaffold-web-project)은 제외.
