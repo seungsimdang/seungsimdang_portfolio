@@ -114,19 +114,38 @@ export async function updateProfile(input: ProfileInput): Promise<Profile> {
   return toProfile(row, true);
 }
 
+const PG_DIVISION_BY_ZERO = "22012";
+const PROJECTS_LOCK_KEY = 7_301_001;
+const TALKS_LOCK_KEY = 7_301_002;
+
 // 순서 변경 요청이 항상 통과하도록 생성 개수에 같은 상한을 둠
-async function assertBelowLimit(table: typeof projects | typeof techTalks) {
-  if ((await db.$count(table)) >= ORDER_SLUGS_MAX) {
-    throw new LimitExceededError();
-  }
+// batch 단일 트랜잭션 안에서 테이블별 advisory xact lock으로 동시 생성을 직렬화한 뒤 개수를 검사함
+// 상한 이상이면 0으로 나누기 오류로 batch 전체가 롤백되고 호출부가 LimitExceededError로 변환함
+function limitGuard(
+  table: typeof projects | typeof techTalks,
+  lockKey: number,
+): BatchItem<"pg">[] {
+  return [
+    db.execute(sql`select pg_advisory_xact_lock(${lockKey})`),
+    db.execute(
+      sql`select 1 / (c - c) from (select count(*)::int as c from ${table}) t where c >= ${ORDER_SLUGS_MAX}`,
+    ),
+  ];
+}
+
+function mapCreateError(error: unknown): never {
+  const code = getPgErrorCode(error);
+  if (code === PG_UNIQUE_VIOLATION) throw new SlugConflictError();
+  if (code === PG_DIVISION_BY_ZERO) throw new LimitExceededError();
+  throw error;
 }
 
 export async function createProject(
   input: ProjectCreateInput,
 ): Promise<Project> {
-  await assertBelowLimit(projects);
   const id = crypto.randomUUID();
   const statements: BatchItem<"pg">[] = [
+    ...limitGuard(projects, PROJECTS_LOCK_KEY),
     db.insert(projects).values({
       id,
       slug: input.slug,
@@ -149,10 +168,7 @@ export async function createProject(
   try {
     await runBatch(statements);
   } catch (error) {
-    if (getPgErrorCode(error) === PG_UNIQUE_VIOLATION) {
-      throw new SlugConflictError();
-    }
-    throw error;
+    mapCreateError(error);
   }
   return loadProjectById(id);
 }
@@ -230,22 +246,22 @@ export async function reorderProjects(slugs: string[]): Promise<void> {
 }
 
 export async function createTalk(input: TalkCreateInput): Promise<TechTalk> {
-  await assertBelowLimit(techTalks);
   try {
-    const [row] = await db
-      .insert(techTalks)
-      .values({
-        ...input,
-        sortOrder: sql`(select coalesce(max(${techTalks.sortOrder}), -1) + 1 from ${techTalks})`,
-      })
-      .returning();
+    const results = await runBatch([
+      ...limitGuard(techTalks, TALKS_LOCK_KEY),
+      db
+        .insert(techTalks)
+        .values({
+          ...input,
+          sortOrder: sql`(select coalesce(max(${techTalks.sortOrder}), -1) + 1 from ${techTalks})`,
+        })
+        .returning(),
+    ]);
+    const [row] = results.at(-1) as (typeof techTalks.$inferSelect)[];
     if (!row) throw new Error("insert returned no row");
     return toTalk(row, true);
   } catch (error) {
-    if (getPgErrorCode(error) === PG_UNIQUE_VIOLATION) {
-      throw new SlugConflictError();
-    }
-    throw error;
+    return mapCreateError(error);
   }
 }
 
