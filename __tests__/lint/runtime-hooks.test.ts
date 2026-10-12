@@ -316,3 +316,42 @@ test("클로드 전용 훅이 리뷰 누락과 영어 응답을 검출한다", (
     rmSync(fixture, { recursive: true, force: true });
   }
 });
+
+test("AskUserQuestion 직접 입력 답변 뒤 같은 응답의 재질문을 차단하고 새 메시지 뒤에는 허용한다", () => {
+  const fixture = mkdtempSync(join(tmpdir(), "portfolio-ask-hook-"));
+  try {
+    const transcript = join(fixture, "transcript.jsonl");
+    const answer = (value: string) => ({
+      type: "user",
+      message: { content: [{ type: "tool_result", content: "answered" }] },
+      toolUseResult: {
+        questions: [
+          {
+            question: "Preview 지원?",
+            multiSelect: false,
+            options: [{ label: "지원, DB 공유" }, { label: "미지원" }],
+          },
+        ],
+        answers: { "Preview 지원?": value },
+      },
+    });
+    const prompt = { type: "user", message: { content: "나머지 질문해" } };
+    const decide = (...entries: object[]) => {
+      writeFileSync(
+        transcript,
+        entries.map((entry) => JSON.stringify(entry)).join("\n"),
+      );
+      const { stdout } = run(".claude", "block-reask-after-free-text-answer", {
+        transcript_path: transcript,
+      });
+      return stdout.trim()
+        ? JSON.parse(stdout).hookSpecificOutput.permissionDecision
+        : "allow";
+    };
+    expect(decide(prompt, answer("best practice가 뭔데?"))).toBe("deny");
+    expect(decide(prompt, answer("지원, DB 공유"))).toBe("allow");
+    expect(decide(answer("best practice가 뭔데?"), prompt)).toBe("allow");
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});

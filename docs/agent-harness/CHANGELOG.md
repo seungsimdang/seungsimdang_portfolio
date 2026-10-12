@@ -81,3 +81,7 @@
 
 - Skill 4개(task·bug orchestrator, git-commit, cross-agent-handoff)에 harness-lab 템플릿 필수 절(실행 모드, 하이브리드 전환, 역할·사용 조건·입력·절차·출력·품질 기준, 테스트 프롬프트)을 보완하고 목차 갱신.
 - `__tests__/lint/harness-spec.test.ts`로 Agent·Skill 필수 절을 검사해 템플릿 절 누락 재발 방지. 외부 가이드 Skill(harness-lab, scaffold-web-project)은 제외.
+
+## 2026-10-12 - AskUserQuestion 직접 입력 답변 뒤 재질문 차단
+
+- `block-reask-after-free-text-answer.sh`(Claude PreToolUse `AskUserQuestion`) 추가. 마지막 사용자 메시지 이후 AskUserQuestion 답변에 선택지 밖 직접 입력이 있으면 같은 응답의 재질문을 deny. 직접 입력한 질문에 텍스트로 답한 직후 질문 창이 답변을 가려 사용자가 답을 못 본 사례 두 번.
