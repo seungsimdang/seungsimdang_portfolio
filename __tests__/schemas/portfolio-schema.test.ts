@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   isValidThumbnail,
   ORDER_SLUGS_MAX,
@@ -7,7 +7,20 @@ import {
   projectCreateInputSchema,
   projectUpdateInputSchema,
   talkCreateInputSchema,
+  talkUpdateInputSchema,
 } from "@/schemas/portfolio.schema";
+
+const blobUrl =
+  "https://ci-test.public.blob.vercel-storage.com/thumbnails/a.png";
+
+beforeAll(() => {
+  vi.stubEnv(
+    "NEXT_PUBLIC_BLOB_HOSTNAME",
+    "ci-test.public.blob.vercel-storage.com",
+  );
+});
+
+afterAll(() => vi.unstubAllEnvs());
 
 const experience = {
   title: "t",
@@ -73,10 +86,14 @@ describe("slug", () => {
     ).toBe(false);
     expect(talkCreateInputSchema.safeParse(talk).success).toBe(true);
   });
-  it("수정 스키마는 slug 필드를 거부 (불변)", () => {
+  it("수정 스키마는 프로젝트와 발표 slug 변경을 허용", () => {
     const { slug: _s, ...rest } = project;
-    expect(projectUpdateInputSchema.safeParse(rest).success).toBe(true);
-    expect(projectUpdateInputSchema.safeParse(project).success).toBe(false);
+    expect(projectUpdateInputSchema.safeParse(rest).success).toBe(false);
+    expect(projectUpdateInputSchema.safeParse(project).success).toBe(true);
+    expect(
+      talkUpdateInputSchema.safeParse({ ...talk, slug: "renamed-talk" })
+        .success,
+    ).toBe(true);
   });
 });
 
@@ -133,20 +150,23 @@ describe("링크 스킴", () => {
 });
 
 describe("썸네일", () => {
-  it.each(["/images/a.png", "/images/dir/a-b_1.webp"])("%s 허용", (v) => {
-    expect(isValidThumbnail(v)).toBe(true);
-    expect(
-      projectCreateInputSchema.safeParse({ ...project, thumbnail: v }).success,
-    ).toBe(true);
-  });
+  it.each([blobUrl, "https://ci-test.public.blob.vercel-storage.com/a.webp"])(
+    "%s 허용",
+    (v) => {
+      expect(isValidThumbnail(v)).toBe(true);
+      expect(
+        projectCreateInputSchema.safeParse({ ...project, thumbnail: v })
+          .success,
+      ).toBe(true);
+    },
+  );
   it.each([
-    "/images/../etc/passwd",
-    "/images/a/..",
+    "/images/a.png",
+    "https://ci-test.public.blob.vercel-storage.com.evil.test/a.png",
+    "https://ci-test.public.blob.vercel-storage.com:443/a.png",
+    "https://user@ci-test.public.blob.vercel-storage.com/a.png",
     "https://a.com/x.png",
     "images/a.png",
-    "/img/a.png",
-    "/images/",
-    "/images/a b.png",
     "//images/a.png",
   ])("%s 거부", (v) => {
     expect(isValidThumbnail(v)).toBe(false);

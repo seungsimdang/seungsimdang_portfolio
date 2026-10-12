@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node --env-file-if-exists=.env.local scripts/check-upload-env.mjs && next dev",
+    "build": "node --env-file-if-exists=.env.local scripts/check-upload-env.mjs && node --env-file-if-exists=.env.local scripts/migrate.mjs && next build",
     "start": "next start",
     "lint": "biome lint .",
     "check": "biome check .",
@@ -21,13 +21,16 @@
     "react-doctor": "react-doctor --verbose --yes --no-telemetry",
     "react-doctor:staged": "sh scripts/check-react-doctor-staged.sh",
     "test": "vitest run",
+    "check:upload-env": "node --env-file-if-exists=.env.local scripts/check-upload-env.mjs",
+    "portfolio:thumbnails:migrate": "node --env-file-if-exists=.env.local scripts/migrate-thumbnails.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
     "db:seed:e2e": "tsx --env-file-if-exists=.env.local tests/e2e/fixtures/seed.ts",
     "test:e2e:local": "sh scripts/run-e2e-local.sh"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
+    "@vercel/blob": "2.3.3",
     "drizzle-orm": "0.45.3",
     "next": "16.3.6",
     "next-auth": "4.24.15",

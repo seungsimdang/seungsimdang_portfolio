@@ -35,7 +35,8 @@ export const apiErrors = {
     new ApiError(
       "SLUG_CONFLICT",
       HttpStatus.Conflict,
-      "이미 사용 중인 slug입니다",
+      "이미 사용 중인 주소입니다",
+      { slug: "이미 사용 중인 주소입니다" },
     ),
   orderMismatch: () =>
     new ApiError(

@@ -108,33 +108,44 @@ export function ExperienceListEditor({
           const err = (name: string) => errors[`${prefix}.${name}`];
           return (
             <li key={item.key}>
-              <fieldset className="space-y-16 rounded-lg border border-white/25 p-16 md:p-24">
-                <legend className="px-8 text-body">
+              <fieldset
+                aria-labelledby={id("heading")}
+                className="space-y-16 rounded-lg border border-white/25 p-16 md:p-24"
+              >
+                <legend className="sr-only">
                   경험 {index + 1}: {item.title.trim() || "제목 없음"}
                   {errorCount > 0 && ` (오류 ${errorCount}개)`}
                 </legend>
-                <div className="flex flex-wrap gap-8">
-                  <AdminButton
-                    disabled={index === 0}
-                    aria-label={`경험 ${index + 1} 위로 이동`}
-                    onClick={() => move(index, -1)}
-                  >
-                    위로
-                  </AdminButton>
-                  <AdminButton
-                    disabled={index === items.length - 1}
-                    aria-label={`경험 ${index + 1} 아래로 이동`}
-                    onClick={() => move(index, 1)}
-                  >
-                    아래로
-                  </AdminButton>
-                  <AdminButton
-                    variant="danger"
-                    aria-label={`경험 ${index + 1} 삭제`}
-                    onClick={() => remove(index)}
-                  >
-                    삭제
-                  </AdminButton>
+                <div className="flex flex-wrap items-center justify-between gap-8">
+                  <h3 id={id("heading")} className="text-body">
+                    경험 {index + 1}: {item.title.trim() || "제목 없음"}
+                    {errorCount > 0 && ` (오류 ${errorCount}개)`}
+                  </h3>
+                  <div className="flex flex-wrap gap-8">
+                    <AdminButton
+                      variant="icon"
+                      disabled={index === 0}
+                      aria-label={`경험 ${index + 1} 위로 이동`}
+                      onClick={() => move(index, -1)}
+                    >
+                      <span aria-hidden="true">↑</span>
+                    </AdminButton>
+                    <AdminButton
+                      variant="icon"
+                      disabled={index === items.length - 1}
+                      aria-label={`경험 ${index + 1} 아래로 이동`}
+                      onClick={() => move(index, 1)}
+                    >
+                      <span aria-hidden="true">↓</span>
+                    </AdminButton>
+                    <AdminButton
+                      variant="danger"
+                      aria-label={`경험 ${index + 1} 삭제`}
+                      onClick={() => remove(index)}
+                    >
+                      삭제
+                    </AdminButton>
+                  </div>
                 </div>
                 <TextField
                   id={id("title")}

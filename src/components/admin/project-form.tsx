@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { HttpStatus } from "@/constants/http-status";
 import { adminRequest } from "@/lib/admin-client/admin-request";
 import {
@@ -27,6 +27,7 @@ import {
 import { FormActionBar, FormStatus } from "./form-parts";
 import { StringListEditor } from "./string-list-editor";
 import { TextAreaField, TextField } from "./text-fields";
+import { ThumbnailField } from "./thumbnail-field";
 
 interface ProjectDraft {
   slug: string;
@@ -54,11 +55,14 @@ function toDraft(project?: Project): ProjectDraft {
   };
 }
 
-function toInput(draft: ProjectDraft, includeSlug: boolean) {
-  const { slug, techStack, experiences, ...rest } = draft;
+function toInput(draft: ProjectDraft, originalThumbnail?: string) {
+  const { slug, thumbnail, techStack, experiences, ...rest } = draft;
   return {
-    ...(includeSlug ? { slug } : {}),
+    slug,
     ...rest,
+    ...(originalThumbnail === undefined || thumbnail !== originalThumbnail
+      ? { thumbnail }
+      : {}),
     techStack: techStack.map((item) => item.value),
     experiences: experiences.map((e) => ({
       title: e.title,
@@ -84,8 +88,12 @@ interface ProjectFormProps {
 export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
   const router = useRouter();
   const isEdit = project !== undefined;
+  const savedSlug = useRef(project?.slug ?? "");
+  const savedThumbnail = useRef(project?.thumbnail ?? "");
   const [draft, setDraft] = useState(() => toDraft(project));
   const [deleting, setDeleting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const uploadingRef = useRef(false);
   const set = <K extends keyof ProjectDraft>(key: K, value: ProjectDraft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
 
@@ -94,19 +102,29 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
     setDraft,
     validate: (d) =>
       isEdit
-        ? validateWith(projectUpdateInputSchema, toInput(d, false))
-        : validateWith(projectCreateInputSchema, toInput(d, true)),
+        ? validateWith(
+            projectUpdateInputSchema,
+            toInput(d, savedThumbnail.current),
+          )
+        : validateWith(projectCreateInputSchema, toInput(d)),
     save: (input) =>
       isEdit
         ? adminRequest<Project>(
             "PUT",
-            `/api/admin/projects/${project.slug}`,
+            `/api/admin/projects/${savedSlug.current}`,
             input,
           )
         : adminRequest<Project>("POST", "/api/admin/projects", input),
     // 저장 응답의 새 experience id를 key로 삼아 폼 기준값을 갱신, 생성 후에는 편집 화면으로 이동
     onSaved: (saved) => {
-      if (isEdit) return toDraft(saved);
+      if (isEdit) {
+        if (saved.slug !== savedSlug.current) {
+          savedSlug.current = saved.slug;
+          void router.replace(`/admin/projects/${saved.slug}`);
+        }
+        savedThumbnail.current = saved.thumbnail ?? "";
+        return toDraft(saved);
+      }
       router.push(`/admin/projects/${saved.slug}?saved=1`);
       return undefined;
     },
@@ -119,7 +137,7 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
     if (!project) return null;
     const result = await adminRequest(
       "DELETE",
-      `/api/admin/projects/${project.slug}`,
+      `/api/admin/projects/${savedSlug.current}`,
     );
     if (result.ok || result.status === HttpStatus.NotFound) {
       router.push("/admin/projects?deleted=1");
@@ -130,12 +148,30 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
     );
   }
 
+  function submit(event: FormEvent<HTMLFormElement>) {
+    if (uploadingRef.current) {
+      event.preventDefault();
+      return;
+    }
+    if (
+      isEdit &&
+      draft.slug !== savedSlug.current &&
+      !window.confirm(
+        `프로젝트 주소가 /work/${savedSlug.current}에서 /work/${draft.slug}(으)로 변경됩니다. 이전 주소는 더 이상 열리지 않으며 자동 이동도 제공되지 않습니다. 저장할까요?`,
+      )
+    ) {
+      event.preventDefault();
+      return;
+    }
+    return form.submit(event);
+  }
+
   return (
     <form
       ref={form.formRef}
       noValidate
-      aria-busy={form.saving}
-      onSubmit={form.submit}
+      aria-busy={form.saving || uploading}
+      onSubmit={submit}
       className="space-y-24"
     >
       <FormStatus notice={form.notice} />
@@ -143,12 +179,12 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
         id="project-slug"
         label="slug"
         required
-        readOnly={isEdit}
+        maxLength={64}
         value={draft.slug}
         error={errors.slug}
         hint={
           isEdit
-            ? `slug는 변경할 수 없습니다. 공개 주소: /work/${draft.slug}`
+            ? `영문 소문자, 숫자, 하이픈(-) 64자 이하. 공개 주소: /work/${draft.slug}`
             : `영문 소문자, 숫자, 하이픈(-)만 사용합니다. 공개 주소: /work/${draft.slug || "slug"}`
         }
         onChange={(v) => set("slug", v)}
@@ -194,13 +230,16 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
         error={errors.link}
         onChange={(v) => set("link", v)}
       />
-      <TextField
-        id="project-thumbnail"
-        label="썸네일 경로"
+      <ThumbnailField
         value={draft.thumbnail}
-        error={errors.thumbnail}
-        hint="저장소에 있는 이미지 경로(/images/...)만 입력할 수 있습니다."
-        onChange={(v) => set("thumbnail", v)}
+        title={draft.title}
+        serverError={errors.thumbnail}
+        saving={form.saving}
+        onChange={(thumbnail) => set("thumbnail", thumbnail)}
+        onUploadStateChange={(value) => {
+          uploadingRef.current = value;
+          setUploading(value);
+        }}
       />
       <StringListEditor
         legend="기술 스택"
@@ -216,7 +255,7 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
         errors={errors}
       />
       <FormActionBar
-        saving={form.saving}
+        saving={form.saving || uploading}
         cancelHref="/admin/projects"
         onDelete={isEdit ? () => setDeleting(true) : undefined}
         deleteLabel="프로젝트 삭제"

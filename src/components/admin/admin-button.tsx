@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "danger";
+type Variant = "primary" | "secondary" | "danger" | "icon";
 
 const base =
   "inline-flex min-h-44 items-center justify-center rounded-full border px-20 text-small transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50";
@@ -11,7 +11,8 @@ const base =
 const variants: Record<Variant, string> = {
   primary: "border-white bg-white text-black hover:bg-white/90",
   secondary: "border-white/25 text-white hover:bg-white/10",
-  danger: "border-white text-white hover:bg-white hover:text-black",
+  danger: "border-transparent text-danger hover:bg-transparent hover:underline",
+  icon: "min-w-44 rounded-md border-transparent px-8 text-body hover:bg-white/10",
 };
 
 interface CommonProps {

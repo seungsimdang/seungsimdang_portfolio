@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { AdminButton } from "@/components/admin/admin-button";
 
 export default function AdminNotFound() {
   return (
@@ -7,9 +7,7 @@ export default function AdminNotFound() {
       <p className="text-body opacity-70">
         이미 삭제되었거나 주소가 올바르지 않습니다.
       </p>
-      <Button href="/admin" variant="secondary">
-        대시보드로
-      </Button>
+      <AdminButton href="/admin/projects">프로젝트 목록</AdminButton>
     </div>
   );
 }

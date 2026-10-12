@@ -40,13 +40,17 @@ function safeHttpUrl(
   }
 }
 
-// 쓰기 스키마와 같은 /images/ 경로 규칙을 읽기 시점에도 적용함
+// 기존 로컬 이미지와 현재 Blob 이미지를 공개 화면에서 계속 읽음
 function safeThumbnail(
   thumbnail: string | null | undefined,
   raw: boolean,
 ): string | undefined {
   if (!thumbnail) return undefined;
-  return raw || isValidThumbnail(thumbnail) ? thumbnail : undefined;
+  return raw ||
+    (thumbnail.startsWith("/images/") && !thumbnail.includes("..")) ||
+    isValidThumbnail(thumbnail)
+    ? thumbnail
+    : undefined;
 }
 
 function toExperience(row: ExperienceRow, raw: boolean): Experience {

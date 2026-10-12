@@ -73,20 +73,23 @@ export function ListEditor<T extends { key: string }>({
             </div>
             <div className="flex flex-wrap gap-8">
               <AdminButton
+                variant="icon"
                 disabled={index === 0}
                 aria-label={`${itemLabel} ${index + 1} 위로 이동`}
                 onClick={() => move(index, -1)}
               >
-                위로
+                <span aria-hidden="true">↑</span>
               </AdminButton>
               <AdminButton
+                variant="icon"
                 disabled={index === items.length - 1}
                 aria-label={`${itemLabel} ${index + 1} 아래로 이동`}
                 onClick={() => move(index, 1)}
               >
-                아래로
+                <span aria-hidden="true">↓</span>
               </AdminButton>
               <AdminButton
+                variant="danger"
                 aria-label={`${itemLabel} ${index + 1} 삭제`}
                 onClick={() => remove(index)}
               >

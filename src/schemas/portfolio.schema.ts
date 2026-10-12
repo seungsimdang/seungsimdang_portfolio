@@ -7,14 +7,29 @@ const URL_MAX = 2000;
 const SLUG_MAX = 64;
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const TALK_DATE_PATTERN = /^\d{4}\.(0[1-9]|1[0-2])$/;
-const THUMBNAIL_PATTERN = /^\/images\/[A-Za-z0-9._/-]+$/;
 
 // 순서 변경 요청의 slug 상한이자 프로젝트·발표 각각의 생성 개수 상한
 export const ORDER_SLUGS_MAX = LIST_MAX * 2;
 
-// 쓰기 검증과 공개 읽기 필터가 같은 규칙을 쓰도록 공유
 export function isValidThumbnail(value: string): boolean {
-  return THUMBNAIL_PATTERN.test(value) && !value.includes("..");
+  const hostname = process.env.NEXT_PUBLIC_BLOB_HOSTNAME;
+  if (!hostname) return false;
+  try {
+    const url = new URL(value);
+    const authority = value.match(/^https:\/\/([^/?#]+)(?:\/|$)/)?.[1];
+    return (
+      url.protocol === "https:" &&
+      url.hostname === hostname &&
+      authority === hostname &&
+      !url.username &&
+      !url.password &&
+      !url.port &&
+      !url.search &&
+      !url.hash
+    );
+  } catch {
+    return false;
+  }
 }
 
 const shortText = z
@@ -71,14 +86,14 @@ const stringList = z
   .array(shortText)
   .max(LIST_MAX, `${LIST_MAX}개 이하로 입력해 주세요`);
 
-// 비어 있으면 null 저장, 값이 있으면 로컬 /images/ 경로만 허용
+// 비어 있으면 null 저장, 값이 있으면 우리 Blob URL만 허용
 const thumbnail = z
   .string()
   .trim()
   .max(URL_MAX, `${URL_MAX}자 이하로 입력해 주세요`)
   .refine(
     (v) => v === "" || isValidThumbnail(v),
-    "/images/ 로 시작하는 경로만 입력할 수 있습니다",
+    "등록된 Blob 스토어의 이미지 주소만 입력할 수 있습니다",
   )
   .optional();
 
@@ -122,6 +137,7 @@ const experienceInputSchema = z.strictObject({
 });
 
 export const projectUpdateInputSchema = z.strictObject({
+  slug: slugSchema,
   title: shortText,
   period: shortText,
   role: shortText,
@@ -139,6 +155,7 @@ export const projectCreateInputSchema = projectUpdateInputSchema.extend({
 });
 
 export const talkUpdateInputSchema = z.strictObject({
+  slug: slugSchema,
   title: shortText,
   date: z
     .string()

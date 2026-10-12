@@ -93,7 +93,7 @@ function describeFailure(
     };
   }
   if (result.code === "SLUG_CONFLICT") {
-    fieldErrors.slug = "이미 사용 중인 slug입니다.";
+    fieldErrors.slug = "이미 사용 중인 주소입니다.";
     return {
       notice: { tone: "error", message: "slug를 확인하세요." },
       fieldErrors,
@@ -150,6 +150,7 @@ export function useAdminForm<D, I, R>({
     initialSaved ? { tone: "success", message: SAVED_MESSAGE } : null,
   );
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [focusTick, setFocusTick] = useState(0);
 
   const dirty = JSON.stringify(draft) !== baseline;
@@ -204,7 +205,7 @@ export function useAdminForm<D, I, R>({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (saving) return;
+    if (savingRef.current) return;
     setSubmitted(true);
     setServerErrors({});
     if (!validation.success) {
@@ -215,12 +216,14 @@ export function useAdminForm<D, I, R>({
       setFocusTick((tick) => tick + 1);
       return;
     }
+    savingRef.current = true;
     setSaving(true);
     setNotice(null);
     let result: Awaited<ReturnType<typeof save>>;
     try {
       result = await save(validation.data);
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
     if (!result.ok) {

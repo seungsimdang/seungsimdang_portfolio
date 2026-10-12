@@ -25,6 +25,7 @@ export function ConfirmDialog({
   const descriptionId = useId();
   const cancelId = useId();
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +45,8 @@ export function ConfirmDialog({
   }
 
   async function confirm() {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -51,6 +54,7 @@ export function ConfirmDialog({
       if (result === null) close();
       else setError(result);
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
