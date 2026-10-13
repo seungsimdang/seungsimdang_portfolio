@@ -118,7 +118,11 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         errors={errors}
         path="skills"
       />
-      <FormActionBar saving={form.saving} cancelHref="/admin" />
+      <FormActionBar
+        saving={form.saving}
+        notice={form.notice}
+        cancelHref="/admin"
+      />
     </form>
   );
 }
