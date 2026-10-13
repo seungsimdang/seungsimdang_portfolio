@@ -15,7 +15,9 @@
 | T05 프론트엔드 | frontend-developer (worktree 격리) | `src/` | done (`b1ff602`) |
 | T06 백엔드 | backend-developer (worktree 격리) | `src/`, `drizzle/`, `scripts/` | done (`6c96417`) |
 | 병합·재검증·커밋·push | orchestrator | `feature/about-resume` | 병합·재검증·커밋 done, push는 아래 조율 후 |
-| T07 코드 리뷰, T08 보안 리뷰, T09 QA | - | - | blocked (사용자 지시: 구현 커밋·push 후 hold) |
+| T07 코드 리뷰 | code-reviewer | `code-review-1~3.md`, `triage-1.md`, `triage-4.md` | done (3차 통과, 3차는 사용자 결정으로 rate limit 코드만) |
+| T08 보안 리뷰 | security-reviewer | `security-review-1~4.md`, `triage-2~4.md` | done (4차 통과, 배포 승인) |
+| T09 QA | qa-engineer | `qa-report-1.md` | 조건부 통과 (DB·e2e·브라우저 항목 미검증, 아래 참고) |
 | 운영 DB 마이그레이션·시드·skills 갱신 | orchestrator | 운영 DB | done (2026-10-13, 아래 기록) |
 
 ## 사용자 지시 (2026-10-13)
@@ -59,3 +61,21 @@
 - 결과: kind별 work 3, education 1, activity 7, award 1, certification 1, language 1. `profile.name`, projects, tech_talks 변경 없음.
 - 영향: 지금 운영에 배포된 main 코드의 홈 히어로 순환 단어가 새 skills 10개로 즉시 바뀜(사용자 승인 사항).
 - 로컬 dev 서버에서 about 렌더 확인(헤드리스 스크린샷). 경력 항목은 제목이 직함, 부제가 회사명으로 표시되며 이력서 표기("Frontend Developer · 회사")와 순서가 다르므로 T07에서 확인.
+
+## 리뷰·QA 단계 기록 (2026-10-13)
+
+- 보안 리뷰 1차 L-2(admin 쓰기 rate limit 없음, 사이클 밖)를 사용자 결정으로 포함해 DB 기반 rate limit 추가(`13b214f`). 이후 L-4(고정 윈도 버스트)로 슬라이딩 윈도 카운터 전환(`e6e0e5b`), L-5(Retry-After 오차) 수정(`c13ebde`), 코드 리뷰 3차 L-2 주석 추가(`2e24549`).
+- 신규 마이그레이션 `drizzle/0002_blushing_toro.sql`(`admin_rate_limits` 테이블 생성, 추가 전용). 아직 어느 DB에도 적용되지 않음.
+- QA 신규 테스트(`2d994a2`): vitest 19 파일 247 통과. 리포트 `335bbef`.
+- 기각·이관 판단은 `triage-1.md`~`triage-4.md` 참고.
+
+## 남은 확인 사항
+
+- 운영 반영 순서: 0002 마이그레이션 적용 전에 rate limit 코드가 배포되면 모든 admin 쓰기가 500(fail-closed). Vercel 빌드는 `migrate.mjs --build`로 마이그레이션을 먼저 적용하므로 정상 배포 경로는 안전함.
+- 로컬 dev 서버는 운영 DB를 바라보므로 운영에 0002가 적용되기 전에는 로컬 admin 저장이 500이 됨.
+- QA 미검증 항목: F1(마이그레이션·DB check), F2-1/2-2/2-4(읽기 정렬·sort_order 부여), F3(admin 화면), F6(시드), F7-2(e2e), `text-h3` 실제 렌더 크기와 모바일 가로 스크롤. 운영 DB 쓰기 금지, `E2E_DATABASE_URL` 없음, playwright 브라우저 미설치가 사유.
+- QA 정보성 지적: `createResumeEntry`가 `mapCreateError`를 공유해 23505를 `SlugConflictError`로 바꾸지만 `resume_entries`에 unique 제약이 없어 도달 불가. 조치 없음.
+
+## 추가 커밋
+
+- `02e818c`, `2c415d7`, `13b214f`, `67c628c`, `e6e0e5b`, `c13ebde`, `0ce6fc7`, `2e24549`, `fa3a08f`, `2d994a2`, `335bbef`
