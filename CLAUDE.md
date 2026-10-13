@@ -2,7 +2,7 @@
 
 # 포트폴리오
 
-- **도메인 세부 규칙**: `docs/agent-rules/` 참조 (project-structure · nextjs · react-query · tailwind)
+- **도메인 세부 규칙**: `docs/agent-rules/` 참조 (project-structure · nextjs · tailwind)
 - **커밋 규칙**: `.claude/skills/git-commit`
 - **검사 로직 배치 기준**: `docs/agent-rules/enforcement-placement.md` 참조
 - **브랜치 전략**: `docs/agent-rules/branch-strategy.md` 참조 (main/develop/feature 트랙, Task Team 분기 기준)
