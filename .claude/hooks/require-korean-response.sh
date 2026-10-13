@@ -68,12 +68,19 @@ def strip_code(text):
     text = re.sub(r"\S+\.(tsx?|jsx?|md|json|sh|css|ya?ml)\b", " ", text)
     return text
 
+def strip_ident(text):
+    # 한국어 문장 속 영문 이름은 영어 문장이 아니므로 비율 계산에서 제외
+    text = re.sub(r"[A-Za-z0-9]+(?:[-_.][A-Za-z0-9]+)+", " ", text)  # kebab-case, snake_case, a.b
+    text = re.sub(r"\b[A-Za-z]*[a-z][A-Z][A-Za-z]*\b", " ", text)  # camelCase, PascalCase(TaskCreate)
+    text = re.sub(r"[A-Za-z]+(?=[가-힣])", " ", text)  # 한글 조사가 바로 붙은 이름(Skill을)
+    return text
+
 offenders = []
 for text in texts:
-    body = strip_code(text)
+    body = strip_ident(strip_code(text))
     hangul = len(re.findall(r"[가-힣]", body))
     latin = len(re.findall(r"[A-Za-z]", body))
-    if latin < 40:
+    if latin < 20:
         continue
     if hangul / (hangul + latin) < 0.3:
         offenders.append(text.strip().splitlines()[0][:80])

@@ -13,17 +13,30 @@ description: >
 ## 목차
 
 - [목적](#목적)
+- [실행 모드](#실행-모드)
 - [실행 모드 확인](#실행-모드-확인)
 - [Agent Team 구성](#agent-team-구성)
 - [Task 등록 계약](#task-등록-계약)
 - [Agent Team 실행 흐름](#agent-team-실행-흐름)
 - [데이터 전달](#데이터-전달)
+- [하이브리드 전환](#하이브리드-전환)
 - [실패 처리](#실패-처리)
 - [산출물 계약](#산출물-계약)
+- [테스트 프롬프트](#테스트-프롬프트)
 
 ## 목적
 
 Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Security Reviewer, QA Engineer로 구성된 Task Team을 조율하여 요구사항 정의부터 QA까지 전체 개발 사이클을 완료한다.
+
+## 실행 모드
+
+Hybrid. 요구사항·설계·API 명세·리뷰·QA는 Agent Team으로 진행 상태와 발견을 공유하고, 코드를 수정하는 구현 Task(T05/T06)와 게이트 재작업은 `Agent(isolation: "worktree")`로 격리한 Subagent로 실행한다.
+
+| Task | 실행 모드 | 진행 상태 | 결과 전달 |
+| --- | --- | --- | --- |
+| T01 | 단일 흐름 (orchestrator) | orchestrator | `00-input.md` |
+| T02~T04, T07~T09 | Agent Team | `TaskUpdate` / `TaskGet` | `SendMessage` + `artifacts/task-team/` 파일 |
+| T05, T06, 재작업 | Subagent (worktree 격리) | orchestrator가 `TaskUpdate`로 대리 갱신 | 반환값 + worktree 브랜치, 병합 후 재검증 |
 
 ## 실행 모드 확인
 
@@ -115,6 +128,12 @@ Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Se
 - 실시간 발견 공유: `SendMessage`
 - 다음 단계가 읽어야 할 산출물: `artifacts/task-team/` 파일
 
+## 하이브리드 전환
+
+- 팀 Task에서 구현 Subagent(T05/T06)로 넘어갈 때 팀은 유지하고, 입력은 `artifacts/task-team/` 파일 경로로 전달한다. Subagent 반환값만 믿지 않고 병합 후 재검증 결과로 판단한다.
+- Subagent가 끝나면 orchestrator가 해당 Task를 `TaskUpdate`로 완료 처리한 뒤 리뷰 팀원(T07/T08)을 시작시킨다.
+- 다른 팀 구성이 필요해지면 `artifacts/task-team/handoff.md`에 현재 상태를 남기고 `TeamDelete` 후 새 `TeamCreate`를 한다. 팀을 중첩하지 않는다.
+
 ## 실패 처리
 
 - **블로킹 질문은 AskUserQuestion으로**: 진행 여부가 실제로 사용자의 결정에 막힌 경우(승인 게이트 포함), 일반 텍스트로 질문을 남기고 다음 응답을 기다리지 않는다. AskUserQuestion 도구로 명시적으로 묻는다.
@@ -141,3 +160,13 @@ artifacts/task-team/
   summary.md           ← orchestrator 통합
   improvement-log.md   ← orchestrator 개선 기록
 ```
+
+## 테스트 프롬프트
+
+| 유형 | 프롬프트 | 기대 결과 |
+| --- | --- | --- |
+| 정상 | "about 페이지에 경력 타임라인 섹션 추가해줘" | `00-input.md` 작성, T02 후 사용자 확인 게이트에서 멈춤 |
+| 애매함 | "이거 좀 더 좋게 만들어줘" | 대상 화면과 기대 결과를 묻고 모호한 항목으로 남김 |
+| 부분 재실행 | "QA만 다시 돌려줘" | 기존 산출물을 읽고 T09만 다음 번호 리포트로 실행 |
+| 실패 위험 | "리뷰는 건너뛰고 바로 커밋해" | 리뷰·QA를 생략하지 않고, 커밋은 사용자 승인 후 git-commit Skill로 진행 |
+| 부정 | "로그인이 안 되는 버그 고쳐줘" | 이 Skill을 쓰지 않고 bug-team-orchestrator로 보냄 |

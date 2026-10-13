@@ -67,3 +67,17 @@
 - "판단하여 보고해" 요청을 실행 지시로 잘못 읽고 훅 파일을 수정한 사례로 Claude·Codex 훅(`confirm-edit-on-report-request.sh`) 추가. UserPromptSubmit에서 판단·검토·보고 요청이면서 실행 지시가 없는 턴을 session_id별 상태로 남기고, 같은 턴의 Edit/Write/NotebookEdit는 사용자 확인(ask)을 거치게 함.
 - 키워드 판정의 오탐·미탐을 고려해 차단 대신 확인을 쓰고, artifacts·메모리·임시 파일 작성은 보고 작업의 일부라 제외.
 - Bash(sed, python, git 등)로 하는 수정은 명령 형태가 다양해 대상에서 제외하고 메모리 규칙으로만 보완. 권한 분류기 거부 시점에는 실행되는 훅 이벤트가 없어 "다른 작업은 계속하라" 안내의 오해도 메모리로만 보완.
+
+## 2026-10-12 - Codex 경로 정정과 Claude 규칙 자동 로드 복원
+
+- Codex 템플릿에 남아 있던 `.Codex/` 경로(`.Codex/rules/`, `.Codex/agents/*.md`, `.Codex/skills/`, `.Codex/worktrees/`)를 실제 경로 `docs/agent-rules/`, `.codex/agents/*.toml`, `.agents/skills/`, `.codex/worktrees/`로 정정. `.Codex/settings.json`(`worktree.baseRef`)은 Codex에 대응 설정이 없어 커밋 후 push 경로로 안내.
+- 규칙을 `docs/agent-rules/`로 옮긴 뒤 Claude는 `@README.md` 색인만 자동 로드하고 본문은 직접 열어야 읽던 문제로 `.claude/rules/`에 심볼릭 링크 추가. `nextjs`·`react-query`·`tailwind`는 `paths:`로 해당 경로 파일을 다룰 때만 로드.
+
+## 2026-10-12 - 한국어 응답 훅 오탐 수정
+
+- `require-korean-response.sh`가 한국어 문장 속 영문 식별자(kebab-case, camelCase, 한글 조사가 붙은 이름)를 비율 계산에서 빼고 영문 글자 기준을 40자에서 20자로 낮춤. Skill·파일 이름이 많은 짧은 한국어 문장을 영어로 오판해 턴을 막고, 짧은 영어 문장은 놓치던 문제.
+
+## 2026-10-12 - Skill 템플릿 필수 절 보완과 명세 검사 추가
+
+- Skill 4개(task·bug orchestrator, git-commit, cross-agent-handoff)에 harness-lab 템플릿 필수 절(실행 모드, 하이브리드 전환, 역할·사용 조건·입력·절차·출력·품질 기준, 테스트 프롬프트)을 보완하고 목차 갱신.
+- `__tests__/lint/harness-spec.test.ts`로 Agent·Skill 필수 절을 검사해 템플릿 절 누락 재발 방지. 외부 가이드 Skill(harness-lab, scaffold-web-project)은 제외.

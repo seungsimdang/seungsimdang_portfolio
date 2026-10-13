@@ -1,3 +1,8 @@
+---
+paths:
+  - "src/**/*.{ts,tsx}"
+---
+
 # React Query / API 핵심 규칙
 
 ## 목차

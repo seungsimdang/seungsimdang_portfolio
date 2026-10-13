@@ -13,21 +13,34 @@ description: >
 ## 목차
 
 - [목적](#목적)
+- [실행 모드](#실행-모드)
 - [실행 모드 확인](#실행-모드-확인)
 - [Agent Team 구성](#agent-team-구성)
 - [Task 등록 계약](#task-등록-계약)
 - [Agent Team 실행 흐름](#agent-team-실행-흐름)
 - [데이터 전달](#데이터-전달)
+- [하이브리드 전환](#하이브리드-전환)
 - [실패 처리](#실패-처리)
 - [산출물 계약](#산출물-계약)
+- [테스트 프롬프트](#테스트-프롬프트)
 
 ## 목적
 
 Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Security Reviewer, QA Engineer로 구성된 Task Team을 조율하여 요구사항 정의부터 QA까지 전체 개발 사이클을 완료한다.
 
+## 실행 모드
+
+Hybrid. 요구사항·설계·API 명세·리뷰·QA는 Agent Team으로 진행 상태와 발견을 공유하고, 코드를 수정하는 구현 Task(T05/T06)와 게이트 재작업은 `Agent(isolation: "worktree")`로 격리한 Subagent로 실행한다.
+
+| Task | 실행 모드 | 진행 상태 | 결과 전달 |
+| --- | --- | --- | --- |
+| T01 | 단일 흐름 (orchestrator) | orchestrator | `00-input.md` |
+| T02~T04, T07~T09 | Agent Team | `TaskUpdate` / `TaskGet` | `SendMessage` + `artifacts/task-team/` 파일 |
+| T05, T06, 재작업 | Subagent (worktree 격리) | orchestrator가 `TaskUpdate`로 대리 갱신 | 반환값 + worktree 브랜치, 병합 후 재검증 |
+
 ## 실행 모드 확인
 
-0. 새 `feature/*` 브랜치를 분기해야 하면 `.Codex/rules/branch-strategy.md`의 브랜치 전략을 따른다(기본 분기 기준은 `develop`).
+0. 새 `feature/*` 브랜치를 분기해야 하면 `docs/agent-rules/branch-strategy.md`의 브랜치 전략을 따른다(기본 분기 기준은 `develop`).
 1. `artifacts/bug-team/postmortem-*.md` 파일을 전체 목록화한다. 파일이 있으면 각 포스트모텀의 "Task Team 피드백 초안" 섹션을 읽고, 미반영 항목을 `00-input.md`의 "Bug Team 피드백 반영 필수" 섹션에 포함한다. 검토가 완료된 포스트모텀 파일은 삭제한다.
 2. `artifacts/task-team/` 폴더 존재 여부를 확인한다.
 3. 폴더가 없거나 비어 있으면 → **초기 실행**으로 진행한다.
@@ -40,13 +53,13 @@ Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Se
 
 | 팀원 | Agent 파일 | 역할 |
 |------|-----------|------|
-| project-manager | `.Codex/agents/project-manager.md` | 요구사항 정의 |
-| designer | `.Codex/agents/designer.md` | 디자인 명세 |
-| frontend-developer | `.Codex/agents/frontend-developer.md` | UI/비즈니스 로직 구현 |
-| backend-developer | `.Codex/agents/backend-developer.md` | API/DB 구현 |
-| code-reviewer | `.Codex/agents/code-reviewer.md` | 코드 품질 검토 |
-| security-reviewer | `.Codex/agents/security-reviewer.md` | 보안 취약점 검토 |
-| qa-engineer | `.Codex/agents/qa-engineer.md` | 테스트 계획 및 실행 |
+| project-manager | `.codex/agents/project-manager.toml` | 요구사항 정의 |
+| designer | `.codex/agents/designer.toml` | 디자인 명세 |
+| frontend-developer | `.codex/agents/frontend-developer.toml` | UI/비즈니스 로직 구현 |
+| backend-developer | `.codex/agents/backend-developer.toml` | API/DB 구현 |
+| code-reviewer | `.codex/agents/code-reviewer.toml` | 코드 품질 검토 |
+| security-reviewer | `.codex/agents/security-reviewer.toml` | 보안 취약점 검토 |
+| qa-engineer | `.codex/agents/qa-engineer.toml` | 테스트 계획 및 실행 |
 
 ## Task 등록 계약
 
@@ -71,14 +84,14 @@ Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Se
 5. **T02 완료 후 사용자 확인 게이트.** `requirements.md` 저장 직후, orchestrator는 기능 분해·수용 기준·edge case 요약을 사용자에게 보고하고 명시적 승인을 받은 뒤에만 T03/T04로 진행한다. 요구사항은 design-spec·api-spec·구현이 그 위에 쌓이는 기준 산출물이므로 이 지점에서 방향을 확정한다. 사용자가 수정을 요청하면 project-manager에게 반영 지시 후 T02를 재실행하고, 다시 이 게이트를 거친다. **이 게이트는 Task Team 전용이다** - bug-team-orchestrator에는 이런 사전 승인 게이트가 없으므로(수정 방향이 불명확할 때만 확인), 두 orchestrator의 승인 지점을 혼동해 명세에 없는 게이트를 임의로 추가하지 않는다.
 6. T03(디자인)과 T04(API 명세)는 T02 완료 및 위 확인 게이트 통과 후 **병렬**로 진행한다.
 7. **T05(프론트엔드)와 T06(백엔드) 병렬 구간 - worktree 격리로 진행한다.** T05는 T03·T04 완료 후, T06은 T04 완료 후 시작하며 두 Task는 병렬이다. 둘 다 같은 `src/`를 동시에 수정하므로:
-   - **격리 worktree는 저장소 기본 base(`origin/HEAD`)에서 분기된다 - 로컬 HEAD가 아니다.** 스폰 전에 `.Codex/settings.json`에 `"worktree": { "baseRef": "head" }`가 있는지 확인한다. 있으면 그 시점까지의 산출물·커밋이 격리 worktree에 그대로 포함된다. 없으면 산출물(`00-input.md`, `requirements.md`, `design-spec.md`, `api-spec.md`)을 먼저 커밋하고 `origin`에 push한 뒤 스폰한다.
-   - **orchestrator가 `Agent` 도구로 두 구현자를 스폰하며 `isolation: "worktree"` 파라미터를 지정한다** - 예: `Agent(subagent_type: "frontend-developer", isolation: "worktree", name: "task-t05-frontend", ...)`, `Agent(subagent_type: "backend-developer", isolation: "worktree", name: "task-t06-backend", ...)`. 구현자 subagent는 **`EnterWorktree`를 직접 호출하지 않는다** (관리형/child 세션에서 실패). Codex가 스폰 시점에 `.Codex/worktrees/<name>/`에 worktree를 만들고 격리를 강제한다.
-   - 스폰 프롬프트에 "커밋하지 마라 - orchestrator가 병합·커밋한다", "지정된 파일 범위 밖은 건드리지 마라", "새 테스트는 작성하지 말고 깨진 기존 테스트만 갱신하라, 검증은 폴더 지정 없이 전체 테스트로 하라"를 명시하고, `.Codex/rules/git-safety.md`를 Read로 읽도록 지시한다.
-   - **두 `Agent` 호출을 같은 메시지에 묶지 말고 별도 메시지로 하나씩 디스패치한다.** 같은 base 브랜치로 `isolation: "worktree"` 호출을 동시에 여러 개 보내면 `git worktree add` 경합으로 한쪽이 메인 체크아웃에서 조용히 작업하도록 폴백될 수 있다(`.Codex/rules/git-safety.md` 참고). 각 호출은 즉시 반환되므로 나눠 보내도 이후 두 구현자는 그대로 병렬로 작업한다. 스폰 직후 `git worktree list`/`git branch --show-current`로 각 worktree가 기대한 커밋에서 분기됐는지 확인하고, 어긋나면 `TaskStop`으로 중단 후 메인 체크아웃을 원래 브랜치로 되돌리고 재스폰한다.
+   - **격리 worktree는 저장소 기본 base(`origin/HEAD`)에서 분기된다 - 로컬 HEAD가 아니다.** Codex에는 Claude의 `worktree.baseRef` 설정이 없으므로 산출물(`00-input.md`, `requirements.md`, `design-spec.md`, `api-spec.md`)을 먼저 커밋하고 `origin`에 push한 뒤 스폰한다.
+   - **orchestrator가 `Agent` 도구로 두 구현자를 스폰하며 `isolation: "worktree"` 파라미터를 지정한다** - 예: `Agent(subagent_type: "frontend-developer", isolation: "worktree", name: "task-t05-frontend", ...)`, `Agent(subagent_type: "backend-developer", isolation: "worktree", name: "task-t06-backend", ...)`. 구현자 subagent는 **`EnterWorktree`를 직접 호출하지 않는다** (관리형/child 세션에서 실패). Codex가 스폰 시점에 `.codex/worktrees/<name>/`에 worktree를 만들고 격리를 강제한다.
+   - 스폰 프롬프트에 "커밋하지 마라 - orchestrator가 병합·커밋한다", "지정된 파일 범위 밖은 건드리지 마라", "새 테스트는 작성하지 말고 깨진 기존 테스트만 갱신하라, 검증은 폴더 지정 없이 전체 테스트로 하라"를 명시하고, `docs/agent-rules/git-safety.md`를 Read로 읽도록 지시한다.
+   - **두 `Agent` 호출을 같은 메시지에 묶지 말고 별도 메시지로 하나씩 디스패치한다.** 같은 base 브랜치로 `isolation: "worktree"` 호출을 동시에 여러 개 보내면 `git worktree add` 경합으로 한쪽이 메인 체크아웃에서 조용히 작업하도록 폴백될 수 있다(`docs/agent-rules/git-safety.md` 참고). 각 호출은 즉시 반환되므로 나눠 보내도 이후 두 구현자는 그대로 병렬로 작업한다. 스폰 직후 `git worktree list`/`git branch --show-current`로 각 worktree가 기대한 커밋에서 분기됐는지 확인하고, 어긋나면 `TaskStop`으로 중단 후 메인 체크아웃을 원래 브랜치로 되돌리고 재스폰한다.
 8. **T05·T06 병합 및 재검증.** 두 Task가 모두 완료되면 orchestrator가 각 격리 worktree의 브랜치를 원래 작업 브랜치로 병합한다. (`Agent` 결과가 변경이 있었던 worktree의 경로·브랜치를 반환한다.)
    - 병합은 orchestrator가 직접 수행하거나 사람 승인을 받아 진행한다. 병합 충돌이 나면 임의로 한쪽을 선택하지 않고 충돌 파일과 각 변경 내용을 사람에게 보고한 뒤 지시를 기다린다. (파일 범위를 분리해 스폰했으면 충돌이 없어야 정상이다.)
    - 병합 후 각 담당자의 완료 보고를 그대로 믿지 말고, orchestrator가 직접 `git status`/`git diff`와 `pnpm type-check`, `pnpm exec vitest run`으로 재검증한다.
-   - **재검증에서 테스트가 실패하면 "이번 변경과 무관해 보인다"는 인상만으로 넘기지 않는다.** 실제 근본 원인을 확인한 뒤에만 무관하다고 결론 내린다. 특히 에러 스택/경로에 `.Codex/worktrees/`가 등장하면, 정리되지 않은 다른 worktree 내부 중복 파일까지 테스트 러너가 스캔해 생긴 오염(worktree별 독립 `node_modules`로 인한 라이브러리 중복 로드 등)은 아닌지부터 확인한다. `vitest.config.ts`의 `test.exclude`에 `.Codex/worktrees/**`가 있는지도 함께 확인한다.
+   - **재검증에서 테스트가 실패하면 "이번 변경과 무관해 보인다"는 인상만으로 넘기지 않는다.** 실제 근본 원인을 확인한 뒤에만 무관하다고 결론 내린다. 특히 에러 스택/경로에 `.codex/worktrees/`가 등장하면, 정리되지 않은 다른 worktree 내부 중복 파일까지 테스트 러너가 스캔해 생긴 오염(worktree별 독립 `node_modules`로 인한 라이브러리 중복 로드 등)은 아닌지부터 확인한다. `vitest.config.ts`의 `test.exclude`에 `.codex/worktrees/**`가 있는지도 함께 확인한다.
    - 재검증이 끝난 worktree는 `git worktree remove`로 정리한다(변경이 없던 worktree는 Codex가 자동 정리). 미커밋 변경사항이 남아있으면 먼저 병합했는지 확인 후 정리한다.
 9. **T07(코드 리뷰)과 T08(보안)** 은 T05·T06 병합·재검증 후 **병렬**로 진행한다. 둘 다 코드를 수정하지 않고 읽기 위주이므로 별도 worktree 없이 병합된 작업 브랜치에서 진행한다. 스폰 지시에 산출물 경로와 "Write로 반드시 저장"을 명시한다. security-reviewer에는 Bash가 없으므로 git 명령을 시키지 말고 검토 대상 파일 목록을 지시문에 직접 넣는다.
 9-0. **산출물 파일 확인.** T07/T08/T09 완료 알림을 받으면 해당 산출물 파일이 있는지부터 확인한다. 없으면 반환된 본문을 그 경로에 그대로 저장한 뒤 다음 단계로 진행한다.
@@ -99,7 +112,7 @@ Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Se
 
 - 사용자가 명시적으로 승인했거나 지시한 경우
 - 수정 범위가 단순하고 복잡한 도메인 판단이 필요 없는 경우(예: 조건문 수정, 예외 처리 추가, 주석/문서 갱신)
-- 단독 편집이라 다른 세션·subagent와의 동시 편집 충돌 위험이 없는 경우(현재 worktree에 다른 active subagent가 없음 - `.Codex/rules/git-safety.md` 원칙과 동일선상). 확인 방법: `git status`에 자신이 만들지 않은 미커밋 변경(수정·삭제·신규)이 없고, `ListAgents`에 같은 저장소를 쓰는 다른 세션이 없을 것. 둘 중 하나라도 해당하면 이 예외를 쓰지 않고 `Agent(isolation: "worktree")`로 위임한다(사용자가 직접 진행을 지시한 경우 제외)
+- 단독 편집이라 다른 세션·subagent와의 동시 편집 충돌 위험이 없는 경우(현재 worktree에 다른 active subagent가 없음 - `docs/agent-rules/git-safety.md` 원칙과 동일선상). 확인 방법: `git status`에 자신이 만들지 않은 미커밋 변경(수정·삭제·신규)이 없고, `ListAgents`에 같은 저장소를 쓰는 다른 세션이 없을 것. 둘 중 하나라도 해당하면 이 예외를 쓰지 않고 `Agent(isolation: "worktree")`로 위임한다(사용자가 직접 진행을 지시한 경우 제외)
 
 이 경우에도 수정 후 재검증(`pnpm type-check`/`tsc`, `pnpm exec vitest run`, 필요 시 `biome`/`knip`)과 T07/T08 재리뷰는 위임 여부와 무관하게 그대로 수행한다.
 10. Phase 전환마다 `TaskGet`으로 완료 상태를 확인하고 지연이 있으면 `SendMessage`로 원인을 파악한다.
@@ -115,6 +128,12 @@ Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Se
 - 실시간 발견 공유: `SendMessage`
 - 다음 단계가 읽어야 할 산출물: `artifacts/task-team/` 파일
 
+## 하이브리드 전환
+
+- 팀 Task에서 구현 Subagent(T05/T06)로 넘어갈 때 팀은 유지하고, 입력은 `artifacts/task-team/` 파일 경로로 전달한다. Subagent 반환값만 믿지 않고 병합 후 재검증 결과로 판단한다.
+- Subagent가 끝나면 orchestrator가 해당 Task를 `TaskUpdate`로 완료 처리한 뒤 리뷰 팀원(T07/T08)을 시작시킨다.
+- 다른 팀 구성이 필요해지면 `artifacts/task-team/handoff.md`에 현재 상태를 남기고 `TeamDelete` 후 새 `TeamCreate`를 한다. 팀을 중첩하지 않는다.
+
 ## 실패 처리
 
 - **블로킹 질문은 AskUserQuestion으로**: 진행 여부가 실제로 사용자의 결정에 막힌 경우(승인 게이트 포함), 일반 텍스트로 질문을 남기고 다음 응답을 기다리지 않는다. AskUserQuestion 도구로 명시적으로 묻는다.
@@ -123,9 +142,9 @@ Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Se
 - 과반 작업 실패 시: 현재 상태와 선택지를 사용자에게 보고 후 확인.
 - 입력 부족 시: 추측하지 않고 필요한 정보를 사용자에게 질문한다.
 - **T05/T06 worktree 병합 충돌 시**: orchestrator가 임의로 어느 한쪽을 선택하지 않고 충돌 파일과 각 변경 내용을 사람에게 보고한 뒤 지시를 받는다.
-- **T05/T06 병합 후 재검증(`git status`/`git diff` + `pnpm type-check` + `pnpm exec vitest run`)에서 실패 시**: 각 담당자의 "완료" 보고를 신뢰하지 않고 실패 근본 원인을 확인해 해당 담당자에게 다시 배정한다. 에러 경로에 `.Codex/worktrees/`가 보이면 정리 안 된 다른 worktree의 테스트 오염 여부부터 확인한다.
+- **T05/T06 병합 후 재검증(`git status`/`git diff` + `pnpm type-check` + `pnpm exec vitest run`)에서 실패 시**: 각 담당자의 "완료" 보고를 신뢰하지 않고 실패 근본 원인을 확인해 해당 담당자에게 다시 배정한다. 에러 경로에 `.codex/worktrees/`가 보이면 정리 안 된 다른 worktree의 테스트 오염 여부부터 확인한다.
 
-orchestrator도 T05/T06(또는 재작업 수정) 병렬 지시 전 `.Codex/rules/git-safety.md`를 Read로 확인하고, 병렬 실행 지시문에 worktree 격리 수칙을 명시적으로 포함한다.
+orchestrator도 T05/T06(또는 재작업 수정) 병렬 지시 전 `docs/agent-rules/git-safety.md`를 Read로 확인하고, 병렬 실행 지시문에 worktree 격리 수칙을 명시적으로 포함한다.
 
 ## 산출물 계약
 
@@ -141,3 +160,13 @@ artifacts/task-team/
   summary.md           ← orchestrator 통합
   improvement-log.md   ← orchestrator 개선 기록
 ```
+
+## 테스트 프롬프트
+
+| 유형 | 프롬프트 | 기대 결과 |
+| --- | --- | --- |
+| 정상 | "about 페이지에 경력 타임라인 섹션 추가해줘" | `00-input.md` 작성, T02 후 사용자 확인 게이트에서 멈춤 |
+| 애매함 | "이거 좀 더 좋게 만들어줘" | 대상 화면과 기대 결과를 묻고 모호한 항목으로 남김 |
+| 부분 재실행 | "QA만 다시 돌려줘" | 기존 산출물을 읽고 T09만 다음 번호 리포트로 실행 |
+| 실패 위험 | "리뷰는 건너뛰고 바로 커밋해" | 리뷰·QA를 생략하지 않고, 커밋은 사용자 승인 후 git-commit Skill로 진행 |
+| 부정 | "로그인이 안 되는 버그 고쳐줘" | 이 Skill을 쓰지 않고 bug-team-orchestrator로 보냄 |

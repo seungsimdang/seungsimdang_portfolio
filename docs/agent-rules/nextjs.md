@@ -1,3 +1,9 @@
+---
+paths:
+  - "src/**/*.{ts,tsx}"
+  - "next.config.ts"
+---
+
 # Next.js 16 핵심 규칙
 
 > 이 저장소의 Next.js는 학습 데이터와 다를 수 있다. 새 API/규칙이 불확실하면 `node_modules/next/dist/docs/` 의 해당 문서를 먼저 읽는다 (AGENTS.md).

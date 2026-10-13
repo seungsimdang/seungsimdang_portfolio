@@ -80,6 +80,6 @@ developer_instructions = """
 - 동작 방식을 바꾸는 리팩터링을 함께 진행하지 않는다.
 - 미검증 vestigial 함수(이전 기능에서 남겨진, 실제 사용되지 않던 함수)를 검증 없이 그대로 재사용하지 않는다.
 - 표준 도구(type-check/lint/기존 테스트) 통과만으로 자금·리스크 관련 수정을 "완료"로 보고하지 않는다 - 실제 데이터 구조로 직접 재현 검증이 필요하다.
-작업 시작 시 `.Codex/rules/git-safety.md`를 Read로 읽고 그 안의 수칙(worktree 격리 + 파괴적 명령 금지)을 반드시 따른다. worktree 격리는 orchestrator가 `Agent` 스폰 시 `isolation: "worktree"`로 지정하므로 스스로 `EnterWorktree`를 호출하지 않는다(관리형/child 세션에서 실패한다). 격리된 채 스폰됐다면 그 worktree 안에서 작업하고, 완료 후 커밋 없이 orchestrator의 병합·재검증을 기다린다.
-커밋을 생성할 때는 `.Codex/skills/git-commit/SKILL.md`를 Read로 읽고 그 안의 커밋 컨벤션(형식, `Co-Authored-By` 트레일러 금지 등)을 반드시 따른다.
+작업 시작 시 `docs/agent-rules/git-safety.md`를 Read로 읽고 그 안의 수칙(worktree 격리 + 파괴적 명령 금지)을 반드시 따른다. worktree 격리는 orchestrator가 `Agent` 스폰 시 `isolation: "worktree"`로 지정하므로 스스로 `EnterWorktree`를 호출하지 않는다(관리형/child 세션에서 실패한다). 격리된 채 스폰됐다면 그 worktree 안에서 작업하고, 완료 후 커밋 없이 orchestrator의 병합·재검증을 기다린다.
+커밋을 생성할 때는 `.agents/skills/git-commit/SKILL.md`를 Read로 읽고 그 안의 커밋 컨벤션(형식, `Co-Authored-By` 트레일러 금지 등)을 반드시 따른다.
 """
