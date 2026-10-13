@@ -1,4 +1,5 @@
 import "server-only";
+import { del } from "@vercel/blob";
 import { eq, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { db } from "@/db";
@@ -10,6 +11,7 @@ import {
 } from "@/db/schema/portfolio";
 import {
   type ExperienceInput,
+  isValidThumbnail,
   ORDER_SLUGS_MAX,
   type ProfileInput,
   type ProjectCreateInput,
@@ -178,25 +180,26 @@ export async function updateProject(
   input: ProjectUpdateInput,
 ): Promise<Project> {
   const [existing] = await db
-    .select({ id: projects.id })
+    .select({ id: projects.id, thumbnail: projects.thumbnail })
     .from(projects)
     .where(eq(projects.slug, slug));
   if (!existing) throw new NotFoundError();
 
+  const projectUpdate = {
+    slug: input.slug,
+    title: input.title,
+    period: input.period,
+    role: input.role,
+    summary: input.summary,
+    link: blankToNull(input.link),
+    techStack: input.techStack,
+    updatedAt: new Date(),
+    ...(input.thumbnail !== undefined
+      ? { thumbnail: blankToNull(input.thumbnail) }
+      : {}),
+  };
   const statements: BatchItem<"pg">[] = [
-    db
-      .update(projects)
-      .set({
-        title: input.title,
-        period: input.period,
-        role: input.role,
-        summary: input.summary,
-        link: blankToNull(input.link),
-        thumbnail: blankToNull(input.thumbnail),
-        techStack: input.techStack,
-        updatedAt: new Date(),
-      })
-      .where(eq(projects.id, existing.id)),
+    db.update(projects).set(projectUpdate).where(eq(projects.id, existing.id)),
     db.delete(experiences).where(eq(experiences.projectId, existing.id)),
   ];
   if (input.experiences.length > 0) {
@@ -209,21 +212,53 @@ export async function updateProject(
   try {
     await runBatch(statements);
   } catch (error) {
+    if (getPgErrorCode(error) === PG_UNIQUE_VIOLATION) {
+      throw new SlugConflictError();
+    }
     // 조회 직후 프로젝트가 삭제되면 experiences 삽입이 FK 위반으로 실패
     if (getPgErrorCode(error) === PG_FOREIGN_KEY_VIOLATION) {
       throw new NotFoundError();
     }
     throw error;
   }
-  return loadProjectById(existing.id);
+  const project = await loadProjectById(existing.id);
+  if (
+    existing.thumbnail &&
+    existing.thumbnail !== project.thumbnail &&
+    isOwnBlobUrl(existing.thumbnail)
+  ) {
+    await deleteBlobIfUnused(existing.thumbnail);
+  }
+  return project;
 }
 
-export async function deleteProject(slug: string): Promise<void> {
+export async function deleteProject(slug: string): Promise<string | null> {
   const rows = await db
     .delete(projects)
     .where(eq(projects.slug, slug))
-    .returning({ id: projects.id });
+    .returning({ id: projects.id, thumbnail: projects.thumbnail });
   if (rows.length === 0) throw new NotFoundError();
+  const thumbnail = rows[0].thumbnail;
+  if (thumbnail && isOwnBlobUrl(thumbnail)) await deleteBlobIfUnused(thumbnail);
+  return thumbnail;
+}
+
+function isOwnBlobUrl(value: string): boolean {
+  return isValidThumbnail(value);
+}
+
+async function deleteBlobIfUnused(url: string): Promise<void> {
+  try {
+    const [reference] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.thumbnail, url))
+      .limit(1);
+    if (reference) return;
+    await del(url);
+  } catch {
+    console.error("Blob thumbnail cleanup failed");
+  }
 }
 
 // 요청 slug 목록이 현재 전체 집합과 정확히 일치할 때만 순번 재배정
@@ -269,13 +304,20 @@ export async function updateTalk(
   slug: string,
   input: TalkUpdateInput,
 ): Promise<TechTalk> {
-  const [row] = await db
-    .update(techTalks)
-    .set({ ...input, updatedAt: new Date() })
-    .where(eq(techTalks.slug, slug))
-    .returning();
-  if (!row) throw new NotFoundError();
-  return toTalk(row, true);
+  try {
+    const [row] = await db
+      .update(techTalks)
+      .set({ ...input, updatedAt: new Date() })
+      .where(eq(techTalks.slug, slug))
+      .returning();
+    if (!row) throw new NotFoundError();
+    return toTalk(row, true);
+  } catch (error) {
+    if (getPgErrorCode(error) === PG_UNIQUE_VIOLATION) {
+      throw new SlugConflictError();
+    }
+    throw error;
+  }
 }
 
 export async function deleteTalk(slug: string): Promise<void> {

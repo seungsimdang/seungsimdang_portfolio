@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { AdminButton } from "@/components/admin/admin-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { SortableList } from "@/components/admin/sortable-list";
-import { Button } from "@/components/ui/button";
 import { requireAdminPage } from "@/lib/auth/require-admin";
 import { listTechTalks } from "@/services/portfolio/portfolio-service";
 
@@ -22,9 +22,9 @@ export default async function AdminTalksPage({ searchParams }: TalksPageProps) {
   return (
     <>
       <AdminPageHeader title="발표">
-        <Button href="/admin/talks/new" variant="secondary">
+        <AdminButton href="/admin/talks/new" variant="primary">
           새 발표
-        </Button>
+        </AdminButton>
       </AdminPageHeader>
       <SortableList
         kind="talks"

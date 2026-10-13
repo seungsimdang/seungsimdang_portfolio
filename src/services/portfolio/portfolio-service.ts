@@ -12,6 +12,8 @@ import { isValidThumbnail } from "@/schemas/portfolio.schema";
 import type { Experience, Profile, Project, TechTalk } from "@/types/portfolio";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// 썸네일을 Blob으로 이전하기 전까지 남는 로컬 경로, 이전 완료 후 함께 삭제
+const LEGACY_THUMBNAIL_PATTERN = /^\/images\/[A-Za-z0-9._/-]+$/;
 
 export class PortfolioNotSeededError extends Error {
   constructor() {
@@ -40,13 +42,17 @@ function safeHttpUrl(
   }
 }
 
-// 쓰기 스키마와 같은 /images/ 경로 규칙을 읽기 시점에도 적용함
+// 기존 로컬 이미지와 현재 Blob 이미지를 공개 화면에서 계속 읽음
 function safeThumbnail(
   thumbnail: string | null | undefined,
   raw: boolean,
 ): string | undefined {
   if (!thumbnail) return undefined;
-  return raw || isValidThumbnail(thumbnail) ? thumbnail : undefined;
+  return raw ||
+    (LEGACY_THUMBNAIL_PATTERN.test(thumbnail) && !thumbnail.includes("..")) ||
+    isValidThumbnail(thumbnail)
+    ? thumbnail
+    : undefined;
 }
 
 function toExperience(row: ExperienceRow, raw: boolean): Experience {

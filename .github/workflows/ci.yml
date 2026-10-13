@@ -23,7 +23,11 @@ jobs:
       - run: pnpm build
         env:
           DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+          BLOB_READ_WRITE_TOKEN: ci-dummy-token
+          NEXT_PUBLIC_BLOB_HOSTNAME: ci-test.public.blob.vercel-storage.com
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
         env:
           DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+          BLOB_READ_WRITE_TOKEN: ci-dummy-token
+          NEXT_PUBLIC_BLOB_HOSTNAME: ci-test.public.blob.vercel-storage.com

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { AdminButton } from "@/components/admin/admin-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { SortableList } from "@/components/admin/sortable-list";
-import { Button } from "@/components/ui/button";
 import { requireAdminPage } from "@/lib/auth/require-admin";
 import { listProjects } from "@/services/portfolio/portfolio-service";
 
@@ -24,9 +24,9 @@ export default async function AdminProjectsPage({
   return (
     <>
       <AdminPageHeader title="프로젝트">
-        <Button href="/admin/projects/new" variant="secondary">
+        <AdminButton href="/admin/projects/new" variant="primary">
           새 프로젝트
-        </Button>
+        </AdminButton>
       </AdminPageHeader>
       <SortableList
         kind="projects"

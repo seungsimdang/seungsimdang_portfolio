@@ -12,8 +12,9 @@ interface LoginPageProps {
   searchParams: Promise<{ from?: string; error?: string; reason?: string }>;
 }
 
-// /admin 하위 상대 경로만 허용하고 그 외는 /admin으로 대체
+// /admin 하위 상대 경로만 허용하고 기본 경로는 프로젝트 목록으로 지정
 function safeCallbackUrl(from: string | undefined) {
+  if (from === "/admin") return "/admin/projects";
   if (
     from &&
     (from === "/admin" || from.startsWith("/admin/")) &&
@@ -22,7 +23,7 @@ function safeCallbackUrl(from: string | undefined) {
   ) {
     return from;
   }
-  return "/admin";
+  return "/admin/projects";
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {

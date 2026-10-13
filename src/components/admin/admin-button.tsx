@@ -3,15 +3,18 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "danger";
+type Variant = "primary" | "secondary" | "danger" | "icon";
 
 const base =
-  "inline-flex min-h-44 items-center justify-center rounded-full border px-20 text-small transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex min-h-44 items-center justify-center rounded-full border text-small transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50";
 
+// 같은 속성의 유틸은 값 순서로 출력되어 base 여백이 variant 여백을 덮으므로 여백은 variant마다 지정
 const variants: Record<Variant, string> = {
-  primary: "border-white bg-white text-black hover:bg-white/90",
-  secondary: "border-white/25 text-white hover:bg-white/10",
-  danger: "border-white text-white hover:bg-white hover:text-black",
+  primary: "border-white px-20 bg-white text-black hover:bg-white/90",
+  secondary: "border-white/25 px-20 text-white hover:bg-white/10",
+  danger:
+    "border-transparent px-20 text-danger hover:bg-transparent hover:underline",
+  icon: "min-w-44 rounded-md border-transparent px-8 text-body hover:bg-white/10",
 };
 
 interface CommonProps {

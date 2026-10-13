@@ -24,7 +24,8 @@ export function Navbar({ name }: { name: string }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-md">
       <div className="w-full max-w-content mx-auto container-padding">
-        <div className="flex items-center justify-between py-24">
+        {/* 모바일은 이름과 링크를 두 줄로 나눠 링크가 화면 밖으로 나가지 않게 하고, 높이 89px로 본문 시작 위치(92px) 안에 맞춤 */}
+        <div className="flex flex-col items-start gap-8 py-16 md:flex-row md:items-center md:justify-between md:py-24">
           <Link
             href="/"
             className="text-xl font-medium whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity"

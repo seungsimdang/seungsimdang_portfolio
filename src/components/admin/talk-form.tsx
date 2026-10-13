@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { HttpStatus } from "@/constants/http-status";
 import { adminRequest } from "@/lib/admin-client/admin-request";
 import {
@@ -40,9 +40,9 @@ function toDraft(talk?: TechTalk): TalkDraft {
   };
 }
 
-function toInput(draft: TalkDraft, includeSlug: boolean) {
+function toInput(draft: TalkDraft) {
   const { slug, ...rest } = draft;
-  return includeSlug ? { slug, ...rest } : rest;
+  return { slug, ...rest };
 }
 
 interface TalkFormProps {
@@ -53,6 +53,7 @@ interface TalkFormProps {
 export function TalkForm({ talk, initialSaved }: TalkFormProps) {
   const router = useRouter();
   const isEdit = talk !== undefined;
+  const savedSlug = useRef(talk?.slug ?? "");
   const [draft, setDraft] = useState(() => toDraft(talk));
   const [deleting, setDeleting] = useState(false);
   const set = <K extends keyof TalkDraft>(key: K, value: TalkDraft[K]) =>
@@ -63,15 +64,25 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
     setDraft,
     validate: (d) =>
       isEdit
-        ? validateWith(talkUpdateInputSchema, toInput(d, false))
-        : validateWith(talkCreateInputSchema, toInput(d, true)),
+        ? validateWith(talkUpdateInputSchema, toInput(d))
+        : validateWith(talkCreateInputSchema, toInput(d)),
     save: (input) =>
       isEdit
-        ? adminRequest<TechTalk>("PUT", `/api/admin/talks/${talk.slug}`, input)
+        ? adminRequest<TechTalk>(
+            "PUT",
+            `/api/admin/talks/${savedSlug.current}`,
+            input,
+          )
         : adminRequest<TechTalk>("POST", "/api/admin/talks", input),
     // 생성 후에는 편집 화면으로 이동
     onSaved: (saved) => {
-      if (isEdit) return toDraft(saved);
+      if (isEdit) {
+        if (saved.slug !== savedSlug.current) {
+          savedSlug.current = saved.slug;
+          void router.replace(`/admin/talks/${saved.slug}`);
+        }
+        return toDraft(saved);
+      }
       router.push(`/admin/talks/${saved.slug}?saved=1`);
       return undefined;
     },
@@ -84,7 +95,7 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
     if (!talk) return null;
     const result = await adminRequest(
       "DELETE",
-      `/api/admin/talks/${talk.slug}`,
+      `/api/admin/talks/${savedSlug.current}`,
     );
     if (result.ok || result.status === HttpStatus.NotFound) {
       router.push("/admin/talks?deleted=1");
@@ -95,12 +106,26 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
     );
   }
 
+  function submit(event: FormEvent<HTMLFormElement>) {
+    if (
+      isEdit &&
+      draft.slug !== savedSlug.current &&
+      !window.confirm(
+        `발표 slug가 ${savedSlug.current}에서 ${draft.slug}(으)로 변경됩니다. 발표에는 slug별 공개 상세 주소가 없으며 자동 이동도 제공되지 않습니다. 저장할까요?`,
+      )
+    ) {
+      event.preventDefault();
+      return;
+    }
+    return form.submit(event);
+  }
+
   return (
     <form
       ref={form.formRef}
       noValidate
       aria-busy={form.saving}
-      onSubmit={form.submit}
+      onSubmit={submit}
       className="space-y-24"
     >
       <FormStatus notice={form.notice} />
@@ -108,12 +133,12 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
         id="talk-slug"
         label="slug"
         required
-        readOnly={isEdit}
+        maxLength={64}
         value={draft.slug}
         error={errors.slug}
         hint={
           isEdit
-            ? "slug는 변경할 수 없습니다."
+            ? "영문 소문자, 숫자, 하이픈(-) 64자 이하입니다."
             : "영문 소문자, 숫자, 하이픈(-)만 사용합니다."
         }
         onChange={(v) => set("slug", v)}

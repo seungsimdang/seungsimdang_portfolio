@@ -55,6 +55,7 @@ interface TextFieldProps extends FieldProps {
   type?: "text" | "email" | "url";
   readOnly?: boolean;
   placeholder?: string;
+  maxLength?: number;
 }
 
 export function TextField({
@@ -63,6 +64,7 @@ export function TextField({
   type = "text",
   readOnly,
   placeholder,
+  maxLength,
   ...field
 }: TextFieldProps) {
   return (
@@ -73,6 +75,7 @@ export function TextField({
         value={value}
         readOnly={readOnly}
         placeholder={placeholder}
+        maxLength={maxLength}
         required={field.required}
         aria-required={field.required}
         aria-invalid={field.error ? true : undefined}

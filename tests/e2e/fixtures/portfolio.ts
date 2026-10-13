@@ -52,7 +52,8 @@ export const projects: FixtureProject[] = [
     techStack: ["Next.js", "TypeScript"],
     summary: "썸네일과 외부 링크가 있는 테스트 프로젝트.",
     link: "https://example.com/alpha",
-    thumbnail: "/images/projects/globber/thumbnail.png",
+    thumbnail:
+      "https://ci-test.public.blob.vercel-storage.com/thumbnails/globber.png",
     experiences: [
       {
         title: "Alpha 경험 1",
