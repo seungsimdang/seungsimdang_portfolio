@@ -21,7 +21,15 @@ if (!databaseUrl) {
 }
 
 // 대상 DB를 오인하지 않도록 비밀번호 없이 호스트만 출력
-console.log(`Migration target host: ${new URL(databaseUrl).hostname}`);
+// 잘못된 값이면 예외 메시지에 URL 원문(비밀번호 포함)이 찍히므로 변수명만 알리고 종료
+let databaseHost;
+try {
+  databaseHost = new URL(databaseUrl).hostname;
+} catch {
+  console.error("DATABASE_URL is not a valid URL");
+  process.exit(1);
+}
+console.log(`Migration target host: ${databaseHost}`);
 
 const root = process.cwd();
 const journal = JSON.parse(

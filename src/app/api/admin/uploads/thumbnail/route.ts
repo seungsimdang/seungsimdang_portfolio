@@ -6,6 +6,7 @@ import { adminRoute } from "@/lib/auth/admin-route";
 import { isValidThumbnail } from "@/schemas/portfolio.schema";
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
+// Content-Length 없는 chunked 요청의 본문 상한은 Vercel Function 요청 본문 제한(4.5MB)에 의존함
 const MAX_REQUEST_BYTES = Math.floor(4.5 * 1024 * 1024);
 
 function invalidFile(message: string): ApiError {

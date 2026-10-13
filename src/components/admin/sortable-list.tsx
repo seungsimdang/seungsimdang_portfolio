@@ -69,6 +69,7 @@ export function SortableList({
 
   useEffect(() => {
     if (!dirty && !busy) return;
+    ignoreNextPopRef.current = false;
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (!leavingRef.current) event.preventDefault();
     };
