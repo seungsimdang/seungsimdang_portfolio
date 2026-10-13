@@ -36,7 +36,7 @@ export function ProjectCard({
       }}
     >
       {thumbnail && (
-        <>
+        <div className="absolute inset-0">
           <Image
             src={thumbnail}
             alt={`${title} 프로젝트 썸네일`}
@@ -45,7 +45,7 @@ export function ProjectCard({
             className="object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/70 from-50% to-transparent" />
-        </>
+        </div>
       )}
       <div className="relative z-10 w-full h-full flex flex-col justify-end p-32 md:p-48 lg:p-64">
         <h3 className="text-4xl md:text-5xl lg:text-6xl font-medium mb-16 break-keep text-balance">
