@@ -30,6 +30,7 @@ export function ThumbnailField({
 }: ThumbnailFieldProps) {
   const [uploading, setUploading] = useState(false);
   const uploadingRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
 
@@ -103,29 +104,40 @@ export function ThumbnailField({
       <label htmlFor="project-thumbnail" className="block text-small">
         썸네일 파일
       </label>
+      {/* 이미지가 있으면 미리보기 옆에 교체·제거를 묶고 파일 입력은 숨겨 교체 버튼으로 엶 */}
       {value && (
-        <div className="relative h-192 w-full max-w-320 overflow-hidden rounded-md">
-          <Image
-            src={value}
-            alt={`${title || "프로젝트"} 썸네일 미리보기`}
-            fill
-            sizes="320px"
-            className="object-cover"
-          />
+        <div className="flex flex-col items-start gap-12 md:flex-row">
+          <div className="relative h-192 w-full max-w-320 overflow-hidden rounded-md">
+            <Image
+              src={value}
+              alt={`${title || "프로젝트"} 썸네일 미리보기`}
+              fill
+              sizes="320px"
+              className="object-cover"
+            />
+          </div>
+          <div className="flex flex-wrap gap-8 md:flex-col">
+            <AdminButton
+              disabled={uploading || saving}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              이미지 교체
+            </AdminButton>
+            <AdminButton
+              variant="danger"
+              disabled={uploading || saving}
+              onClick={() => onChange("")}
+            >
+              썸네일 제거
+            </AdminButton>
+          </div>
         </div>
       )}
-      {/* 제거 대상인 미리보기 바로 아래에 두고, 저장 전까지는 폼 값만 비움 */}
-      {value && (
-        <AdminButton
-          disabled={uploading || saving}
-          onClick={() => onChange("")}
-        >
-          썸네일 제거
-        </AdminButton>
-      )}
       <input
+        ref={fileInputRef}
         id="project-thumbnail"
         type="file"
+        hidden={Boolean(value)}
         accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
         disabled={uploading || saving}
         aria-invalid={uploadError || serverError ? true : undefined}
