@@ -17,7 +17,7 @@
 | 병합·재검증·커밋·push | orchestrator | `feature/about-resume` | 병합·재검증·커밋 done, push는 아래 조율 후 |
 | T07 코드 리뷰 | code-reviewer | `code-review-1~3.md`, `triage-1.md`, `triage-4.md` | done (3차 통과, 3차는 사용자 결정으로 rate limit 코드만) |
 | T08 보안 리뷰 | security-reviewer | `security-review-1~4.md`, `triage-2~4.md` | done (4차 통과, 배포 승인) |
-| T09 QA | qa-engineer | `qa-report-1.md` | 조건부 통과 (DB·e2e·브라우저 항목 미검증, 아래 참고) |
+| T09 QA | qa-engineer | `qa-report-1.md` | 조건부 통과로 종료 (DB·e2e·브라우저 항목은 사용자 결정으로 Preview 확인 생략, 아래 참고) |
 | 운영 DB 마이그레이션·시드·skills 갱신 | orchestrator | 운영 DB | done (2026-10-13, 아래 기록) |
 
 ## 사용자 지시 (2026-10-13)
@@ -79,3 +79,17 @@
 ## 추가 커밋
 
 - `02e818c`, `2c415d7`, `13b214f`, `67c628c`, `e6e0e5b`, `c13ebde`, `0ce6fc7`, `2e24549`, `fa3a08f`, `2d994a2`, `335bbef`
+
+## push와 Preview 확인 (2026-10-13)
+
+- 사용자 승인 후 `feature/about-resume`을 push(`e9cafb4..2580ae8`). 같은 체크아웃을 쓰던 세션(seungsimdang-portfolio-f6)과 사전 조율함.
+- Vercel Preview 빌드 성공. Preview DB(Neon `br-winter-frost-b8ysl2y3`)에 마이그레이션 3건 기록, `admin_rate_limits`(github_id, window_start, count, prev_count) 생성 확인. 운영 DB는 변경 없음, 0002 미적용.
+- Preview DB의 `resume_entries`는 0건(시드는 운영에만 적용).
+- Preview 화면 확인은 Vercel Deployment Protection(SSO)과 자동화 브라우저의 Google 로그인 차단으로 진행하지 못했고, 사용자 결정으로 생략함. QA 미검증 항목은 그대로 남음.
+- 이후 f6 세션이 같은 브랜치에 공개 페이지 UI 커밋 `46c6802`, `c551faa`를 추가하고 push함. `about/page.tsx`는 하단 CTA 제거만 포함.
+
+## 운영 반영 시 순서
+
+- `develop` 병합 후 push는 Preview DB에만 영향. `main` 병합 후 push 시 Production 빌드가 운영 DB에 0002를 먼저 적용하고 코드를 배포함.
+- 그 전까지 로컬 dev 서버(운영 DB 사용)의 admin 저장은 500. 필요하면 `pnpm db:migrate`로 운영 DB에 0002만 먼저 적용 가능(테이블 추가 전용, 배포된 코드에 영향 없음).
+- main 반영 전 미검증 항목(admin 이력 편집, about 표시 순서, text-h3, 모바일 가로 스크롤) 확인 권장.
