@@ -111,11 +111,13 @@ export const techTalks = pgTable(
   ],
 );
 
-// githubId당 한 행을 갱신하는 고정 윈도 요청 횟수 기록
+// githubId당 한 행을 갱신하는 슬라이딩 윈도 카운터 기록
+// windowStart는 현재 버킷 시작, count는 현재 버킷 횟수, prevCount는 직전 버킷 횟수
 export const adminRateLimits = pgTable("admin_rate_limits", {
   githubId: text("github_id").primaryKey(),
   windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
   count: integer("count").notNull(),
+  prevCount: integer("prev_count").notNull().default(0),
 });
 
 export const resumeEntries = pgTable(
