@@ -56,7 +56,7 @@ export async function consumeAdminWriteQuota(
 // 다음 요청이 count를 1 올린 상태로 추정치가 상한 이하가 되는 시점까지의 초
 // 현재 버킷 안: prev_count * (1 - t/W) + count + 1 <= MAX 에서 t = W * (1 - (MAX - count - 1) / prev_count)
 // 다음 버킷: 직전 횟수가 count, 현재 횟수가 1이므로 u = W * (1 - (MAX - 1) / count), 버킷 잔여 시간에 더함
-function secondsUntilNextAllowed(
+export function secondsUntilNextAllowed(
   count: number,
   prevCount: number,
   elapsed: number,
