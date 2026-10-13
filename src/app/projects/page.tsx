@@ -2,15 +2,19 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { ProjectCard } from "@/components/common/project-card";
 import { Button } from "@/components/ui/button";
-import { profileData, projects } from "@/constants/portfolio-data";
-import { projectCardTheme } from "@/constants/project-card-theme";
+import { getProjectCardTheme } from "@/constants/project-card-theme";
+import {
+  getProfile,
+  listProjects,
+} from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
   title: "projects",
   alternates: { canonical: "/projects" },
 };
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const [profile, projects] = await Promise.all([getProfile(), listProjects()]);
   return (
     <div className="w-full min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -20,7 +24,7 @@ export default function ProjectsPage() {
       <section className="w-full max-w-content mx-auto container-padding">
         <div className="flex justify-center">
           <p className="text-h2 text-center w-full md:w-3/4 break-keep">
-            {profileData.description}
+            {profile.description}
           </p>
         </div>
       </section>
@@ -28,7 +32,7 @@ export default function ProjectsPage() {
       {/* Projects Section */}
       <section className="w-full max-w-content mx-auto container-padding section-spacing">
         <div className="space-y-128 md:space-y-160 lg:space-y-192">
-          {projects.map((project) => (
+          {projects.map((project, index) => (
             <div
               key={project.id}
               className="grid grid-cols-1 lg:grid-cols-12 gap-32 items-start"
@@ -39,8 +43,8 @@ export default function ProjectsPage() {
                   role={project.role}
                   period={project.period}
                   thumbnail={project.thumbnail}
-                  href={`/work/${project.id}`}
-                  {...projectCardTheme[project.id]}
+                  href={`/work/${project.slug}`}
+                  {...getProjectCardTheme(index)}
                   className="h-[60vh] lg:h-[75vh]"
                 />
               </div>

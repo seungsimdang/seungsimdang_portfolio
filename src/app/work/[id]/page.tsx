@@ -4,7 +4,11 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { ExternalLink } from "@/components/common/external-link";
 import { Button } from "@/components/ui/button";
-import { profileData, projects } from "@/constants/portfolio-data";
+import {
+  getProfile,
+  getProjectBySlug,
+  listProjectSlugs,
+} from "@/services/portfolio/portfolio-service";
 import type { Experience } from "@/types/portfolio";
 
 interface WorkPageProps {
@@ -14,24 +18,25 @@ interface WorkPageProps {
 const bodyClassName =
   "text-body whitespace-pre-line break-keep break-words min-w-0";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return projects.map((project) => ({ id: project.id }));
+export async function generateStaticParams() {
+  return (await listProjectSlugs()).map((id) => ({ id }));
 }
 
 export async function generateMetadata({
   params,
 }: WorkPageProps): Promise<Metadata> {
   const { id } = await params;
-  const project = projects.find((item) => item.id === id);
+  const [project, profile] = await Promise.all([
+    getProjectBySlug(id),
+    getProfile(),
+  ]);
   if (!project) return {};
   return {
     title: project.title,
     description: project.summary,
     alternates: { canonical: `/work/${id}` },
     openGraph: {
-      title: `${project.title} | ${profileData.name}`,
+      title: `${project.title} | ${profile.name}`,
       description: project.summary,
       type: "article",
       locale: "ko_KR",
@@ -110,7 +115,7 @@ function ExperienceSection({ experience }: { experience: Experience }) {
 
 export default async function WorkPage({ params }: WorkPageProps) {
   const { id } = await params;
-  const project = projects.find((item) => item.id === id);
+  const project = await getProjectBySlug(id);
   if (!project) notFound();
 
   return (
@@ -153,7 +158,7 @@ export default async function WorkPage({ params }: WorkPageProps) {
       </section>
 
       {project.experiences.map((experience) => (
-        <ExperienceSection key={experience.title} experience={experience} />
+        <ExperienceSection key={experience.id} experience={experience} />
       ))}
 
       <section className="w-full max-w-content mx-auto container-padding pb-48 md:pb-64 lg:pb-80">

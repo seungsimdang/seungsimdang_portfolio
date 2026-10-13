@@ -1,4 +1,22 @@
+export interface Profile {
+  name: string;
+  title: string;
+  tagline: string;
+  description: string;
+  email: string;
+  // DB 컬럼은 필수이나 읽기 시 http/https가 아닌 값은 제외되어 없을 수 있음
+  github?: string;
+  skills: string[];
+}
+
+export interface ExperienceLink {
+  label: string;
+  url: string;
+}
+
 export interface Experience {
+  // DB uuid, 렌더 key
+  id: string;
   title: string;
   problem: string;
   solution: string;
@@ -9,37 +27,37 @@ export interface Experience {
   };
   result: string;
   learning: string;
-  links?: {
-    label: string;
-    url: string;
-  }[];
+  // 빈 배열은 undefined로 매핑
+  links?: ExperienceLink[];
 }
 
-export type ProjectId =
-  | "globber"
-  | "dpm-core"
-  | "semt"
-  | "endo-admin"
-  | "endo-report";
-
 export interface Project {
-  id: ProjectId;
+  // DB uuid, 렌더 key
+  id: string;
+  // 공개 URL 식별자
+  slug: string;
   title: string;
   period: string;
   role: string;
   techStack: string[];
   summary: string;
+  // DB null은 undefined로 매핑
   link?: string;
+  // DB null은 undefined로 매핑
   thumbnail?: string;
+  // sort_order 오름차순
   experiences: Experience[];
 }
 
 export interface TechTalk {
+  // DB uuid, 렌더 key
   id: string;
+  slug: string;
   title: string;
+  // "YYYY.MM"
   date: string;
   venue: string;
   description: string;
   impact: string;
-  link: string;
+  link?: string;
 }

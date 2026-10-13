@@ -6,7 +6,7 @@ interface TalkPreviewProps {
   venue: string;
   description: string;
   impact?: string;
-  link: string;
+  link?: string;
   detailed?: boolean;
   className?: string;
 }
@@ -42,9 +42,11 @@ export function TalkPreview({
           </p>
         </div>
       )}
-      <ExternalLink href={link} className="text-small">
-        view details
-      </ExternalLink>
+      {link && (
+        <ExternalLink href={link} className="text-small">
+          view details
+        </ExternalLink>
+      )}
     </article>
   );
 }
