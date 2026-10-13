@@ -118,6 +118,15 @@
             "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/confirm-repeated-review.sh\""
           }
         ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-reask-after-free-text-answer.sh\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
