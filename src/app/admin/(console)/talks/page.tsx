@@ -30,7 +30,7 @@ export default async function AdminTalksPage({ searchParams }: TalksPageProps) {
         kind="talks"
         initialMessage={deleted ? "삭제했습니다." : ""}
         items={talks.map((talk) => ({
-          slug: talk.slug,
+          id: talk.slug,
           title: talk.title,
           meta: `${talk.date} · ${talk.venue}`,
         }))}

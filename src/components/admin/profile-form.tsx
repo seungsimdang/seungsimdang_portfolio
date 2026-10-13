@@ -19,6 +19,7 @@ interface ProfileDraft {
   email: string;
   github: string;
   skills: StringItem[];
+  tools: StringItem[];
 }
 
 function toDraft(profile: Profile): ProfileDraft {
@@ -26,11 +27,16 @@ function toDraft(profile: Profile): ProfileDraft {
     ...profile,
     github: profile.github ?? "",
     skills: toStringItems(profile.skills),
+    tools: toStringItems(profile.tools),
   };
 }
 
 function toInput(draft: ProfileDraft) {
-  return { ...draft, skills: draft.skills.map((item) => item.value) };
+  return {
+    ...draft,
+    skills: draft.skills.map((item) => item.value),
+    tools: draft.tools.map((item) => item.value),
+  };
 }
 
 export function ProfileForm({ profile }: { profile: Profile }) {
@@ -111,12 +117,21 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         onChange={(v) => set("github", v)}
       />
       <StringListEditor
-        legend="스킬 (순서가 첫 화면 순환 단어 순서입니다)"
+        legend="스킬 (순서가 첫 화면 순환 단어 순서이며 about의 .stack에도 표시됩니다)"
         itemLabel="스킬"
+        hint="한 항목에 기술 하나씩 입력하세요."
         items={draft.skills}
         onChange={(skills) => set("skills", skills)}
         errors={errors}
         path="skills"
+      />
+      <StringListEditor
+        legend="툴 (공개 about의 .tools에 표시됩니다)"
+        itemLabel="툴"
+        items={draft.tools}
+        onChange={(tools) => set("tools", tools)}
+        errors={errors}
+        path="tools"
       />
       <FormActionBar
         saving={form.saving}
