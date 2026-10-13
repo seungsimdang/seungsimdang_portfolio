@@ -2,6 +2,7 @@ import "server-only";
 import { HttpStatusCode } from "axios";
 import { ApiError, apiErrors } from "@/lib/api/api-error";
 import { fail } from "@/lib/api/response";
+import { consumeAdminWriteQuota } from "@/services/admin/rate-limit-service";
 import {
   LimitExceededError,
   NotFoundError,
@@ -70,6 +71,13 @@ export function adminRoute<
             ? apiErrors.unauthorized()
             : apiErrors.forbidden(),
         );
+      }
+      if (MUTATING_METHODS.has(request.method)) {
+        // 조회 실패는 catch로 넘어가 500으로 처리되므로 쓰기를 통과시키지 않음
+        const quota = await consumeAdminWriteQuota(guard.githubId);
+        if (!quota.allowed) {
+          return fail(apiErrors.rateLimited(quota.retryAfterSeconds));
+        }
       }
       return await handler({
         request,

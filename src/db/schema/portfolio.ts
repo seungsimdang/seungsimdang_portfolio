@@ -111,6 +111,13 @@ export const techTalks = pgTable(
   ],
 );
 
+// githubId당 한 행을 갱신하는 고정 윈도 요청 횟수 기록
+export const adminRateLimits = pgTable("admin_rate_limits", {
+  githubId: text("github_id").primaryKey(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  count: integer("count").notNull(),
+});
+
 export const resumeEntries = pgTable(
   "resume_entries",
   {

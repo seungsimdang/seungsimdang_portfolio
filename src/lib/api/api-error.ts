@@ -8,6 +8,7 @@ export class ApiError extends Error {
     readonly status: number,
     message: string,
     readonly fieldErrors?: Record<string, string>,
+    readonly headers?: Record<string, string>,
   ) {
     super(message);
     this.name = "ApiError";
@@ -53,6 +54,14 @@ export const apiErrors = {
       "LIMIT_EXCEEDED",
       HttpStatusCode.Conflict,
       "더 이상 만들 수 없습니다. 기존 항목을 삭제한 뒤 다시 시도해 주세요",
+    ),
+  rateLimited: (retryAfterSeconds: number) =>
+    new ApiError(
+      "RATE_LIMITED",
+      HttpStatusCode.TooManyRequests,
+      "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요",
+      undefined,
+      { "Retry-After": String(retryAfterSeconds) },
     ),
   notSeeded: () =>
     new ApiError(
