@@ -58,3 +58,6 @@ artifacts/task-team/*/qa-screens/
 
 # MCP 서버 URL에 secret 포함
 /.mcp.json
+
+# Playwright MCP 스냅샷
+/.playwright-mcp/
