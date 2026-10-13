@@ -14,6 +14,7 @@ export type WriteQuota =
 // 버킷은 DB now()를 윈도 길이 단위로 정렬한 시작 시각
 // 저장 버킷이 현재면 count+1, 직전 버킷이면 prev_count=count와 count=1, 그보다 오래됐으면 prev_count=0과 count=1
 // 추정치는 prev_count * (1 - 경과초/윈도) + count
+// 거부된 요청도 count를 올리므로 한도 초과 상태에서 계속 재시도하면 대기 시간이 늘어남
 export async function consumeAdminWriteQuota(
   githubId: string,
 ): Promise<WriteQuota> {
