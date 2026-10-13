@@ -105,6 +105,7 @@ export function ThumbnailField({
         썸네일 파일
       </label>
       {/* 이미지가 있으면 미리보기 옆에 교체·제거를 묶고 파일 입력은 숨겨 교체 버튼으로 엶 */}
+      {/* 제거는 저장 전까지 되돌릴 수 있어 위험 스타일 대신 교체와 같은 일반 버튼으로 둠 */}
       {value && (
         <div className="flex flex-col items-start gap-12 md:flex-row">
           <div className="relative h-192 w-full max-w-320 overflow-hidden rounded-md">
@@ -124,7 +125,6 @@ export function ThumbnailField({
               이미지 교체
             </AdminButton>
             <AdminButton
-              variant="danger"
               disabled={uploading || saving}
               onClick={() => onChange("")}
             >
