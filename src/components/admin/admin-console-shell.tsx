@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
-import { ExternalLink } from "@/components/common/external-link";
 import { AdminNav } from "./admin-nav";
 import { SignOutButton } from "./sign-out-button";
 
@@ -49,9 +48,6 @@ export function AdminConsoleShell({
             </Link>
             <div className="admin-header-navigation">
               <AdminNav />
-              <ExternalLink href="/" className="text-sm">
-                사이트 보기
-              </ExternalLink>
               <SignOutButton />
             </div>
           </div>

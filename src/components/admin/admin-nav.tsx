@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// 자주 편집하는 콘텐츠를 앞에 두고 /admin 기본 이동 대상인 프로젝트를 첫 탭으로 배치
 const LINKS = [
-  { href: "/admin/profile", label: "프로필" },
   { href: "/admin/projects", label: "프로젝트" },
   { href: "/admin/talks", label: "발표" },
+  { href: "/admin/profile", label: "프로필" },
 ];
 
 export function AdminNav() {

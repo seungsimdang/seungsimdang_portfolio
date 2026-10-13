@@ -21,7 +21,7 @@
 
 1. 사용자가 로컬 `pnpm dev`에서 admin UI(F1-F6, F7 폼 업로드, F9 slug 변경)를 직접 확인한다. GitHub 로그인이 필요해 자동 검증 불가.
 2. 확인 후 사용자 지시에 따라 develop 병합과 Production 배포를 진행한다.
-3. Production 배포 직후 F8 이름 변경과 F11 썸네일 이전을 각각 dry-run 결과를 보여 주고 승인받은 뒤 실행한다(`api-spec.md` 6절). 2026-10-13 dry-run(읽기 전용)에서 이전 대상은 썸네일이 있는 모든 항목(사용자 확정, 현재 globber 1개).
+3. F8은 완료. Production 배포 직후 F11 썸네일 이전을 dry-run 결과를 보여 주고 승인받은 뒤 실행한다(`api-spec.md` 6절). 2026-10-13 dry-run(읽기 전용)에서 이전 대상은 썸네일이 있는 모든 항목(사용자 확정, 현재 globber 1개).
 4. F11 확인 후 이전된 원본 이미지, `scripts/migrate-thumbnails.mjs`, `portfolio-service.ts`의 `LEGACY_THUMBNAIL_PATTERN` 분기를 삭제 커밋한다.
 5. 다음 Preview 배포에서 Preview DB 엔드포인트(`ep-snowy-dew-b88kcy4t`) 사용 여부를 확인한다(미확인).
 6. GitHub Secret `E2E_DATABASE_URL`이 e2e 전용 Neon 브랜치를 가리키는지 사용자가 1회 확인한다(Secret이라 값 확인 불가).
@@ -40,6 +40,13 @@
 - 하네스 수정(이 브랜치에 커밋됨):
   - `git-safety-guard.sh` 새 브랜치 차단을 브랜치 수 대신 살아 있는 worktree 기준으로 변경. candanta(`f22e258`, develop), globber-dashboard(`75e733c`, main)에도 같은 변경을 푸시함.
   - `block-reask-after-free-text-answer.sh`가 jq `-R`의 4095바이트 경계 한글 깨짐으로 선택지 답변을 직접 입력으로 오판하던 문제를 수정함(`2cbd5a2`).
+
+## 사용자 화면 확인 후 변경 (2026-10-13)
+
+- 관리자 탭 순서를 프로젝트, 발표, 프로필로 변경. `/admin` 기본 이동 대상(프로젝트)이 첫 탭이 되도록 맞춤.
+- 관리자 헤더의 "사이트 보기" 링크 제거(사용자 요청 기능이 아니었고 세로 정렬도 어긋남).
+- 프로젝트·발표 목록은 행 전체를 눌러 편집으로 이동. 마우스를 올리면 행 배경과 제목 밑줄로 표시. 순서·삭제 버튼은 행 링크 위에 따로 동작.
+- F8 실행 완료: Production `profile.name`을 사용자 지시로 `이승현`에서 `SeungHyun Lee`로 변경(조건부 UPDATE, 1행). 원복은 `id = 1` 한 행의 name을 `이승현`으로 되돌리는 것. 배포된 공개 사이트는 정적 캐시라 다음 Production 배포 또는 admin 프로필 저장(재검증) 전까지 이전 이름 표시.
 
 ## 사용자 결정 요약
 

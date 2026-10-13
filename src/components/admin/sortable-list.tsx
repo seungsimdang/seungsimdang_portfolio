@@ -254,14 +254,15 @@ export function SortableList({
       ) : (
         <ol className="divide-y divide-white/10 border-y border-white/10">
           {items.map((item, index) => (
+            // 제목 링크의 after 영역을 행 전체로 넓혀 행 어디를 눌러도 편집으로 이동하고 버튼만 그 위에 올림
             <li
               key={item.slug}
-              className="flex flex-col gap-12 py-16 md:flex-row md:items-center md:justify-between"
+              className="group relative flex flex-col gap-12 px-12 py-16 transition-colors hover:bg-white/5 md:flex-row md:items-center md:justify-between"
             >
               <div className="min-w-0">
                 <Link
                   href={`/admin/${kind}/${item.slug}`}
-                  className="text-body break-keep underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-white"
+                  className="text-body break-keep underline-offset-4 after:absolute after:inset-0 group-hover:underline focus-visible:outline-2 focus-visible:outline-white"
                 >
                   {index + 1}. {item.title}
                 </Link>
@@ -269,7 +270,7 @@ export function SortableList({
                   {item.slug} · {item.meta}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-8">
+              <div className="relative z-10 flex flex-wrap items-center gap-8">
                 <AdminButton
                   variant="icon"
                   disabled={busy || index === 0}
