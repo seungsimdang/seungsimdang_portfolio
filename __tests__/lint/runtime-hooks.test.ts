@@ -390,6 +390,14 @@ test("AskUserQuestion 직접 입력 답변 뒤 같은 응답의 재질문을 차
     expect(decide(prompt, answer("best practice가 뭔데?"))).toBe("deny");
     expect(decide(prompt, answer("지원, DB 공유"))).toBe("allow");
     expect(decide(answer("best practice가 뭔데?"), prompt)).toBe("allow");
+    // 다른 세션·subagent 메시지로 시작한 새 턴에서도 재질문 허용
+    const peer = {
+      type: "user",
+      isMeta: true,
+      origin: { kind: "peer" },
+      message: { content: "Another Claude session sent a message:" },
+    };
+    expect(decide(answer("best practice가 뭔데?"), peer)).toBe("allow");
     // 줄이 4095바이트를 넘고 라벨의 한글이 읽기 경계에 걸려도 선택지 답변은 허용
     const padded = (pad: string) => ({ pad, ...answer("미지원") });
     const start =
