@@ -45,7 +45,7 @@ export default async function ProjectsPage() {
                   thumbnail={project.thumbnail}
                   href={`/work/${project.slug}`}
                   {...getProjectCardTheme(index)}
-                  className="h-[60vh] lg:h-[75vh]"
+                  className="h-card lg:h-card-tall"
                 />
               </div>
               <div className="lg:col-span-1" />
