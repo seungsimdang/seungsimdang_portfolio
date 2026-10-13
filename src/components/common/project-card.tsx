@@ -27,7 +27,7 @@ export function ProjectCard({
     <Link
       href={href}
       className={cn(
-        "sticky top-160 block w-full h-[60vh] md:h-[90vh] rounded-lg overflow-hidden transition-transform hover:scale-[1.02] motion-reduce:transition-none motion-reduce:hover:scale-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+        "sticky top-160 block w-full h-[60vh] md:h-[calc(100dvh-208px)] rounded-lg overflow-hidden transition-transform hover:scale-[1.02] motion-reduce:transition-none motion-reduce:hover:scale-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black",
         className,
       )}
       style={{
