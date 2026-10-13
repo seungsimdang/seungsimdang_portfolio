@@ -22,4 +22,5 @@
 
 - `task-team-orchestrator`가 새 기능 사이클을 시작할 때 분기 기준은 `develop`이다(기존 SKILL.md의 worktree `baseRef: "head"` 설정과 무관하게, 사이클 시작 시점의 기준 브랜치를 `develop`으로 둔다).
 - `bug-team-orchestrator`의 병렬 T03-fix worktree도 같은 원칙을 따른다 - 수정 대상 브랜치가 `develop`이면 그 기준으로 분기한다.
+- `develop`·`main`에는 `git merge --no-ff`로만 반영한다. fast-forward 반영(`git merge --ff-only`, `git fetch . X:develop` 등)은 `.husky/pre-push`의 `scripts/check-merge-only-push.sh`가 차단한다.
 - 이 문서가 정한 병합 방향(`feature/* → develop → main`)을 벗어나는 병합(예: `feature/*`를 `main`에 직접 병합)은 사용자가 명시적으로 지시하지 않는 한 하지 않는다.

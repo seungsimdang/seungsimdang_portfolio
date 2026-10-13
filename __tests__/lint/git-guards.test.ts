@@ -63,3 +63,62 @@ test("커밋 검사가 인덱스 소스를 확인하고 기준 작성자를 강�
     rmSync(fixture, { recursive: true, force: true });
   }
 });
+
+test("develop·main push는 병합 커밋만 받고 main은 develop 병합만 허용한다", () => {
+  const fixture = mkdtempSync(join(tmpdir(), "portfolio-merge-only-"));
+  const git = (...args: string[]) =>
+    spawnSync("git", args, { cwd: fixture, encoding: "utf8" }).stdout.trim();
+  const commit = (message: string) => {
+    git("commit", "-q", "--allow-empty", "-m", message);
+    return git("rev-parse", "HEAD");
+  };
+  const zero = "0".repeat(40);
+  const push = (lines: string[][]) =>
+    spawnSync("sh", ["scripts/check-merge-only-push.sh", "origin"], {
+      cwd: fixture,
+      encoding: "utf8",
+      input: `${lines.map((line) => line.join(" ")).join("\n")}\n`,
+    }).status;
+  try {
+    cpSync(resolve("scripts"), join(fixture, "scripts"), { recursive: true });
+    git("init", "-q", "-b", "main");
+    git("config", "user.name", "Test");
+    git("config", "user.email", "test@example.com");
+    const base = commit("base");
+    git("switch", "-q", "-c", "feature/a");
+    const feature = commit("feature");
+    git("switch", "-q", "--detach", base);
+    git("merge", "-q", "--no-ff", "feature/a", "-m", "merge feature");
+    const developMerge = git("rev-parse", "HEAD");
+    git("switch", "-q", "--detach", base);
+    git("merge", "-q", "--no-ff", developMerge, "-m", "merge develop");
+    const mainMerge = git("rev-parse", "HEAD");
+    git("switch", "-q", "--detach", base);
+    git("merge", "-q", "--no-ff", "feature/a", "-m", "merge feature to main");
+    const mainFromFeature = git("rev-parse", "HEAD");
+
+    const develop = (sha: string) => [
+      "refs/heads/develop",
+      sha,
+      "refs/heads/develop",
+      base,
+    ];
+    const main = (sha: string) => [
+      "refs/heads/main",
+      sha,
+      "refs/heads/main",
+      base,
+    ];
+    expect(push([develop(feature)])).toBe(1);
+    expect(push([develop(developMerge)])).toBe(0);
+    expect(push([develop(developMerge), main(mainMerge)])).toBe(0);
+    expect(push([main(mainMerge)])).toBe(1);
+    expect(push([develop(developMerge), main(mainFromFeature)])).toBe(1);
+    expect(push([develop(zero)])).toBe(1);
+    expect(
+      push([["refs/heads/feature/a", feature, "refs/heads/feature/a", zero]]),
+    ).toBe(0);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
