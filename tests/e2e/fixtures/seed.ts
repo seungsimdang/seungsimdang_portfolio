@@ -9,11 +9,13 @@ import {
   experiences,
   profile,
   projects,
+  resumeEntries,
   techTalks,
 } from "../../../src/db/schema/portfolio";
 import {
   profileData,
   projects as seedProjects,
+  resumeEntries as seedResume,
   techTalks as seedTalks,
 } from "./portfolio";
 
@@ -42,11 +44,13 @@ async function main() {
   }
 
   const db = drizzle(neon(url));
-  const [[hasProfile], [hasProject], [hasTalk]] = await Promise.all([
-    db.select({ id: profile.id }).from(profile).limit(1),
-    db.select({ id: projects.id }).from(projects).limit(1),
-    db.select({ id: techTalks.id }).from(techTalks).limit(1),
-  ]);
+  const [[hasProfile], [hasProject], [hasTalk], [hasResume]] =
+    await Promise.all([
+      db.select({ id: profile.id }).from(profile).limit(1),
+      db.select({ id: projects.id }).from(projects).limit(1),
+      db.select({ id: techTalks.id }).from(techTalks).limit(1),
+      db.select({ id: resumeEntries.id }).from(resumeEntries).limit(1),
+    ]);
 
   const statements = [];
   const summary: string[] = [];
@@ -119,6 +123,23 @@ async function main() {
       ),
     );
     summary.push(`tech_talks: ${seedTalks.length}건`);
+  }
+
+  if (hasResume) {
+    summary.push("resume_entries: 건너뜀(이미 존재)");
+  } else {
+    // sort_order는 kind별로 fixture 표기 순서대로 0부터 부여
+    const counters: Record<string, number> = {};
+    statements.push(
+      db.insert(resumeEntries).values(
+        seedResume.map((e) => {
+          const sortOrder = counters[e.kind] ?? 0;
+          counters[e.kind] = sortOrder + 1;
+          return { ...e, sortOrder };
+        }),
+      ),
+    );
+    summary.push(`resume_entries: ${seedResume.length}건`);
   }
 
   if (statements.length > 0) {

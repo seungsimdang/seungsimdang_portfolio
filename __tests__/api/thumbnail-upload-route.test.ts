@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/db", () => ({ db: {} }));
+vi.mock("@/services/admin/rate-limit-service", () => ({
+  consumeAdminWriteQuota: async () => ({ allowed: true }),
+}));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("@/lib/auth/auth-options", () => ({ authOptions: {} }));
 const getServerSession = vi.fn();

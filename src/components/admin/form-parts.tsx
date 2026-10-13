@@ -30,6 +30,8 @@ export function FormStatus({ notice }: { notice: Notice | null }) {
 
 interface FormActionBarProps {
   saving: boolean;
+  // 상단 FormStatus와 같은 알림의 하단 요약용
+  notice: Notice | null;
   cancelHref: string;
   // 편집 화면에서만 전달
   onDelete?: () => void;
@@ -39,6 +41,7 @@ interface FormActionBarProps {
 // 긴 폼에서도 저장 버튼에 닿도록 하단에 고정되는 액션 바
 export function FormActionBar({
   saving,
+  notice,
   cancelHref,
   onDelete,
   deleteLabel,
@@ -49,6 +52,14 @@ export function FormActionBar({
         {saving ? "저장 중..." : "저장"}
       </AdminButton>
       <AdminButton href={cancelHref}>취소</AdminButton>
+      {/* 상단 FormStatus가 이미 낭독되므로 중복 낭독 방지 */}
+      {notice && !saving && (
+        <span aria-hidden="true" className="text-small text-white/75">
+          {notice.tone === "success"
+            ? "저장됨"
+            : "저장 실패 (상세는 위 알림 참고)"}
+        </span>
+      )}
       {onDelete && (
         <div className="ml-auto">
           <AdminButton variant="danger" onClick={onDelete}>

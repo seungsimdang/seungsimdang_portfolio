@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-13 - AskUserQuestion 재질문 차단 훅의 peer 메시지 턴 오탐 수정
+
+`block-reask-after-free-text-answer.sh`는 사용자 메시지가 들어오면 직접 입력 상태를 초기화하는데, `isMeta`인 항목은 건너뛰었다. 다른 세션 메시지와 subagent hand-back은 `isMeta: true`, `origin.kind: "peer"`로 기록되면서도 새 턴을 시작하므로, 그 턴에서도 이전 직접 입력 답변이 남아 몇 턴 뒤의 AskUserQuestion까지 차단했다. `origin.kind == "peer"` 항목도 초기화 대상에 넣고, 해당 경우를 `__tests__/lint/runtime-hooks.test.ts`에 추가했다.
+
 ## 2026-10-13 - develop·main fast-forward 반영 차단
 
 메인 세션이 관심사와 무관한 feature 브랜치에서 커밋한 뒤 `git fetch . X:develop`으로 develop·main에 fast-forward 반영해, 브랜치 출처가 이력에 남지 않았다. Claude 훅은 이런 우회 경로를 다 잡지 못하므로 push 시점에 검사하는 `scripts/check-merge-only-push.sh`를 `.husky/pre-push` 첫 단계로 추가했다. develop·main에 새로 들어오는 first-parent 커밋은 모두 병합 커밋이어야 하고, main 병합 커밋의 두 번째 부모는 develop first-parent 경로 위의 커밋이어야 한다. 두 브랜치의 삭제 push도 막는다. 검사는 `__tests__/lint/git-guards.test.ts`가 고정한다.

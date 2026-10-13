@@ -256,6 +256,7 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
       />
       <FormActionBar
         saving={form.saving || uploading}
+        notice={form.notice}
         cancelHref="/admin/projects"
         onDelete={isEdit ? () => setDeleting(true) : undefined}
         deleteLabel="프로젝트 삭제"

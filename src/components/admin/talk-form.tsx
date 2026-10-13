@@ -198,6 +198,7 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
       />
       <FormActionBar
         saving={form.saving}
+        notice={form.notice}
         cancelHref="/admin/talks"
         onDelete={isEdit ? () => setDeleting(true) : undefined}
         deleteLabel="발표 삭제"

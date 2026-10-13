@@ -18,6 +18,9 @@ const SESSION_EXPIRED = "세션이 만료되었습니다. 다시 로그인하세
 const FORBIDDEN_MESSAGE = "권한이 없습니다.";
 const FORBIDDEN_ORIGIN_MESSAGE = "요청 출처가 허용되지 않습니다.";
 
+const RATE_LIMITED_MESSAGE =
+  "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
+
 type AdminFailure = Extract<AdminResult<unknown>, { ok: false }>;
 
 // 목록 순서 변경과 삭제처럼 알림 구조가 필요 없는 경로의 401/403 문구
@@ -28,6 +31,8 @@ export function describeAuthFailure(result: AdminFailure): string | null {
       ? FORBIDDEN_ORIGIN_MESSAGE
       : FORBIDDEN_MESSAGE;
   }
+  if (result.status === HttpStatusCode.TooManyRequests)
+    return RATE_LIMITED_MESSAGE;
   return null;
 }
 
@@ -70,6 +75,12 @@ function describeFailure(
         message: "대상이 이미 삭제되었습니다.",
         link: { href: listHref, label: "목록으로" },
       },
+      fieldErrors,
+    };
+  }
+  if (result.status === HttpStatusCode.TooManyRequests) {
+    return {
+      notice: { tone: "error", message: RATE_LIMITED_MESSAGE },
       fieldErrors,
     };
   }
