@@ -18,7 +18,7 @@ export default async function ContactPage() {
       <PageHeader title="say hello" />
 
       {/* Contact Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
+      <section className="w-full max-w-content mx-auto container-padding py-40 md:py-48 lg:py-64">
         <div className="space-y-48">
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-32">
             <li>

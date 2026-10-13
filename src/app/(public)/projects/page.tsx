@@ -17,7 +17,7 @@ export default async function ProjectsPage() {
       <PageHeader title="projects" />
 
       {/* Projects Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
+      <section className="w-full max-w-content mx-auto container-padding py-40 md:py-48 lg:py-64">
         <div className="space-y-128 md:space-y-160 lg:space-y-192">
           {projects.map((project, index) => (
             <div

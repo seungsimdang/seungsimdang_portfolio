@@ -226,6 +226,11 @@ body {
   }
 }
 
+/* 연속된 섹션은 앞 섹션의 하단 여백만 남겨 간격이 이중으로 쌓이지 않게 함 */
+.section-spacing + .section-spacing {
+  padding-top: 0;
+}
+
 /* Smooth scroll */
 html {
   scroll-behavior: smooth;

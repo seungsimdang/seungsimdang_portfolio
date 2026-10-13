@@ -16,7 +16,7 @@ export default async function TalkPage() {
       <PageHeader title="talks" />
 
       {/* Talks Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
+      <section className="w-full max-w-content mx-auto container-padding py-40 md:py-48 lg:py-64">
         <div className="space-y-32 md:space-y-40">
           <div className="flex items-center gap-10">
             <h2 className="text-small whitespace-nowrap">.talks</h2>
