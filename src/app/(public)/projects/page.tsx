@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { ProjectCard } from "@/components/common/project-card";
-import { Button } from "@/components/ui/button";
 import { getProjectCardTheme } from "@/constants/project-card-theme";
-import {
-  getProfile,
-  listProjects,
-} from "@/services/portfolio/portfolio-service";
+import { listProjects } from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
   title: "projects",
@@ -14,23 +10,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ProjectsPage() {
-  const [profile, projects] = await Promise.all([getProfile(), listProjects()]);
+  const projects = await listProjects();
   return (
     <div className="w-full min-h-screen bg-black text-white">
       {/* Hero Section */}
       <PageHeader title="projects" />
 
-      {/* Description */}
-      <section className="w-full max-w-content mx-auto container-padding">
-        <div className="flex justify-center">
-          <p className="text-h2 text-center w-full md:w-3/4 break-keep">
-            {profile.description}
-          </p>
-        </div>
-      </section>
-
       {/* Projects Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
+      <section className="w-full max-w-content mx-auto container-padding py-40 md:py-48 lg:py-64">
         <div className="space-y-128 md:space-y-160 lg:space-y-192">
           {projects.map((project, index) => (
             <div
@@ -52,9 +39,7 @@ export default async function ProjectsPage() {
               <div className="lg:col-span-1" />
               <div className="lg:col-span-4 flex flex-col justify-between min-h-project-info">
                 <div className="sticky top-128">
-                  <p className="text-small opacity-70 mb-32">
-                    {project.summary}
-                  </p>
+                  <p className="text-h3 break-keep mb-32">{project.summary}</p>
                   <div className="flex justify-end">
                     <div className="w-36 h-36 opacity-50">
                       <svg
@@ -71,16 +56,6 @@ export default async function ProjectsPage() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
-        <div className="text-center py-64 md:py-96 lg:py-128">
-          <h2 className="text-h2 mb-24 md:mb-32">Let&apos;s work together</h2>
-          <Button href="/contact" variant="primary">
-            Get in touch
-          </Button>
         </div>
       </section>
     </div>

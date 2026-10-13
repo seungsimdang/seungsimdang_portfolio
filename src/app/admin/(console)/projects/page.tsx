@@ -32,7 +32,7 @@ export default async function AdminProjectsPage({
         kind="projects"
         initialMessage={deleted ? "삭제했습니다." : ""}
         items={projects.map((project) => ({
-          slug: project.slug,
+          id: project.slug,
           title: project.title,
           meta: project.period,
           experienceCount: project.experiences.length,

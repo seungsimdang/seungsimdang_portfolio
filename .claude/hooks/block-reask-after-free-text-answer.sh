@@ -8,8 +8,9 @@ transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/nul
 [ -n "$transcript" ] && [ -r "$transcript" ] || exit 0
 
 # jq -R은 4095바이트 넘는 줄에서 한글 등 멀티바이트 문자가 읽기 경계에 걸리면 깨뜨려 선택지 라벨 비교가 어긋나므로 JSON으로 직접 읽음
+# 다른 세션·subagent 메시지(origin.kind == "peer")는 isMeta로 기록되지만 새 턴을 시작하므로 사용자 메시지처럼 초기화
 free_text=$(jq -n '
-  reduce (inputs | select(.type == "user" and (.isMeta | not))) as $e (false;
+  reduce (inputs | select(.type == "user" and ((.isMeta | not) or .origin.kind? == "peer"))) as $e (false;
     if ($e.message.content | type) == "string"
       or ([$e.message.content[]? | select(.type == "text")] | length > 0)
     then false

@@ -41,7 +41,61 @@ export const profileData = {
   email: "e2e@example.com",
   github: "https://github.com/e2e-fixture",
   skills: ["React", "Vue 3", "TypeScript"],
+  tools: ["Git/Github", "Jira"],
 };
+
+// kind는 constants/resume.ts의 RESUME_KINDS 값, 수상은 period가 빈 항목
+export const resumeEntries = [
+  {
+    kind: "work",
+    period: "2025.01 - 현재",
+    title: "Fixture Developer",
+    subtitle: "Fixture Company",
+    details: ["fixture 업무 첫째", "fixture 업무 둘째"],
+  },
+  {
+    kind: "work",
+    period: "2024.01 - 2024.12",
+    title: "Fixture Intern",
+    subtitle: "Fixture Company",
+    details: [],
+  },
+  {
+    kind: "education",
+    period: "졸업 2024.08",
+    title: "Fixture University",
+    subtitle: "Fixture Major",
+    details: [],
+  },
+  {
+    kind: "activity",
+    period: "2023.01 - 2023.02",
+    title: "Fixture Community",
+    subtitle: "",
+    details: [],
+  },
+  {
+    kind: "award",
+    period: "",
+    title: "Fixture Award",
+    subtitle: "Fixture Org",
+    details: ["fixture 수상 내역"],
+  },
+  {
+    kind: "certification",
+    period: "2024",
+    title: "Fixture Certification",
+    subtitle: "",
+    details: [],
+  },
+  {
+    kind: "language",
+    period: "2024",
+    title: "Fixture Language Test",
+    subtitle: "Fixture Level",
+    details: [],
+  },
+];
 
 export const projects: FixtureProject[] = [
   {

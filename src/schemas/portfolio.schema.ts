@@ -1,15 +1,20 @@
 import { z } from "zod";
+import { RESUME_KINDS } from "@/constants/resume";
 
 const SHORT_TEXT_MAX = 200;
 const LONG_TEXT_MAX = 5000;
 const LIST_MAX = 50;
 const URL_MAX = 2000;
+const PERIOD_MAX = 100;
 const SLUG_MAX = 64;
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const TALK_DATE_PATTERN = /^\d{4}\.(0[1-9]|1[0-2])$/;
 
 // 순서 변경 요청의 slug 상한이자 프로젝트·발표 각각의 생성 개수 상한
 export const ORDER_SLUGS_MAX = LIST_MAX * 2;
+
+// kind별 이력 생성 상한이자 정렬 요청 id 상한
+export const RESUME_KIND_MAX = LIST_MAX;
 
 export function isValidThumbnail(value: string): boolean {
   const hostname = process.env.NEXT_PUBLIC_BLOB_HOSTNAME;
@@ -116,6 +121,37 @@ export const profileInputSchema = z.strictObject({
   email: z.email("이메일 형식이 올바르지 않습니다").max(SHORT_TEXT_MAX),
   github: httpsUrl,
   skills: stringList,
+  tools: stringList,
+});
+
+// 빈 문자열 허용
+const optionalShortText = z
+  .string()
+  .trim()
+  .max(SHORT_TEXT_MAX, `${SHORT_TEXT_MAX}자 이하로 입력해 주세요`);
+
+export const resumeEntryUpdateInputSchema = z.strictObject({
+  period: z
+    .string()
+    .trim()
+    .max(PERIOD_MAX, `${PERIOD_MAX}자 이하로 입력해 주세요`),
+  title: shortText,
+  subtitle: optionalShortText,
+  details: stringList,
+});
+
+// kind는 생성 시에만 받고 수정으로 바꾸지 않음
+export const resumeEntryCreateInputSchema = resumeEntryUpdateInputSchema.extend(
+  { kind: z.enum(RESUME_KINDS) },
+);
+
+export const resumeOrderInputSchema = z.strictObject({
+  kind: z.enum(RESUME_KINDS),
+  ids: z
+    .array(z.uuid("올바른 id가 아닙니다"))
+    .min(1, "1개 이상 필요합니다")
+    .max(RESUME_KIND_MAX)
+    .refine((v) => new Set(v).size === v.length, "중복된 항목이 있습니다"),
 });
 
 const experienceLinkSchema = z.strictObject({ label: shortText, url: httpUrl });
@@ -186,3 +222,9 @@ export type ProjectUpdateInput = z.infer<typeof projectUpdateInputSchema>;
 export type ProjectCreateInput = z.infer<typeof projectCreateInputSchema>;
 export type TalkUpdateInput = z.infer<typeof talkUpdateInputSchema>;
 export type TalkCreateInput = z.infer<typeof talkCreateInputSchema>;
+export type ResumeEntryCreateInput = z.infer<
+  typeof resumeEntryCreateInputSchema
+>;
+export type ResumeEntryUpdateInput = z.infer<
+  typeof resumeEntryUpdateInputSchema
+>;

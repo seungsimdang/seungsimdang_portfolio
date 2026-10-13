@@ -15,6 +15,6 @@ export function fail(error: ApiError) {
   };
   return Response.json(
     { data: body, status: error.status } satisfies CustomData<ApiErrorBody>,
-    { status: error.status },
+    { status: error.status, headers: error.headers },
   );
 }

@@ -160,15 +160,6 @@ export default async function WorkPage({ params }: WorkPageProps) {
       {project.experiences.map((experience) => (
         <ExperienceSection key={experience.id} experience={experience} />
       ))}
-
-      <section className="w-full max-w-content mx-auto container-padding pb-48 md:pb-64 lg:pb-80">
-        <div className="text-center py-64 md:py-96 lg:py-128">
-          <h2 className="text-h2 mb-24 md:mb-32">Let&apos;s work together</h2>
-          <Button href="/contact" variant="primary">
-            Get in touch
-          </Button>
-        </div>
-      </section>
     </div>
   );
 }

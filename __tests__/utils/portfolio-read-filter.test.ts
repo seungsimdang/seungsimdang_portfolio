@@ -27,6 +27,7 @@ const profileRow = {
   email: "e@e.co",
   github: "javascript:alert(1)",
   skills: ["x"],
+  tools: [],
   updatedAt: new Date(),
 };
 

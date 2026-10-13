@@ -25,6 +25,8 @@
     "portfolio:thumbnails:migrate": "node --env-file-if-exists=.env.local scripts/migrate-thumbnails.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
+    "db:resume:seed": "tsx --env-file-if-exists=.env.local scripts/resume-data.ts seed",
+    "db:resume:profile": "tsx --env-file-if-exists=.env.local scripts/resume-data.ts profile",
     "db:seed:e2e": "tsx --env-file-if-exists=.env.local tests/e2e/fixtures/seed.ts",
     "test:e2e:local": "sh scripts/run-e2e-local.sh"
   },

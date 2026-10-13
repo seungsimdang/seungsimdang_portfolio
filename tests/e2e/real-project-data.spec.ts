@@ -17,9 +17,9 @@ for (const project of projects) {
         page.getByRole("heading", { level: 2, name: experience.title }),
       ).toBeVisible();
     }
-    // 경험 제목 h2 전체와 하단 CTA h2 1개
+    // 경험 제목 h2 전체
     await expect(page.getByRole("heading", { level: 2 })).toHaveCount(
-      project.experiences.length + 1,
+      project.experiences.length,
     );
     await expect(page).toHaveTitle(`${project.title} | ${siteSuffix}`);
     await expect(page.locator("link[rel=canonical]")).toHaveAttribute(

@@ -3,7 +3,6 @@ import { AboutSection } from "@/components/common/about-section";
 import { HeroSection } from "@/components/common/hero-section";
 import { ProjectCard } from "@/components/common/project-card";
 import { TalkPreview } from "@/components/common/talk-preview";
-import { Button } from "@/components/ui/button";
 import { getProjectCardTheme } from "@/constants/project-card-theme";
 import {
   getProfile,
@@ -60,25 +59,6 @@ export default async function Home() {
               <TalkPreview key={talk.id} {...talk} />
             ))}
           </div>
-
-          {/* Button Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-16 items-center">
-            <div className="hidden lg:block lg:col-span-5" />
-            <div className="lg:col-span-3 flex justify-center md:justify-end">
-              <Button href="/blog">visit talks</Button>
-            </div>
-            <div className="hidden lg:block lg:col-span-4" />
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
-        <div className="text-center py-64 md:py-96 lg:py-128">
-          <h2 className="text-h2 mb-24 md:mb-32">Let&apos;s work together</h2>
-          <Button href="/contact" variant="primary">
-            Get in touch
-          </Button>
         </div>
       </section>
     </div>

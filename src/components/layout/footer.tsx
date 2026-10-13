@@ -26,7 +26,7 @@ export function Footer({ profile }: FooterProps) {
   ];
 
   return (
-    <footer className="w-full max-w-content mx-auto container-padding py-96 md:py-128 bg-black">
+    <footer className="w-full max-w-content mx-auto container-padding pt-96 md:pt-128 pb-40 md:pb-48 bg-black">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-48 md:gap-64">
         {/* Brand */}
         <div className="space-y-16">

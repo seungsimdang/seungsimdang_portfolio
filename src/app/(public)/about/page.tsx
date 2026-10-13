@@ -1,82 +1,61 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
-import { Button } from "@/components/ui/button";
-import { getProfile } from "@/services/portfolio/portfolio-service";
+import {
+  ResumeEntryList,
+  ResumeSection,
+  TagList,
+} from "@/components/common/resume-section";
+import type { ResumeKind } from "@/constants/resume";
+import {
+  getProfile,
+  getResumeByKind,
+} from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
   title: "about",
   alternates: { canonical: "/about" },
 };
 
+// 화면 순서: 경력, 스킬, 툴, 이후 학력부터 어학까지
+const BEFORE_TAGS: [ResumeKind, string][] = [["work", ".experience"]];
+const AFTER_TAGS: [ResumeKind, string][] = [
+  ["education", ".education"],
+  ["activity", ".activities"],
+  ["award", ".award"],
+  ["certification", ".certification"],
+  ["language", ".language"],
+];
+
 export default async function AboutPage() {
-  const profile = await getProfile();
+  const [profile, resume] = await Promise.all([
+    getProfile(),
+    getResumeByKind(),
+  ]);
+  const renderEntries = ([kind, label]: [ResumeKind, string]) =>
+    resume[kind].length > 0 && (
+      <ResumeSection key={kind} label={label}>
+        <ResumeEntryList entries={resume[kind]} />
+      </ResumeSection>
+    );
   return (
     <div className="w-full min-h-screen bg-black text-white">
-      {/* Hero Section */}
       <PageHeader title="about" />
 
-      {/* Description */}
-      <section className="w-full max-w-content mx-auto container-padding">
-        <div className="flex justify-center">
-          <p className="text-h2 text-center w-full md:w-3/4 whitespace-pre-line break-keep">
-            {profile.tagline}
-          </p>
-        </div>
-      </section>
+      {BEFORE_TAGS.map(renderEntries)}
 
-      {/* About Content Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
-        <div className="lg:w-2/3 space-y-24">
-          <div className="flex items-center gap-10">
-            <h2 className="text-small whitespace-nowrap">.hello</h2>
-            <div className="flex-1 h-px bg-white/25" />
-          </div>
-          <p className="text-h3 break-keep">{profile.description}</p>
-          <div className="flex justify-end pt-32">
-            <div className="w-36 h-36 opacity-50">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 36 36"
-                fill="none"
-                className="w-full h-full"
-              >
-                <circle cx="18" cy="18" r="18" fill="currentColor" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </section>
+      {profile.skills.length > 0 && (
+        <ResumeSection label=".stack">
+          <TagList tags={profile.skills} />
+        </ResumeSection>
+      )}
 
-      {/* Tools/Stack Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
-        <div className="space-y-48 md:space-y-64">
-          <div className="flex items-center gap-10">
-            <h2 className="text-small whitespace-nowrap">.stack</h2>
-            <div className="flex-1 h-px bg-white/25" />
-          </div>
+      {profile.tools.length > 0 && (
+        <ResumeSection label=".tools">
+          <TagList tags={profile.tools} />
+        </ResumeSection>
+      )}
 
-          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-32 md:gap-48">
-            {profile.skills.map((skill) => (
-              <li
-                key={skill}
-                className="flex items-center justify-center p-32 border border-white/10 rounded-lg hover:border-white/30 transition-colors"
-              >
-                <span className="text-xl font-medium">{skill}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
-        <div className="text-center py-64 md:py-96 lg:py-128">
-          <h2 className="text-h2 mb-24 md:mb-32">Let&apos;s work together</h2>
-          <Button href="/contact" variant="primary">
-            Get in touch
-          </Button>
-        </div>
-      </section>
+      {AFTER_TAGS.map(renderEntries)}
     </div>
   );
 }
