@@ -43,19 +43,29 @@ export async function consumeAdminWriteQuota(
     row.prevCount * (remainingInBucket / ADMIN_WRITE_WINDOW_SECONDS) +
     row.count;
   if (estimate <= ADMIN_WRITE_MAX_PER_WINDOW) return { allowed: true };
-  // count가 상한 초과면 현재 버킷 끝까지 대기
-  // 그 외에는 직전 버킷 가중치가 상한 여유분 이하로 줄어드는 시점까지 대기, 즉 W * (1 - 여유분/prev_count) - 경과초
-  const waitSeconds =
-    row.count > ADMIN_WRITE_MAX_PER_WINDOW
-      ? remainingInBucket
-      : Math.min(
-          remainingInBucket,
-          ADMIN_WRITE_WINDOW_SECONDS *
-            (1 - (ADMIN_WRITE_MAX_PER_WINDOW - row.count) / row.prevCount) -
-            elapsed,
-        );
   return {
     allowed: false,
-    retryAfterSeconds: Math.max(1, Math.ceil(waitSeconds)),
+    retryAfterSeconds: Math.max(
+      1,
+      Math.ceil(secondsUntilNextAllowed(row.count, row.prevCount, elapsed)),
+    ),
   };
+}
+
+// 다음 요청이 count를 1 올린 상태로 추정치가 상한 이하가 되는 시점까지의 초
+// 현재 버킷 안: prev_count * (1 - t/W) + count + 1 <= MAX 에서 t = W * (1 - (MAX - count - 1) / prev_count)
+// 다음 버킷: 직전 횟수가 count, 현재 횟수가 1이므로 u = W * (1 - (MAX - 1) / count), 버킷 잔여 시간에 더함
+function secondsUntilNextAllowed(
+  count: number,
+  prevCount: number,
+  elapsed: number,
+): number {
+  const W = ADMIN_WRITE_WINDOW_SECONDS;
+  const MAX = ADMIN_WRITE_MAX_PER_WINDOW;
+  const remainingInBucket = W - elapsed;
+  if (count + 1 <= MAX && prevCount > 0) {
+    const withinBucket = W * (1 - (MAX - count - 1) / prevCount) - elapsed;
+    if (withinBucket < remainingInBucket) return withinBucket;
+  }
+  return remainingInBucket + Math.max(0, W * (1 - (MAX - 1) / count));
 }
