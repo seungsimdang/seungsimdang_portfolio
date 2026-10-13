@@ -5,7 +5,6 @@ import {
   ResumeSection,
   TagList,
 } from "@/components/common/resume-section";
-import { Button } from "@/components/ui/button";
 import type { ResumeKind } from "@/constants/resume";
 import {
   getProfile,
@@ -57,15 +56,6 @@ export default async function AboutPage() {
       )}
 
       {AFTER_TAGS.map(renderEntries)}
-
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
-        <div className="text-center py-64 md:py-96 lg:py-128">
-          <h2 className="text-h2 mb-24 md:mb-32">Let&apos;s work together</h2>
-          <Button href="/contact" variant="primary">
-            Get in touch
-          </Button>
-        </div>
-      </section>
     </div>
   );
 }

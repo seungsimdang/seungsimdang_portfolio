@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { TalkPreview } from "@/components/common/talk-preview";
-import { Button } from "@/components/ui/button";
 import { listTechTalks } from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
@@ -29,16 +28,6 @@ export default async function TalkPage() {
               <TalkPreview key={talk.id} {...talk} detailed />
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="w-full max-w-content mx-auto container-padding section-spacing">
-        <div className="text-center py-64 md:py-96 lg:py-128">
-          <h2 className="text-h2 mb-24 md:mb-32">Let&apos;s work together</h2>
-          <Button href="/contact" variant="primary">
-            Get in touch
-          </Button>
         </div>
       </section>
     </div>

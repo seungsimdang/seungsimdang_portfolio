@@ -17,15 +17,6 @@ export default async function ContactPage() {
       {/* Hero Section */}
       <PageHeader title="say hello" />
 
-      {/* Description */}
-      <section className="w-full max-w-content mx-auto container-padding">
-        <div className="flex justify-center">
-          <p className="text-h2 text-center w-full md:w-3/4 break-keep">
-            함께 일할 기회를 기다립니다.
-          </p>
-        </div>
-      </section>
-
       {/* Contact Section */}
       <section className="w-full max-w-content mx-auto container-padding section-spacing">
         <div className="space-y-48">
