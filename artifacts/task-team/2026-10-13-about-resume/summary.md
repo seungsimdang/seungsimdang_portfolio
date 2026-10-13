@@ -16,7 +16,7 @@
 | T06 백엔드 | backend-developer (worktree 격리) | `src/`, `drizzle/`, `scripts/` | done (`6c96417`) |
 | 병합·재검증·커밋·push | orchestrator | `feature/about-resume` | 병합·재검증·커밋 done, push는 아래 조율 후 |
 | T07 코드 리뷰, T08 보안 리뷰, T09 QA | - | - | blocked (사용자 지시: 구현 커밋·push 후 hold) |
-| 운영 DB 마이그레이션·시드·skills 갱신 | orchestrator | - | blocked (사용자 승인 완료, 적용 직전 다른 세션과 조율 필요) |
+| 운영 DB 마이그레이션·시드·skills 갱신 | orchestrator | 운영 DB | done (2026-10-13, 아래 기록) |
 
 ## 사용자 지시 (2026-10-13)
 
@@ -50,3 +50,12 @@
 - `97fc808` docs: about 이력 재구성 요구사항·디자인·API 명세 추가
 - `6c96417` feat(portfolio): 이력 항목 테이블·서비스·admin API 추가
 - `b1ff602` feat(portfolio): about 페이지를 이력서 기반으로 재구성하고 admin 이력 편집 화면 추가
+
+## 운영 DB 적용 기록 (2026-10-13)
+
+- 대상: Neon `dawn-rice-73098836` main 브랜치(`br-twilight-scene-b854ucg3`, 엔드포인트 `ep-holy-snow-b88v3ff4`). 로컬 `.env.local`의 `DATABASE_URL` 호스트와 일치 확인.
+- 사전 확인: 운영 `profile.skills`가 `OLD_SKILLS` 9개와 정확히 일치, 다른 세션(seungsimdang-portfolio-b5)은 prod 쓰기 작업 없음 확인.
+- 실행: `pnpm db:migrate`(0001 적용, 마이그레이션 기록 1 -> 2) -> `pnpm db:resume:seed --yes`(14건) -> `pnpm db:resume:profile --yes`(skills 10개, tools 5개).
+- 결과: kind별 work 3, education 1, activity 7, award 1, certification 1, language 1. `profile.name`, projects, tech_talks 변경 없음.
+- 영향: 지금 운영에 배포된 main 코드의 홈 히어로 순환 단어가 새 skills 10개로 즉시 바뀜(사용자 승인 사항).
+- 로컬 dev 서버에서 about 렌더 확인(헤드리스 스크린샷). 경력 항목은 제목이 직함, 부제가 회사명으로 표시되며 이력서 표기("Frontend Developer · 회사")와 순서가 다르므로 T07에서 확인.
