@@ -44,8 +44,9 @@ export default async function ProjectsPage() {
                   period={project.period}
                   thumbnail={project.thumbnail}
                   href={`/work/${project.slug}`}
+                  eager={index === 0}
                   {...getProjectCardTheme(index)}
-                  className="h-[60vh] lg:h-[75vh]"
+                  className="h-card lg:h-card-tall"
                 />
               </div>
               <div className="lg:col-span-1" />
