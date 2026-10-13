@@ -1,5 +1,6 @@
 "use client";
 
+import { HttpStatusCode } from "axios";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { AdminButton } from "./admin-button";
@@ -76,7 +77,7 @@ export function ThumbnailField({
           .catch(() => null)) as UploadResult | null;
         setUploadError(
           result?.data?.fieldErrors?.file ??
-            (response.status === 413
+            (response.status === HttpStatusCode.PayloadTooLarge
               ? "4MB 이하 파일만 올릴 수 있습니다."
               : "썸네일을 올리지 못했습니다. 다시 시도하세요."),
         );

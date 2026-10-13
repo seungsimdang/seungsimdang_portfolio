@@ -55,3 +55,9 @@ next-env.d.ts
 
 # QA 화면 캡처는 재실행으로 다시 생성
 artifacts/task-team/*/qa-screens/
+
+# MCP 서버 URL에 secret 포함
+/.mcp.json
+
+# Playwright MCP 스냅샷
+/.playwright-mcp/

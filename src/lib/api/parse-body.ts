@@ -1,6 +1,6 @@
 import "server-only";
+import { HttpStatusCode } from "axios";
 import type { ZodType } from "zod";
-import { HttpStatus } from "@/constants/http-status";
 import { ApiError } from "./api-error";
 
 const BODY_MAX_BYTES = 256 * 1024;
@@ -14,7 +14,7 @@ export async function parseJsonBody<T>(
   if (!contentType.toLowerCase().startsWith("application/json")) {
     throw new ApiError(
       "UNSUPPORTED_MEDIA_TYPE",
-      HttpStatus.UnsupportedMediaType,
+      HttpStatusCode.UnsupportedMediaType,
       "application/json 요청만 허용됩니다",
     );
   }
@@ -33,7 +33,7 @@ export async function parseJsonBody<T>(
   } catch {
     throw new ApiError(
       "VALIDATION_FAILED",
-      HttpStatus.BadRequest,
+      HttpStatusCode.BadRequest,
       "요청 본문이 올바른 JSON이 아닙니다",
     );
   }
@@ -48,7 +48,7 @@ export async function parseJsonBody<T>(
   }
   throw new ApiError(
     "VALIDATION_FAILED",
-    HttpStatus.BadRequest,
+    HttpStatusCode.BadRequest,
     "입력값을 확인해 주세요",
     fieldErrors,
   );
@@ -57,7 +57,7 @@ export async function parseJsonBody<T>(
 function payloadTooLarge() {
   return new ApiError(
     "PAYLOAD_TOO_LARGE",
-    HttpStatus.PayloadTooLarge,
+    HttpStatusCode.PayloadTooLarge,
     "요청 본문이 너무 큽니다",
   );
 }

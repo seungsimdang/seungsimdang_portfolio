@@ -1,6 +1,5 @@
-"use client";
-
 import Link from "next/link";
+import { cn } from "@/utils/styleUtils";
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -30,7 +29,7 @@ export function Button({
   return (
     <Link
       href={href}
-      className={`${baseStyles} ${variantStyles[variant]} ${className}`}
+      className={cn(baseStyles, variantStyles[variant], className)}
       {...(external && { target: "_blank", rel: "noopener noreferrer" })}
     >
       {external ? (

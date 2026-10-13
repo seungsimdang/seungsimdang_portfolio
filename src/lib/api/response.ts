@@ -1,9 +1,9 @@
 import "server-only";
-import { HttpStatus } from "@/constants/http-status";
+import { HttpStatusCode } from "axios";
 import type { ApiErrorBody, CustomData } from "@/types/api-types";
 import type { ApiError } from "./api-error";
 
-export function ok<T>(data: T, status: number = HttpStatus.Ok) {
+export function ok<T>(data: T, status: number = HttpStatusCode.Ok) {
   return Response.json({ data, status } satisfies CustomData<T>, { status });
 }
 

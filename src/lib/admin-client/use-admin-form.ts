@@ -1,7 +1,7 @@
 "use client";
 
+import { HttpStatusCode } from "axios";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { HttpStatus } from "@/constants/http-status";
 import type { AdminResult } from "./admin-request";
 import type { Validation } from "./validate";
 
@@ -22,8 +22,8 @@ type AdminFailure = Extract<AdminResult<unknown>, { ok: false }>;
 
 // 목록 순서 변경과 삭제처럼 알림 구조가 필요 없는 경로의 401/403 문구
 export function describeAuthFailure(result: AdminFailure): string | null {
-  if (result.status === HttpStatus.Unauthorized) return SESSION_EXPIRED;
-  if (result.status === HttpStatus.Forbidden) {
+  if (result.status === HttpStatusCode.Unauthorized) return SESSION_EXPIRED;
+  if (result.status === HttpStatusCode.Forbidden) {
     return result.code === "FORBIDDEN_ORIGIN"
       ? FORBIDDEN_ORIGIN_MESSAGE
       : FORBIDDEN_MESSAGE;
@@ -37,7 +37,7 @@ function describeFailure(
   listHref: string,
 ): { notice: Notice; fieldErrors: Record<string, string> } {
   const fieldErrors = { ...result.fieldErrors };
-  if (result.status === HttpStatus.Unauthorized) {
+  if (result.status === HttpStatusCode.Unauthorized) {
     const from = encodeURIComponent(window.location.pathname);
     return {
       notice: {
@@ -51,7 +51,7 @@ function describeFailure(
       fieldErrors,
     };
   }
-  if (result.status === HttpStatus.Forbidden) {
+  if (result.status === HttpStatusCode.Forbidden) {
     // 출처 거부는 계정 문제가 아니므로 로그아웃을 유도하지 않음
     const originDenied = result.code === "FORBIDDEN_ORIGIN";
     return {
@@ -63,7 +63,7 @@ function describeFailure(
       fieldErrors,
     };
   }
-  if (result.status === HttpStatus.NotFound) {
+  if (result.status === HttpStatusCode.NotFound) {
     return {
       notice: {
         tone: "error",
@@ -99,7 +99,7 @@ function describeFailure(
       fieldErrors,
     };
   }
-  if (result.status === HttpStatus.BadRequest) {
+  if (result.status === HttpStatusCode.BadRequest) {
     return {
       notice: { tone: "error", message: "입력값을 확인하세요." },
       fieldErrors,

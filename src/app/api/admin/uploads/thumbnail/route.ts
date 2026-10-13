@@ -1,5 +1,5 @@
 import { del, put } from "@vercel/blob";
-import { HttpStatus } from "@/constants/http-status";
+import { HttpStatusCode } from "axios";
 import { ApiError, apiErrors } from "@/lib/api/api-error";
 import { ok } from "@/lib/api/response";
 import { adminRoute } from "@/lib/auth/admin-route";
@@ -12,7 +12,7 @@ const MAX_REQUEST_BYTES = Math.floor(4.5 * 1024 * 1024);
 function invalidFile(message: string): ApiError {
   return new ApiError(
     "VALIDATION_FAILED",
-    HttpStatus.BadRequest,
+    HttpStatusCode.BadRequest,
     "파일을 확인해 주세요",
     {
       file: message,
@@ -57,7 +57,7 @@ function sniffImage(
 function tooLarge(): ApiError {
   return new ApiError(
     "PAYLOAD_TOO_LARGE",
-    HttpStatus.PayloadTooLarge,
+    HttpStatusCode.PayloadTooLarge,
     "파일 크기는 4MB 이하여야 합니다",
   );
 }
@@ -67,7 +67,7 @@ export const POST = adminRoute(async ({ request }) => {
   if (!contentType.toLowerCase().startsWith("multipart/form-data;")) {
     throw new ApiError(
       "UNSUPPORTED_MEDIA_TYPE",
-      HttpStatus.UnsupportedMediaType,
+      HttpStatusCode.UnsupportedMediaType,
       "multipart/form-data 요청만 허용됩니다",
     );
   }

@@ -1,7 +1,7 @@
+import { HttpStatusCode } from "axios";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginPanel } from "@/components/admin/login-panel";
-import { HttpStatus } from "@/constants/http-status";
 import { requireAdmin } from "@/lib/auth/require-admin";
 
 export const metadata: Metadata = {
@@ -36,7 +36,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <div className="container-padding py-96">
       <LoginPanel
         callbackUrl={callbackUrl}
-        forbidden={guard.status === HttpStatus.Forbidden}
+        forbidden={guard.status === HttpStatusCode.Forbidden}
         notice={error ? "denied" : reason === "expired" ? "expired" : null}
       />
     </div>

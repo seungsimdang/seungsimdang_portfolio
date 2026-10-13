@@ -1,6 +1,6 @@
+import { HttpStatusCode } from "axios";
 import { type NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { HttpStatus } from "@/constants/http-status";
 import type { ApiErrorBody, CustomData } from "@/types/api-types";
 
 const LOGIN_PATH = "/admin/login";
@@ -23,10 +23,10 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/")) {
     const body: CustomData<ApiErrorBody> = {
       data: { code: "UNAUTHORIZED", message: "로그인이 필요합니다" },
-      status: HttpStatus.Unauthorized,
+      status: HttpStatusCode.Unauthorized,
     };
     return withAdminHeaders(
-      NextResponse.json(body, { status: HttpStatus.Unauthorized }),
+      NextResponse.json(body, { status: HttpStatusCode.Unauthorized }),
     );
   }
 

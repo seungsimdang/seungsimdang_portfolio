@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "@/utils/styleUtils";
 
 interface ExternalLinkProps {
   href: string;
@@ -16,7 +17,10 @@ export function ExternalLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`underline underline-offset-4 hover:opacity-70 transition-opacity focus-visible:outline-2 focus-visible:outline-white ${className}`}
+      className={cn(
+        "underline underline-offset-4 hover:opacity-70 transition-opacity focus-visible:outline-2 focus-visible:outline-white",
+        className,
+      )}
     >
       {children}
       <span aria-hidden="true" className="ml-4 inline-block no-underline">

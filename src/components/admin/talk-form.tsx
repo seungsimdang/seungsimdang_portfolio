@@ -1,8 +1,8 @@
 "use client";
 
+import { HttpStatusCode } from "axios";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
-import { HttpStatus } from "@/constants/http-status";
 import { adminRequest } from "@/lib/admin-client/admin-request";
 import {
   describeAuthFailure,
@@ -97,7 +97,7 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
       "DELETE",
       `/api/admin/talks/${savedSlug.current}`,
     );
-    if (result.ok || result.status === HttpStatus.NotFound) {
+    if (result.ok || result.status === HttpStatusCode.NotFound) {
       router.push("/admin/talks?deleted=1");
       return null;
     }
