@@ -10,6 +10,7 @@ interface ProjectCardProps {
   textColor: string;
   href: string;
   thumbnail?: string;
+  eager?: boolean;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export function ProjectCard({
   textColor,
   href,
   thumbnail,
+  eager = false,
   className = "",
 }: ProjectCardProps) {
   return (
@@ -42,6 +44,7 @@ export function ProjectCard({
             alt={`${title} 프로젝트 썸네일`}
             fill
             sizes="(min-width: 1024px) 60vw, 100vw"
+            loading={eager ? "eager" : "lazy"}
             className="object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/70 from-50% to-transparent" />

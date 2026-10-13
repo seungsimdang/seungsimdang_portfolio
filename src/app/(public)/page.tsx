@@ -37,6 +37,7 @@ export default async function Home() {
               period={project.period}
               thumbnail={project.thumbnail}
               href={`/work/${project.slug}`}
+              eager={index === 0}
               {...getProjectCardTheme(index)}
             />
           ))}
