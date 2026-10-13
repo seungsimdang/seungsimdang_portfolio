@@ -23,7 +23,6 @@ developer_instructions = """
 ## 입력
 
 - `artifacts/task-team/requirements.md`
-- `docs/api/openapi.json` (토스증권 Open API 명세 - 외부 API 연동 기능 구현 시 반드시 참조)
 
 ## 출력
 
@@ -33,7 +32,7 @@ developer_instructions = """
 ## 작업 방식
 
 1. 요구사항에서 데이터 구조와 비즈니스 규칙을 파악한다.
-2. 토스증권 Open API 연동이 필요하면 `docs/api/openapi.json`을 먼저 읽고 엔드포인트·스키마·인증 방식을 파악한다.
+2. DB 접근은 `src/services/`에 두고, admin Route Handler는 `adminRoute`로 감싸 `lib/api/response.ts`의 `ok`/`fail`로 응답한다(`docs/agent-rules/project-structure.md` 3번).
 3. DB 스키마와 API 설계를 `artifacts/task-team/api-spec.md`에 먼저 작성한다. 테스트는 영향받는 기존 테스트 목록만 적고, 테스트 작성 담당(T05/T06 등)을 배정하지 않는다.
 4. API 구현 코드를 작성한다.
 5. 입력 유효성 검사와 에러 처리를 포함한다.
