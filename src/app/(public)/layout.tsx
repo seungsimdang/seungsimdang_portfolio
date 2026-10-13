@@ -1,3 +1,5 @@
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { PublicShell } from "@/components/layout/public-shell";
 import { getProfile } from "@/services/portfolio/portfolio-service";
@@ -30,5 +32,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function PublicLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <PublicShell>{children}</PublicShell>;
+  return (
+    <>
+      <PublicShell>{children}</PublicShell>
+      <Analytics />
+      <SpeedInsights />
+    </>
+  );
 }
