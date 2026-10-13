@@ -35,6 +35,8 @@
 
 - `profile.skills` 갱신 스크립트는 현재 값이 기존 9개(React, Vue 3, TypeScript, Next.js, TanStack Query, Zustand, Pinia, Tailwind CSS, Playwright)와 정확히 같을 때만 새 10개로 바꾼다. 이 9개는 화면 확인 기준 추정값이므로 적용 직전에 운영 값을 읽어 대조한다.
 - 다른 세션이 운영 DB의 `profile`(예: `profile.name`)을 바꿀 수 있으므로 적용 직전에 대상과 순서를 메시지로 조율한다.
+- 운영(main 브랜치) DB의 `profile.name`과 `projects.summary` 4건은 preview보다 최신 값이며, 사용자가 운영 값을 유지하기로 정했다(다른 세션 전달, 2026-10-13). 운영 반영 시 이 값들을 preview 값이나 fixture 값으로 덮어쓰지 않는다. `scripts/resume-data.ts`는 `resume_entries`, `profile.skills`, `profile.tools`만 다룬다.
+- push 전 조율 완료: 다른 세션은 Preview DB(`br-winter-frost-b8ysl2y3`)에서 진행 중인 작업이 없고 이번 마이그레이션과 겹치지 않는다고 확인함.
 
 ## 병합 후 재검증 (메인 체크아웃, `b1ff602` 기준)
 
