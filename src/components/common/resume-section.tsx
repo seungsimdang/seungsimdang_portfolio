@@ -46,8 +46,10 @@ export function ResumeEntryList({ entries }: { entries: ResumeEntry[] }) {
             )}
             {entry.details.length > 0 && (
               <ul className="list-disc pl-20 text-body space-y-4">
-                {entry.details.map((detail) => (
-                  <li key={detail}>{detail}</li>
+                {entry.details.map((detail, index) => (
+                  // 같은 문구가 반복될 수 있어 위치를 함께 key로 사용
+                  // biome-ignore lint/suspicious/noArrayIndexKey: 정적 목록이라 순서 변경 없음
+                  <li key={`${index}-${detail}`}>{detail}</li>
                 ))}
               </ul>
             )}
@@ -61,9 +63,10 @@ export function ResumeEntryList({ entries }: { entries: ResumeEntry[] }) {
 export function TagList({ tags }: { tags: string[] }) {
   return (
     <ul className="flex flex-wrap gap-12">
-      {tags.map((tag) => (
+      {tags.map((tag, index) => (
         <li
-          key={tag}
+          // biome-ignore lint/suspicious/noArrayIndexKey: 같은 태그가 반복될 수 있는 정적 목록
+          key={`${index}-${tag}`}
           className="px-20 py-10 border border-white/10 rounded-lg text-body"
         >
           {tag}

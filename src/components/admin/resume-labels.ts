@@ -15,7 +15,7 @@ export const RESUME_FIELD_HINTS: Record<
   ResumeKind,
   { title: string; subtitle: string }
 > = {
-  work: { title: "회사명", subtitle: "직함" },
+  work: { title: "직함", subtitle: "회사명" },
   education: { title: "학교와 학위", subtitle: "학과" },
   activity: { title: "항목명", subtitle: "" },
   award: { title: "항목명", subtitle: "주최 기관" },

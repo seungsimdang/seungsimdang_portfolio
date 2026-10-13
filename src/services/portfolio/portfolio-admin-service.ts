@@ -1,6 +1,6 @@
 import "server-only";
 import { del } from "@vercel/blob";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, type SQL, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { z } from "zod";
 import type { ResumeKind } from "@/constants/resume";
@@ -136,13 +136,16 @@ const TALKS_LOCK_KEY = 7_301_002;
 // batch 단일 트랜잭션 안에서 테이블별 advisory xact lock으로 동시 생성을 직렬화한 뒤 개수를 검사함
 // 상한 이상이면 0으로 나누기 오류로 batch 전체가 롤백되고 호출부가 LimitExceededError로 변환함
 function limitGuard(
-  table: typeof projects | typeof techTalks,
+  table: typeof projects | typeof techTalks | typeof resumeEntries,
   lockKey: number,
+  max = ORDER_SLUGS_MAX,
+  where?: SQL,
 ): BatchItem<"pg">[] {
+  const filter = where ? sql` where ${where}` : sql``;
   return [
     db.execute(sql`select pg_advisory_xact_lock(${lockKey})`),
     db.execute(
-      sql`select 1 / (c - c) from (select count(*)::int as c from ${table}) t where c >= ${ORDER_SLUGS_MAX}`,
+      sql`select 1 / (c - c) from (select count(*)::int as c from ${table}${filter}) t where c >= ${max}`,
     ),
   ];
 }
@@ -358,7 +361,8 @@ export async function reorderTalks(slugs: string[]): Promise<void> {
   );
 }
 
-const RESUME_LOCK_KEY = 7_301_003;
+// 7_301_003은 scripts/migrate.mjs의 마이그레이션 잠금 키라 사용 불가
+const RESUME_LOCK_KEY = 7_301_004;
 
 function isUuid(value: string) {
   return z.uuid().safeParse(value).success;
@@ -370,9 +374,11 @@ export async function createResumeEntry(
 ): Promise<ResumeEntry> {
   try {
     const results = await runBatch([
-      db.execute(sql`select pg_advisory_xact_lock(${RESUME_LOCK_KEY})`),
-      db.execute(
-        sql`select 1 / (c - c) from (select count(*)::int as c from ${resumeEntries} where ${resumeEntries.kind} = ${input.kind}) t where c >= ${RESUME_KIND_MAX}`,
+      ...limitGuard(
+        resumeEntries,
+        RESUME_LOCK_KEY,
+        RESUME_KIND_MAX,
+        eq(resumeEntries.kind, input.kind),
       ),
       db
         .insert(resumeEntries)

@@ -56,7 +56,7 @@ export default async function AdminResumePage({
               resumeKind={kind}
               noun={noun}
               headingId={`resume-${kind}-heading`}
-              initialMessage={deleted && kind === "work" ? "삭제했습니다." : ""}
+              initialMessage={deleted === kind ? "삭제했습니다." : ""}
               items={resume[kind].map((entry) => ({
                 id: entry.id,
                 title: entry.title,

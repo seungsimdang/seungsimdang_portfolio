@@ -95,7 +95,7 @@ export function ResumeEntryForm({
       `/api/admin/resume-entries/${entry.id}`,
     );
     if (result.ok || result.status === HttpStatusCode.NotFound) {
-      router.push("/admin/resume?deleted=1");
+      router.push(`/admin/resume?deleted=${entry.kind}`);
       return null;
     }
     return (
