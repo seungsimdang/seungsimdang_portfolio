@@ -2,7 +2,7 @@
 
 - 브랜치: `feature/admin-ui-refresh` (develop `6fb558e`에서 분기)
 - 마지막 갱신: 2026-10-13, Claude orchestrator
-- 현재 상태: T05/T06 구현 커밋 `28cff6c` 푸시 완료. 검토 지적 수정 후 T07/T08 리뷰와 T09 QA 진행
+- 현재 상태: T07/T08 최종 리뷰 통과, T09 QA 조건부 통과. admin UI(F1-F6) 수동 확인과 develop 병합 지시 대기
 
 ## 단계 상태
 
@@ -14,16 +14,17 @@
 | T03 디자인 | designer | done | `design-spec.md` |
 | T04 API 명세 | backend-developer | done | `api-spec.md` |
 | T05/T06 구현 | frontend/backend-developer | done | 커밋 `28cff6c`. 임시 worktree 3개는 2026-10-13 정리 |
-| T07/T08 리뷰 | code/security-reviewer | pending | `code-review-N.md`, `security-review-N.md` |
-| T09 QA | qa-engineer | pending | `qa-report-N.md` |
+| T07/T08 리뷰 | code/security-reviewer | done | `code-review-1·2.md`, `security-review-1·2.md`, 판정 기록 `triage-1.md`. 2차(사이클 전체 최종) 모두 통과 |
+| T09 QA | qa-engineer | done(조건부) | `qa-report-1.md`. vitest 187개, e2e 50개 통과. admin UI F1-F6은 로그인 자동화 수단이 없어 미검증 |
 
 ## 다음 세션이 할 일
 
-1. T07/T08 리뷰와 T09 QA 결과(`code-review-N.md`, `security-review-N.md`, `qa-report-N.md`)를 확인하고 지적 사항을 반영한다.
-2. QA 통과 후 사용자 지시에 따라 develop 병합과 Production 배포를 진행한다.
-3. Production 배포 직후 F8 이름 변경과 F11 썸네일 이전을 각각 dry-run 결과를 보여 주고 승인받은 뒤 실행한다(`api-spec.md` 6절).
-4. F11 확인 후 이전된 원본 이미지와 `scripts/migrate-thumbnails.mjs`를 삭제 커밋한다.
+1. 사용자가 로컬 `pnpm dev`에서 admin UI(F1-F6, F7 폼 업로드, F9 slug 변경)를 직접 확인한다. GitHub 로그인이 필요해 자동 검증 불가.
+2. 확인 후 사용자 지시에 따라 develop 병합과 Production 배포를 진행한다.
+3. Production 배포 직후 F8 이름 변경과 F11 썸네일 이전을 각각 dry-run 결과를 보여 주고 승인받은 뒤 실행한다(`api-spec.md` 6절). 2026-10-13 dry-run(읽기 전용)에서 `/images` 썸네일 행은 globber 1개뿐이라 요구사항의 "5개"와 다름. 실행 전 사용자 확인 필요.
+4. F11 확인 후 이전된 원본 이미지, `scripts/migrate-thumbnails.mjs`, `portfolio-service.ts`의 `LEGACY_THUMBNAIL_PATTERN` 분기를 삭제 커밋한다.
 5. 다음 Preview 배포에서 Preview DB 엔드포인트(`ep-snowy-dew-b88kcy4t`) 사용 여부를 확인한다(미확인).
+6. GitHub Secret `E2E_DATABASE_URL`이 e2e 전용 Neon 브랜치를 가리키는지 사용자가 1회 확인한다(Secret이라 값 확인 불가).
 
 ## 이번 세션에서 끝낸 작업
 
