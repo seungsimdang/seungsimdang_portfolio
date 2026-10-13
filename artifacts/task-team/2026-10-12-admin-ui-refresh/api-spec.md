@@ -117,7 +117,8 @@ Vercel Blob 삭제는 URL 또는 pathname을 받으며 존재하지 않는 URL�
 ### 대상과 실행 위치
 
 - `pnpm build`는 `next build`보다 앞서 migration을 수행한다. CI build/e2e, 로컬 E2E build, Vercel Preview/Production 모두 각각 그 실행 환경의 `DATABASE_URL`을 사용한다.
-- 로컬 `scripts/run-e2e-local.sh`는 `DATABASE_URL`을 `E2E_DATABASE_URL`로 바꾼 뒤 build를 실행하므로 그 DB에 적용된다. migration 단계는 `knip`, `check`, `type-check`, `harness:*`의 `DATABASE_URL`이 없는 검사 경로에 붙이지 않는다.
+- build migration은 `VERCEL_ENV`가 `preview`/`production`이거나 `CI=true`, 또는 `MIGRATE_ON_BUILD=1`일 때만 실행한다. 로컬 `.env.local`의 `DATABASE_URL`은 Production이므로 로컬 `pnpm build`는 migration을 건너뛴다(2026-10-13 검토 반영). 수동 적용은 `pnpm db:migrate`다.
+- 로컬 `scripts/run-e2e-local.sh`는 `MIGRATE_ON_BUILD=1`과 함께 `DATABASE_URL`을 `E2E_DATABASE_URL`로 바꾼 뒤 build를 실행하므로 그 DB에 적용된다. migration 단계는 `knip`, `check`, `type-check`, `harness:*`의 `DATABASE_URL`이 없는 검사 경로에 붙이지 않는다.
 - 기존 `drizzle-kit migrate` 이력(`drizzle.__drizzle_migrations`)과 `drizzle/` journal을 유지한다. 현재 사이클은 DB schema change가 없어서 새 migration 파일을 만들지 않는다.
 - `DATABASE_URL`이 비어 있으면 build migration은 실패하고 secret 전체 URL은 출력하지 않는다. `BLOB_READ_WRITE_TOKEN` 누락도 요구사항에 따라 build/dev 진입에서 변수명만 표시해 실패시킨다. lint/type-check/knip는 앱 빌드 또는 런타임 진입이 아니므로 Blob token 검사를 실행하지 않는다.
 

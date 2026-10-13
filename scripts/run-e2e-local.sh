@@ -7,5 +7,5 @@ if [ -z "$url" ]; then
   echo ".env.local에 E2E_DATABASE_URL 없음" >&2
   exit 1
 fi
-DATABASE_URL="$url" pnpm build
+DATABASE_URL="$url" MIGRATE_ON_BUILD=1 pnpm build
 DATABASE_URL="$url" pnpm test:e2e "$@"

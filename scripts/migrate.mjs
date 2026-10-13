@@ -3,6 +3,17 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Pool } from "@neondatabase/serverless";
 
+// 로컬 .env.local의 DATABASE_URL은 Production이라 빌드 시 자동 적용은 Vercel Preview·Production, CI, 로컬 e2e(MIGRATE_ON_BUILD=1)로 한정
+// vercel env pull이 .env.local에 넣는 VERCEL=1, VERCEL_ENV=development로는 실행되지 않도록 VERCEL_ENV 값으로 판정
+const buildMigrationAllowed =
+  ["preview", "production"].includes(process.env.VERCEL_ENV ?? "") ||
+  process.env.CI === "true" ||
+  process.env.MIGRATE_ON_BUILD === "1";
+if (process.argv.includes("--build") && !buildMigrationAllowed) {
+  console.log("Skipping build migration outside Vercel/CI");
+  process.exit(0);
+}
+
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   console.error("Missing required environment variable: DATABASE_URL");

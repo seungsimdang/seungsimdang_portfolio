@@ -122,7 +122,7 @@ export const POST = adminRoute(async ({ request }) => {
     try {
       await del(blob.url);
     } catch {
-      // A rejected SDK URL is never returned to the client.
+      // 검증을 통과하지 못한 URL은 클라이언트에 돌려주지 않고 정리만 시도함
     }
     throw apiErrors.internal();
   }

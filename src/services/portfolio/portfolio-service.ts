@@ -12,6 +12,8 @@ import { isValidThumbnail } from "@/schemas/portfolio.schema";
 import type { Experience, Profile, Project, TechTalk } from "@/types/portfolio";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// F11 이전 전까지 남아 있는 로컬 썸네일 경로, 이전 완료 후 함께 삭제
+const LEGACY_THUMBNAIL_PATTERN = /^\/images\/[A-Za-z0-9._/-]+$/;
 
 export class PortfolioNotSeededError extends Error {
   constructor() {
@@ -47,7 +49,7 @@ function safeThumbnail(
 ): string | undefined {
   if (!thumbnail) return undefined;
   return raw ||
-    (thumbnail.startsWith("/images/") && !thumbnail.includes("..")) ||
+    (LEGACY_THUMBNAIL_PATTERN.test(thumbnail) && !thumbnail.includes("..")) ||
     isValidThumbnail(thumbnail)
     ? thumbnail
     : undefined;
