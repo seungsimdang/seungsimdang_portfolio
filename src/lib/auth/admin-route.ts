@@ -1,0 +1,97 @@
+import "server-only";
+import { HttpStatusCode } from "axios";
+import { ApiError, apiErrors } from "@/lib/api/api-error";
+import { fail } from "@/lib/api/response";
+import {
+  LimitExceededError,
+  NotFoundError,
+  OrderMismatchError,
+  SlugConflictError,
+} from "@/services/portfolio/portfolio-admin-service";
+import { PortfolioNotSeededError } from "@/services/portfolio/portfolio-service";
+import { requireAdmin } from "./require-admin";
+
+interface AdminRouteContext<P> {
+  request: Request;
+  params: P;
+  githubId: string;
+}
+
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+// NEXTAUTH_URL과 ADMIN_ALLOWED_HOSTS(쉼표 구분)의 host를 허용하고 둘 다 없으면 host 헤더만 허용함
+function allowedHosts(request: Request): string[] {
+  const extra = (process.env.ADMIN_ALLOWED_HOSTS ?? "")
+    .split(",")
+    .map((h) => h.trim())
+    .filter(Boolean);
+  if (!process.env.NEXTAUTH_URL && extra.length === 0) {
+    const host = request.headers.get("host");
+    return host ? [host] : [];
+  }
+  try {
+    const base = process.env.NEXTAUTH_URL
+      ? [new URL(process.env.NEXTAUTH_URL).host]
+      : [];
+    return [...base, ...extra];
+  } catch {
+    // NEXTAUTH_URL이 잘못된 값이면 모든 Origin을 거부함
+    return [];
+  }
+}
+
+function isSameOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin) return false;
+  try {
+    // 프록시가 덧붙일 수 있는 x-forwarded-host는 신뢰하지 않고 고정 설정값 또는 host 헤더와만 비교함
+    return allowedHosts(request).includes(new URL(origin).host);
+  } catch {
+    return false;
+  }
+}
+
+// Origin 검사, 관리자 가드, 에러 변환을 공통 처리하고 핸들러에는 비즈니스 로직만 남김
+export function adminRoute<
+  P extends Record<string, string> = Record<string, never>,
+>(handler: (ctx: AdminRouteContext<P>) => Promise<Response>) {
+  return async (
+    request: Request,
+    routeContext: { params: Promise<P> },
+  ): Promise<Response> => {
+    try {
+      if (MUTATING_METHODS.has(request.method) && !isSameOrigin(request)) {
+        return fail(apiErrors.forbiddenOrigin());
+      }
+      const guard = await requireAdmin();
+      if (!guard.ok) {
+        return fail(
+          guard.status === HttpStatusCode.Unauthorized
+            ? apiErrors.unauthorized()
+            : apiErrors.forbidden(),
+        );
+      }
+      return await handler({
+        request,
+        params: await routeContext.params,
+        githubId: guard.githubId,
+      });
+    } catch (error) {
+      if (error instanceof ApiError) return fail(error);
+      if (error instanceof SlugConflictError)
+        return fail(apiErrors.slugConflict());
+      if (error instanceof NotFoundError) return fail(apiErrors.notFound());
+      if (error instanceof OrderMismatchError)
+        return fail(apiErrors.orderMismatch());
+      if (error instanceof LimitExceededError)
+        return fail(apiErrors.limitExceeded());
+      if (error instanceof PortfolioNotSeededError)
+        return fail(apiErrors.notSeeded());
+      console.error(
+        "admin route error:",
+        error instanceof Error ? `${error.name}: ${error.message}` : "unknown",
+      );
+      return fail(apiErrors.internal());
+    }
+  };
+}

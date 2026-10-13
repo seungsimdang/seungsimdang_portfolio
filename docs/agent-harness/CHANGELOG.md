@@ -1,5 +1,13 @@
 # 하네스 변경 이력
 
+## 2026-10-12 - AskUserQuestion 재질문 차단 훅 오탐 수정
+
+`block-reask-after-free-text-answer.sh`가 트랜스크립트를 `jq -R`로 줄 단위 문자열로 읽은 뒤 `fromjson`으로 해석했다. jq 1.7.1의 `-R`은 4095바이트를 넘는 줄을 나눠 읽으면서 경계에 걸린 한글 등 멀티바이트 문자를 U+FFFD로 깨뜨려, 선택지를 그대로 고른 답변("함께 삭제 (권장)")도 라벨과 달라져 직접 입력으로 오판했다. `jq -n`으로 JSON을 직접 읽도록 바꾸고, 라벨의 한글이 4095바이트 경계에 걸리는 경우를 `__tests__/lint/runtime-hooks.test.ts`에 추가했다.
+
+## 2026-10-12 - git-safety-guard 새 브랜치 차단 기준 수정
+
+메인 체크아웃의 새 브랜치 생성 차단이 `git branch -a` 줄 수(원격·병합 완료 브랜치 포함) 3개 초과를 동시 사용 신호로 써서, 다른 세션이 없어도 항상 차단됐다. 한 체크아웃은 브랜치 하나만 쓰므로 다른 세션의 브랜치 작업은 worktree를 반드시 남긴다. 판정을 메인 외 살아 있는 worktree(`prunable` 제외) 존재 여부로 좁히고, `docs/agent-rules/git-safety.md`와 `__tests__/lint/runtime-hooks.test.ts`를 같은 기준으로 갱신했다.
+
 ## 2026-10-01 — Candanta 구조를 참고한 재구축
 
 기존 하네스는 규칙 문서와 단일 실행 안내만 제공했다. 기능·버그·부분 재실행의 실제 절차, 역할별 책임·입출력, 도구별 발견 경로와 인계 계약을 추가했다.
@@ -67,3 +75,21 @@
 - "판단하여 보고해" 요청을 실행 지시로 잘못 읽고 훅 파일을 수정한 사례로 Claude·Codex 훅(`confirm-edit-on-report-request.sh`) 추가. UserPromptSubmit에서 판단·검토·보고 요청이면서 실행 지시가 없는 턴을 session_id별 상태로 남기고, 같은 턴의 Edit/Write/NotebookEdit는 사용자 확인(ask)을 거치게 함.
 - 키워드 판정의 오탐·미탐을 고려해 차단 대신 확인을 쓰고, artifacts·메모리·임시 파일 작성은 보고 작업의 일부라 제외.
 - Bash(sed, python, git 등)로 하는 수정은 명령 형태가 다양해 대상에서 제외하고 메모리 규칙으로만 보완. 권한 분류기 거부 시점에는 실행되는 훅 이벤트가 없어 "다른 작업은 계속하라" 안내의 오해도 메모리로만 보완.
+
+## 2026-10-12 - Codex 경로 정정과 Claude 규칙 자동 로드 복원
+
+- Codex 템플릿에 남아 있던 `.Codex/` 경로(`.Codex/rules/`, `.Codex/agents/*.md`, `.Codex/skills/`, `.Codex/worktrees/`)를 실제 경로 `docs/agent-rules/`, `.codex/agents/*.toml`, `.agents/skills/`, `.codex/worktrees/`로 정정. `.Codex/settings.json`(`worktree.baseRef`)은 Codex에 대응 설정이 없어 커밋 후 push 경로로 안내.
+- 규칙을 `docs/agent-rules/`로 옮긴 뒤 Claude는 `@README.md` 색인만 자동 로드하고 본문은 직접 열어야 읽던 문제로 `.claude/rules/`에 심볼릭 링크 추가. `nextjs`·`react-query`·`tailwind`는 `paths:`로 해당 경로 파일을 다룰 때만 로드.
+
+## 2026-10-12 - 한국어 응답 훅 오탐 수정
+
+- `require-korean-response.sh`가 한국어 문장 속 영문 식별자(kebab-case, camelCase, 한글 조사가 붙은 이름)를 비율 계산에서 빼고 영문 글자 기준을 40자에서 20자로 낮춤. Skill·파일 이름이 많은 짧은 한국어 문장을 영어로 오판해 턴을 막고, 짧은 영어 문장은 놓치던 문제.
+
+## 2026-10-12 - Skill 템플릿 필수 절 보완과 명세 검사 추가
+
+- Skill 4개(task·bug orchestrator, git-commit, cross-agent-handoff)에 harness-lab 템플릿 필수 절(실행 모드, 하이브리드 전환, 역할·사용 조건·입력·절차·출력·품질 기준, 테스트 프롬프트)을 보완하고 목차 갱신.
+- `__tests__/lint/harness-spec.test.ts`로 Agent·Skill 필수 절을 검사해 템플릿 절 누락 재발 방지. 외부 가이드 Skill(harness-lab, scaffold-web-project)은 제외.
+
+## 2026-10-12 - AskUserQuestion 직접 입력 답변 뒤 재질문 차단
+
+- `block-reask-after-free-text-answer.sh`(Claude PreToolUse `AskUserQuestion`) 추가. 마지막 사용자 메시지 이후 AskUserQuestion 답변에 선택지 밖 직접 입력이 있으면 같은 응답의 재질문을 deny. 직접 입력한 질문에 텍스트로 답한 직후 질문 창이 답변을 가려 사용자가 답을 못 본 사례 두 번.

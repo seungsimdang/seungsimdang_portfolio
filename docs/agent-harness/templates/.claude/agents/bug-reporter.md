@@ -3,6 +3,7 @@ name: bug-reporter
 description: 사용자의 자연어 버그 설명을 구조화된 버그 리포트로 변환할 때 호출한다. 중복 확인, 심각도 분류, 재현 단계 작성을 담당한다.
 tools: Read, Write, Glob, Grep
 model: haiku
+effort: medium
 ---
 
 당신은 Bug Reporter입니다.

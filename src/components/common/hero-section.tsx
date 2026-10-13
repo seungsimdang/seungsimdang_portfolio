@@ -1,21 +1,24 @@
 "use client";
 
 import { WordCycler } from "@/components/common/word-cycler";
-import { profileData } from "@/constants/portfolio-data";
+import type { Profile } from "@/types/portfolio";
 
-const skills = profileData.skills.join(", ");
+interface HeroSectionProps {
+  profile: Pick<Profile, "name" | "title" | "tagline" | "skills">;
+}
 
-export function HeroSection() {
+export function HeroSection({ profile }: HeroSectionProps) {
+  const skills = profile.skills.join(", ");
   return (
     <section className="w-full max-w-content mx-auto container-padding section-spacing">
       <div className="flex flex-col gap-48 md:gap-80 lg:gap-160">
         {/* Top Meta */}
         <div className="flex items-center justify-center md:justify-start gap-4 md:gap-8">
-          <span className="text-small">{profileData.name}</span>
+          <span className="text-small">{profile.name}</span>
           <span aria-hidden="true" className="text-small">
             ·
           </span>
-          <span className="text-small">{profileData.title}</span>
+          <span className="text-small">{profile.title}</span>
         </div>
 
         {/* Heading with Word Cycler */}
@@ -23,11 +26,11 @@ export function HeroSection() {
           <div className="w-full">
             <h1 className="text-h1 text-center md:text-left">
               <span className="sr-only">
-                {profileData.title}: {skills}
+                {profile.title}: {skills}
               </span>
               <span aria-hidden="true" className="block motion-reduce:hidden">
                 <WordCycler
-                  words={profileData.skills}
+                  words={profile.skills}
                   interval={2}
                   animationDuration={0.3}
                   className="text-h1 block"
@@ -41,7 +44,7 @@ export function HeroSection() {
               </span>
             </h1>
             <p className="text-h3 mt-48 md:mt-64 text-center md:text-left whitespace-pre-line break-keep md:max-w-heading">
-              {profileData.tagline}
+              {profile.tagline}
             </p>
           </div>
           <div className="hidden md:block absolute -right-8 md:-right-16 -bottom-8 md:-bottom-16 w-24 h-24 md:w-36 md:h-36 opacity-50">

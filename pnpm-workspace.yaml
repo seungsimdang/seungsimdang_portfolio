@@ -1,7 +1,10 @@
 minimumReleaseAge: 10080
 trustPolicy: no-downgrade
 allowBuilds:
+  esbuild: false
   sharp: false
 trustPolicyExclude:
   # semver 6 계열의 provenance 부재와 major 교차 비교 충돌: pnpm/pnpm#10202
   - semver@6.3.1
+  # next-auth v4가 요구하는 jose 4.x 계열의 provenance 부재와 major 교차 비교 충돌: pnpm/pnpm#10202
+  - jose@4.15.9

@@ -3,6 +3,7 @@ name: postmortem-agent
 description: 처리 완료된 버그의 패턴을 분석하고 재발 방지 문서를 생성할 때 호출한다.
 tools: Read, Write, Glob
 model: haiku
+effort: high
 ---
 
 당신은 Postmortem Agent입니다.

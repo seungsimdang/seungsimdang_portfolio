@@ -3,9 +3,7 @@
 :root {
   --background: #000000;
   --foreground: #ffffff;
-  --green: hsl(148, 100%, 50%);
-  --white-25: rgba(255, 255, 255, 0.25);
-  --white-50: rgba(255, 255, 255, 0.5);
+  --danger: #ff6b6b;
 }
 
 @theme inline {
@@ -19,6 +17,70 @@
   --container-heading: 1200px;
   --spacing-header: 92px;
   --spacing-project-info: 200px;
+  --spacing-card: 60vh;
+  --spacing-card-tall: 75vh;
+  /* 프로젝트 카드 sticky top-160과 하단 여백 48px을 뺀 높이 */
+  --spacing-card-stuck: calc(100dvh - 208px);
+  --color-danger: var(--danger);
+}
+
+.admin-header-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 24px;
+  row-gap: 8px;
+}
+
+.admin-header-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-header-navigation > a,
+.admin-header-navigation > button {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.admin-header-navigation > a:hover,
+.admin-header-navigation > button:hover {
+  opacity: 1;
+}
+
+.admin-header-navigation > button:focus-visible,
+.admin-header-navigation > a:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.admin-nav-links {
+  column-gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .admin-header-content,
+  .admin-header-navigation {
+    flex-wrap: nowrap;
+  }
+
+  .admin-header-navigation {
+    gap: 48px;
+  }
+
+  .admin-nav-links {
+    column-gap: 48px;
+  }
 }
 
 body {

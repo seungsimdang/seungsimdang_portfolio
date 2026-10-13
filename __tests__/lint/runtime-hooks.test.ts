@@ -4,12 +4,17 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "vitest";
 
+// pre-commit 안에서는 GIT_DIR 등이 설정돼 임시 저장소 대신 실제 저장소를 가리키므로 제거
+const env = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")),
+) as NodeJS.ProcessEnv;
+
 const run = (tool: string, hook: string, input: object, cwd = process.cwd()) =>
   spawnSync("sh", [resolve(tool, "hooks", `${hook}.sh`)], {
     cwd,
     input: JSON.stringify(input),
     encoding: "utf8",
-    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd },
+    env: { ...env, CLAUDE_PROJECT_DIR: cwd },
   });
 
 for (const tool of [".claude", ".codex"]) {
@@ -205,7 +210,7 @@ for (const tool of [".claude", ".codex"]) {
     ).toBe(0);
     const fixture = mkdtempSync(join(tmpdir(), "portfolio-hooks-"));
     try {
-      spawnSync("git", ["init", "-q"], { cwd: fixture });
+      spawnSync("git", ["init", "-q"], { cwd: fixture, env });
       writeFileSync(join(fixture, "dirty.txt"), "changed");
       expect(
         run(
@@ -230,6 +235,40 @@ for (const tool of [".claude", ".codex"]) {
       ).toBe(0);
     } finally {
       rmSync(fixture, { recursive: true, force: true });
+    }
+  });
+  test(`${tool} 새 브랜치 생성은 브랜치 수와 무관하고 살아 있는 worktree에만 차단된다`, () => {
+    const repo = mkdtempSync(join(tmpdir(), "portfolio-branch-"));
+    const git = (...args: string[]) =>
+      spawnSync("git", args, { cwd: repo, env });
+    const create = () =>
+      run(
+        tool,
+        "git-safety-guard",
+        { tool_input: { command: "git switch -c feature/next" } },
+        repo,
+      ).status;
+    try {
+      git("init", "-q");
+      git(
+        "-c",
+        "user.name=t",
+        "-c",
+        "user.email=t@t",
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        "init",
+      );
+      for (const name of ["a", "b", "c", "d", "e"]) git("branch", name);
+      expect(create()).toBe(0);
+      git("worktree", "add", "-q", join(repo, "wt"), "a");
+      expect(create()).toBe(2);
+      rmSync(join(repo, "wt"), { recursive: true, force: true });
+      expect(create()).toBe(0);
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
     }
   });
   test(`${tool} best practice 안내 훅이 키워드에만 조건부 지시를 추가하고 차단하지 않는다`, () => {
@@ -312,6 +351,55 @@ test("클로드 전용 훅이 리뷰 누락과 영어 응답을 검출한다", (
     expect(
       JSON.parse(review.stdout).hookSpecificOutput.permissionDecision,
     ).toBe("ask");
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test("AskUserQuestion 직접 입력 답변 뒤 같은 응답의 재질문을 차단하고 새 메시지 뒤에는 허용한다", () => {
+  const fixture = mkdtempSync(join(tmpdir(), "portfolio-ask-hook-"));
+  try {
+    const transcript = join(fixture, "transcript.jsonl");
+    const answer = (value: string) => ({
+      type: "user",
+      message: { content: [{ type: "tool_result", content: "answered" }] },
+      toolUseResult: {
+        questions: [
+          {
+            question: "Preview 지원?",
+            multiSelect: false,
+            options: [{ label: "지원, DB 공유" }, { label: "미지원" }],
+          },
+        ],
+        answers: { "Preview 지원?": value },
+      },
+    });
+    const prompt = { type: "user", message: { content: "나머지 질문해" } };
+    const decide = (...entries: object[]) => {
+      writeFileSync(
+        transcript,
+        entries.map((entry) => JSON.stringify(entry)).join("\n"),
+      );
+      const { stdout } = run(".claude", "block-reask-after-free-text-answer", {
+        transcript_path: transcript,
+      });
+      return stdout.trim()
+        ? JSON.parse(stdout).hookSpecificOutput.permissionDecision
+        : "allow";
+    };
+    expect(decide(prompt, answer("best practice가 뭔데?"))).toBe("deny");
+    expect(decide(prompt, answer("지원, DB 공유"))).toBe("allow");
+    expect(decide(answer("best practice가 뭔데?"), prompt)).toBe("allow");
+    // 줄이 4095바이트를 넘고 라벨의 한글이 읽기 경계에 걸려도 선택지 답변은 허용
+    const padded = (pad: string) => ({ pad, ...answer("미지원") });
+    const start =
+      Buffer.from(JSON.stringify(padded(""))).indexOf('"label":"미지원"') +
+      Buffer.byteLength('"label":"미');
+    for (const shift of [0, 1, 2]) {
+      expect(decide(prompt, padded("a".repeat(4093 - start + shift)))).toBe(
+        "allow",
+      );
+    }
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }
