@@ -54,6 +54,7 @@ export function SortableList({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const savingRef = useRef(false);
   const leavingRef = useRef(false);
+  const ignoreNextPopRef = useRef(false);
   const dirty =
     items.map((item) => item.slug).join("\0") !== savedSlugs.join("\0");
   if (initial !== previousInitial) {
@@ -70,6 +71,13 @@ export function SortableList({
     if (!dirty && !busy) return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (!leavingRef.current) event.preventDefault();
+    };
+    // 확인을 거친 이동은 같은 클릭의 beforeunload 경고만 건너뛰고, 페이지에 남으면 다음 tick에 경고를 되살림
+    const allowLeaving = () => {
+      leavingRef.current = true;
+      setTimeout(() => {
+        leavingRef.current = false;
+      }, 0);
     };
     const onClick = (event: MouseEvent) => {
       const targetElement = event.target;
@@ -100,18 +108,24 @@ export function SortableList({
         event.preventDefault();
         event.stopImmediatePropagation();
       } else {
-        leavingRef.current = true;
+        allowLeaving();
       }
     };
     const onPopState = () => {
+      // 취소 후 history.forward()로 되돌아오며 생긴 popstate는 다시 묻지 않음
+      if (ignoreNextPopRef.current) {
+        ignoreNextPopRef.current = false;
+        return;
+      }
       if (
         !window.confirm(
           "저장하지 않은 순서 변경이 있습니다. 변경을 버리고 이동할까요?",
         )
       ) {
+        ignoreNextPopRef.current = true;
         window.history.forward();
       } else {
-        leavingRef.current = true;
+        allowLeaving();
       }
     };
     window.addEventListener("beforeunload", onBeforeUnload);

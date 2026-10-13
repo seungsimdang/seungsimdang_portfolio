@@ -120,7 +120,11 @@ export function ThumbnailField({
         accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
         disabled={uploading || saving}
         aria-invalid={uploadError || serverError ? true : undefined}
-        aria-describedby="project-thumbnail-hint project-thumbnail-error"
+        aria-describedby={
+          uploadError || serverError
+            ? "project-thumbnail-hint project-thumbnail-error"
+            : "project-thumbnail-hint"
+        }
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
           event.currentTarget.value = "";

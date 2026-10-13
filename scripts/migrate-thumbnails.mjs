@@ -19,6 +19,8 @@ if (
   process.exit(1);
 }
 
+// 대상 DB를 오인하지 않도록 비밀번호 없이 호스트만 출력
+console.log(`Target database host: ${new URL(databaseUrl).hostname}`);
 const sql = neon(databaseUrl);
 const publicRoot = await realpath(resolve("public"));
 const rows =
@@ -78,6 +80,8 @@ async function validate(thumbnail) {
 }
 
 function report({ slug, thumbnail, size, contentType, status, url }) {
+  // 한 행이라도 실패하면 종료 코드로 알림
+  if (status.startsWith("failed")) process.exitCode = 1;
   console.log(
     JSON.stringify({
       slug,

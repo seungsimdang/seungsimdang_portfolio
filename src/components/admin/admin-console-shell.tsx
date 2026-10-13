@@ -61,8 +61,8 @@ export function AdminConsoleShell({
       <main
         id="admin-main"
         tabIndex={-1}
-        style={{ paddingTop: headerHeight }}
-        className="container-padding mx-auto w-full max-w-content py-48"
+        style={{ paddingTop: headerHeight + 48 }}
+        className="container-padding mx-auto w-full max-w-content pb-48"
       >
         {children}
       </main>

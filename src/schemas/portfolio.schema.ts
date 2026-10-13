@@ -21,6 +21,7 @@ export function isValidThumbnail(value: string): boolean {
       url.protocol === "https:" &&
       url.hostname === hostname &&
       authority === hostname &&
+      url.pathname.startsWith("/thumbnails/") &&
       !url.username &&
       !url.password &&
       !url.port &&

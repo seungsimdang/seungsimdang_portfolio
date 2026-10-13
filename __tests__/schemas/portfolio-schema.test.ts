@@ -150,21 +150,21 @@ describe("링크 스킴", () => {
 });
 
 describe("썸네일", () => {
-  it.each([blobUrl, "https://ci-test.public.blob.vercel-storage.com/a.webp"])(
-    "%s 허용",
-    (v) => {
-      expect(isValidThumbnail(v)).toBe(true);
-      expect(
-        projectCreateInputSchema.safeParse({ ...project, thumbnail: v })
-          .success,
-      ).toBe(true);
-    },
-  );
+  it.each([
+    blobUrl,
+    "https://ci-test.public.blob.vercel-storage.com/thumbnails/a.webp",
+  ])("%s 허용", (v) => {
+    expect(isValidThumbnail(v)).toBe(true);
+    expect(
+      projectCreateInputSchema.safeParse({ ...project, thumbnail: v }).success,
+    ).toBe(true);
+  });
   it.each([
     "/images/a.png",
-    "https://ci-test.public.blob.vercel-storage.com.evil.test/a.png",
-    "https://ci-test.public.blob.vercel-storage.com:443/a.png",
-    "https://user@ci-test.public.blob.vercel-storage.com/a.png",
+    "https://ci-test.public.blob.vercel-storage.com/a.webp",
+    "https://ci-test.public.blob.vercel-storage.com.evil.test/thumbnails/a.png",
+    "https://ci-test.public.blob.vercel-storage.com:443/thumbnails/a.png",
+    "https://user@ci-test.public.blob.vercel-storage.com/thumbnails/a.png",
     "https://a.com/x.png",
     "images/a.png",
     "//images/a.png",

@@ -20,6 +20,9 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
+// 대상 DB를 오인하지 않도록 비밀번호 없이 호스트만 출력
+console.log(`Migration target host: ${new URL(databaseUrl).hostname}`);
+
 const root = process.cwd();
 const journal = JSON.parse(
   await readFile(join(root, "drizzle/meta/_journal.json"), "utf8"),

@@ -12,7 +12,7 @@ import { isValidThumbnail } from "@/schemas/portfolio.schema";
 import type { Experience, Profile, Project, TechTalk } from "@/types/portfolio";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-// F11 이전 전까지 남아 있는 로컬 썸네일 경로, 이전 완료 후 함께 삭제
+// 썸네일을 Blob으로 이전하기 전까지 남는 로컬 경로, 이전 완료 후 함께 삭제
 const LEGACY_THUMBNAIL_PATTERN = /^\/images\/[A-Za-z0-9._/-]+$/;
 
 export class PortfolioNotSeededError extends Error {
