@@ -13,18 +13,6 @@ export function AboutSection({ profile }: AboutSectionProps) {
           <div className="flex-1 h-px bg-white/25" />
         </div>
         <p className="text-h3 break-keep">{profile.description}</p>
-        <div className="flex justify-end">
-          <div className="w-36 h-36 opacity-50">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 36 36"
-              fill="none"
-              className="w-full h-full"
-            >
-              <circle cx="18" cy="18" r="18" fill="currentColor" />
-            </svg>
-          </div>
-        </div>
       </div>
     </section>
   );

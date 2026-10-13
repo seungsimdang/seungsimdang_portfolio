@@ -47,17 +47,6 @@ export function HeroSection({ profile }: HeroSectionProps) {
               {profile.tagline}
             </p>
           </div>
-          <div className="hidden md:block absolute -right-8 md:-right-16 -bottom-8 md:-bottom-16 w-24 h-24 md:w-36 md:h-36 opacity-50">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 36 36"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-full h-full"
-            >
-              <circle cx="18" cy="18" r="18" fill="currentColor" />
-            </svg>
-          </div>
         </div>
       </div>
     </section>
