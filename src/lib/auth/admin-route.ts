@@ -1,5 +1,5 @@
 import "server-only";
-import { HttpStatus } from "@/constants/http-status";
+import { HttpStatusCode } from "axios";
 import { ApiError, apiErrors } from "@/lib/api/api-error";
 import { fail } from "@/lib/api/response";
 import {
@@ -66,7 +66,7 @@ export function adminRoute<
       const guard = await requireAdmin();
       if (!guard.ok) {
         return fail(
-          guard.status === HttpStatus.Unauthorized
+          guard.status === HttpStatusCode.Unauthorized
             ? apiErrors.unauthorized()
             : apiErrors.forbidden(),
         );

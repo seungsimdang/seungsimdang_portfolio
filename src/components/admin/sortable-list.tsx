@@ -1,8 +1,8 @@
 "use client";
 
+import { HttpStatusCode } from "axios";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { HttpStatus } from "@/constants/http-status";
 import { adminRequest } from "@/lib/admin-client/admin-request";
 import { moveItem } from "@/lib/admin-client/draft";
 import { describeAuthFailure } from "@/lib/admin-client/use-admin-form";
@@ -191,7 +191,7 @@ export function SortableList({
       savingRef.current = false;
       setBusy(false);
     }
-    if (result.ok || result.status === HttpStatus.NotFound) {
+    if (result.ok || result.status === HttpStatusCode.NotFound) {
       setItems((current) => current.filter((item) => item.slug !== row.slug));
       setSavedSlugs((current) => current.filter((slug) => slug !== row.slug));
       setMessage(`${row.title}을 삭제했습니다.`);

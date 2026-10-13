@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/utils/styleUtils";
 
 function isActive(pathname: string, href: string) {
   if (href === "/projects") {
@@ -38,9 +39,10 @@ export function Navbar({ name }: { name: string }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm transition-opacity hover:opacity-100 ${
-                  isActive(pathname, link.href) ? "opacity-100" : "opacity-50"
-                }`}
+                className={cn(
+                  "text-sm transition-opacity hover:opacity-100",
+                  isActive(pathname, link.href) ? "opacity-100" : "opacity-50",
+                )}
               >
                 {link.label}
               </Link>

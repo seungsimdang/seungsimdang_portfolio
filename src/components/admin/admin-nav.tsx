@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/utils/styleUtils";
 
 // 자주 편집하는 콘텐츠를 앞에 두고 /admin 기본 이동 대상인 프로젝트를 첫 탭으로 배치
 const LINKS = [
@@ -22,7 +23,10 @@ export function AdminNav() {
             key={link.href}
             href={link.href}
             aria-current={current ? "page" : undefined}
-            className={`flex min-h-44 items-center text-sm underline-offset-8 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-white ${current ? "underline opacity-100" : "opacity-50"}`}
+            className={cn(
+              "flex min-h-44 items-center text-sm underline-offset-8 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-white",
+              current ? "underline opacity-100" : "opacity-50",
+            )}
           >
             {link.label}
           </Link>
