@@ -114,6 +114,15 @@ export function ThumbnailField({
           />
         </div>
       )}
+      {/* 제거 대상인 미리보기 바로 아래에 두고, 저장 전까지는 폼 값만 비움 */}
+      {value && (
+        <AdminButton
+          disabled={uploading || saving}
+          onClick={() => onChange("")}
+        >
+          썸네일 제거
+        </AdminButton>
+      )}
       <input
         id="project-thumbnail"
         type="file"
@@ -133,7 +142,7 @@ export function ThumbnailField({
         className={inputClassName}
       />
       <p id="project-thumbnail-hint" className="text-small opacity-70">
-        PNG, JPG, WebP, 4MB 이하. 업로드한 파일은 프로젝트 저장 후 공개됩니다.
+        PNG, JPG, WebP, 4MB 이하. 업로드와 제거는 프로젝트 저장 후 반영됩니다.
       </p>
       {(uploadError || serverError) && (
         <p id="project-thumbnail-error" role="alert" className="text-small">
@@ -147,15 +156,6 @@ export function ThumbnailField({
       )}
       {selectedFileName && (
         <p className="text-small opacity-70">선택한 파일: {selectedFileName}</p>
-      )}
-      {value && (
-        <AdminButton
-          variant="danger"
-          disabled={uploading || saving}
-          onClick={() => onChange("")}
-        >
-          썸네일 삭제
-        </AdminButton>
       )}
     </div>
   );

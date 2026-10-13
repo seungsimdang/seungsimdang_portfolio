@@ -13,7 +13,7 @@ export function AdminConsoleShell({
   children: ReactNode;
 }) {
   const headerRef = useRef<HTMLElement>(null);
-  const [headerHeight, setHeaderHeight] = useState(92);
+  const [headerHeight, setHeaderHeight] = useState(77);
 
   useLayoutEffect(() => {
     const header = headerRef.current;
@@ -39,7 +39,8 @@ export function AdminConsoleShell({
         className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-md"
       >
         <div className="w-full max-w-content mx-auto container-padding">
-          <div className="admin-header-content py-24">
+          {/* 탭·로그아웃의 44px 터치 영역에 위아래 16px을 더해 공개 Navbar 높이(77px)와 맞춤 */}
+          <div className="admin-header-content py-16">
             <Link
               href="/admin/projects"
               className="shrink-0 whitespace-nowrap text-xl font-medium hover:opacity-70 transition-opacity"

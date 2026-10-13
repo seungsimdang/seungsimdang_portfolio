@@ -48,7 +48,7 @@
   background: transparent;
   color: white;
   font-size: 0.875rem;
-  font-weight: 300;
+  font-weight: 400;
   opacity: 0.5;
 }
 
@@ -63,7 +63,11 @@
   outline-offset: 2px;
 }
 
-@media (min-width: 810px) {
+.admin-nav-links {
+  column-gap: 16px;
+}
+
+@media (min-width: 768px) {
   .admin-header-content,
   .admin-header-navigation {
     flex-wrap: nowrap;
