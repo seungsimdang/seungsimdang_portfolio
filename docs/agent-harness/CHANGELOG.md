@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-13 - develop·main fast-forward 반영 차단
+
+메인 세션이 관심사와 무관한 feature 브랜치에서 커밋한 뒤 `git fetch . X:develop`으로 develop·main에 fast-forward 반영해, 브랜치 출처가 이력에 남지 않았다. Claude 훅은 이런 우회 경로를 다 잡지 못하므로 push 시점에 검사하는 `scripts/check-merge-only-push.sh`를 `.husky/pre-push` 첫 단계로 추가했다. develop·main에 새로 들어오는 first-parent 커밋은 모두 병합 커밋이어야 하고, main 병합 커밋의 두 번째 부모는 develop first-parent 경로 위의 커밋이어야 한다. 두 브랜치의 삭제 push도 막는다. 검사는 `__tests__/lint/git-guards.test.ts`가 고정한다.
+
 ## 2026-10-12 - AskUserQuestion 재질문 차단 훅 오탐 수정
 
 `block-reask-after-free-text-answer.sh`가 트랜스크립트를 `jq -R`로 줄 단위 문자열로 읽은 뒤 `fromjson`으로 해석했다. jq 1.7.1의 `-R`은 4095바이트를 넘는 줄을 나눠 읽으면서 경계에 걸린 한글 등 멀티바이트 문자를 U+FFFD로 깨뜨려, 선택지를 그대로 고른 답변("함께 삭제 (권장)")도 라벨과 달라져 직접 입력으로 오판했다. `jq -n`으로 JSON을 직접 읽도록 바꾸고, 라벨의 한글이 4095바이트 경계에 걸리는 경우를 `__tests__/lint/runtime-hooks.test.ts`에 추가했다.
