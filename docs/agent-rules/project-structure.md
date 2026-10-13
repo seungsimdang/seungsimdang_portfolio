@@ -34,7 +34,6 @@ Framer 디자인 기반 포트폴리오. Next.js App Router + React + TypeScript
 5. **죽은 코드·미사용 export/의존성 금지** - pre-commit에서 `knip`이 전체 검사한다.
 6. **주석·문서에 em-dash(`—`) 금지** - 하이픈(`-`)만 쓴다. `//` 주석은 읽기 쉬운 문장·문단 단위로 작성하며, 여러 줄이 필요하면 같은 형식을 반복한다. 주석은 완결형 종결어미(`~했다`, `~한다`, `~된다`, `~있다` 등 `다`로 끝나는 문장) 대신 명사형·비종결 구절(`~함`, `~됨`, `~수정`)로 끝낸다(`__tests__/lint/source-rules.test.ts`가 pre-push·CI에서 검사). 여러 줄 주석의 줄바꿈은 [주석 줄바꿈 기준](#주석-줄바꿈-기준)을 따른다. `.husky/pre-commit`이 변경 범위의 금지 참조·em-dash를 강제하고, 커밋 메시지 규칙은 `.claude/skills/git-commit` 참조.
 7. 커밋은 `.claude/skills/git-commit` 규칙을 따른다.
-8. **통화 단위(원화/네이티브)는 변수명에 명시** - `number` 타입만으로는 원화 환산 여부가 구분되지 않는다. 네이티브 통화(USD 등, 환율 미적용) 값은 `Native`/`Usd` 접미사, 원화 환산 완료 값은 `Krw` 접미사를 붙인다 (`priceNative`, `avgCostKrw` 등). `price`, `avgCost`처럼 단위가 드러나지 않는 이름으로 두 통화를 같은 계산식에 섞지 않는다 (BUG 20260909220000 - 원화값에 환율을 재적용해 손익이 ~1,300배 왜곡된 사례, `artifacts/bug-team/postmortem-20260909220000.md`).
 
 ## 주석 줄바꿈 기준
 

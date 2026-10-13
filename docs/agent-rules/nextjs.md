@@ -12,7 +12,7 @@ paths:
 2. **params / searchParams는 `Promise` 타입**: `async/await`로 추출 (Server), Client에서는 `use()`.
    - ✅ `const { symbol } = await params;` / ❌ `const { symbol } = params;`
 3. **인증/인가는 `src/proxy.ts`** (Next 16에서 `middleware.ts` → `proxy.ts`로 rename, 위치는 `src/`).
-   - proxy: `getToken`(`next-auth/jwt`)으로 JWT 판별 → 미인증 시 `/login?from=` 리다이렉트, 루트 `/`는 인증 상태에 따라 `/dashboard` 또는 `/login`로 분기.
+   - proxy: `matcher`는 `/admin/:path*`, `/api/admin/:path*`뿐이며 공개 페이지는 거치지 않는다. `getToken`(`next-auth/jwt`)으로 JWT 존재만 확인하고, 미인증이면 페이지는 `/admin/login?from=`로 리다이렉트, `/api/admin/*`은 401 JSON을 반환한다. `/admin/login`은 그대로 통과한다.
    - Route Handler: `getServerSession(authOptions)` → 세션 없으면 `Response.json({ error }, { status: HttpStatusCode.Unauthorized })`.
 4. **`<Image>`는 `width`/`height` 명시 또는 `fill`**. `<img>` 직접 사용 금지.
 5. **서버 fetch는 `serverGet`(server-axios)**, 클라이언트에서 `server-axios`/`serverGet` import 금지. 반대로 서버에서 `apiClient`(client-axios) import 금지.

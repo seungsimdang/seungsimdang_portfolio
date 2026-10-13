@@ -47,9 +47,6 @@ effort: medium
    - GET/HEAD 핸들러에 상태 변경 부작용(DB insert/update 등)이 없는가? 있다면 왜 GET으로 유지했는지 사유가 주석에 있는가(react-doctor-disable 주석 등).
    - CSRF/Origin 검증은 POST/PUT/DELETE 같은 unsafe method에만 적용되어 있는가? GET에 동일한 검증이 걸려 있다면 RFC 7231 safe method 원칙 위반으로 지적한다.
 3-2. **서버 사이드 HTTP 함수 선택 확인.** `server-query-options/*.ts` 또는 `services/*.ts`에 `serverGet`/`serverGetRetryable`/`serverGetWithAccountForUser`/`internalRouteGet` 등을 새로 호출하는 코드가 있으면, 넘기는 URL이 이 저장소 자신의 `src/app/api/...` 내부 라우트인지 아니면 외부 토스 오픈API(`/api/v1/...`)인지 확인한다. 내부 라우트에 `serverGet` 계열(토스 전용, `baseURL: TOSS_API_BASE_URL`)을 쓰면 baseURL/인증 불일치로 SSR prefetch가 조용히 실패한다(`docs/agent-rules/react-query.md` "서버 사이드 HTTP 함수 선택" 참고, BUG 20260906183000 사례).
-3-3. **통화 환산(`fxMul`/환율) 로직 확인.** 원화/네이티브 통화를 함께 다루는 코드가 있으면:
-   - 변수명에 단위가 드러나는가(`priceNative`/`avgCostKrw` 등, `docs/agent-rules/project-structure.md` 8번 참고)? 단위 불명확한 이름(`price`, `avgCost`)으로 두 통화가 섞이지 않는가?
-   - 환율 배수가 정확히 1회만 적용되는가(이중 적용 여부)? 특히 기존 값(이미 환산 완료)을 재사용하는 경로에서 재적용하지 않는지 확인한다 (BUG 20260909220000 - 원화 이미 환산된 값에 환율을 다시 곱해 손익이 ~1,300배 왜곡된 사례).
 3-4. **동시성/race condition 확인.** read-then-write 패턴(존재 확인 후 insert 등)이 동시 요청에 안전한가? 서버 로직만으로 유일성을 보장한다면, 같은 대상에 DB unique 제약이 있는지 확인한다.
 3-5. **props 전달 검증.** 새로 추가한 prop이 모든 호출부에 실제로 전달되는가? optional prop이라 TypeScript 에러 없이 조용히 undefined로 빠지는 경로가 없는지 확인한다.
 3-6. **사용자 노출 메시지 검증.** 전체 중 일부만(상위 N개 등) 보여주는 메시지라면, 전체 개수와의 관계가 텍스트에 명시되어 있는지 확인한다.
