@@ -274,7 +274,7 @@
 
 ### F11. 기존 `/images` 썸네일 Blob 일괄 이전과 원본 삭제
 
-- 목적: DB에 `/images/...` 경로로 저장된 기존 썸네일 5개를 Blob으로 올리고 `projects.thumbnail`을 새 URL로 갱신한 뒤, 같은 사이클 안에서 이전된 원본 이미지와 스크립트를 삭제한다(Q5, A2).
+- 목적: DB에 `/images/...` 경로로 저장된 기존 썸네일 전부(2026-10-13 Production 조회 기준 globber 1개, 나머지 4개 프로젝트는 썸네일 없음)를 Blob으로 올리고 `projects.thumbnail`을 새 URL로 갱신한 뒤, 같은 사이클 안에서 이전된 원본 이미지와 스크립트를 삭제한다(Q5, A2).
 - 수용 기준
   - AC1: 스크립트는 `projects.thumbnail`이 `/images/`로 시작하는 행을 찾아 `public/` 아래 해당 파일을 읽어 Blob에 올리고, 업로드 성공 후 해당 행의 `thumbnail`을 Blob URL로 갱신한다.
   - AC2: 대상 DB와 Blob 스토어는 환경변수로 정한다(`DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`). 기본 모드는 dry-run(대상 행과 파일 목록, 크기, 형식 검증 결과만 출력)이며 실제 실행은 명시적 플래그가 있을 때만 한다.

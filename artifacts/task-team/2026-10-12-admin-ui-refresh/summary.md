@@ -21,7 +21,7 @@
 
 1. 사용자가 로컬 `pnpm dev`에서 admin UI(F1-F6, F7 폼 업로드, F9 slug 변경)를 직접 확인한다. GitHub 로그인이 필요해 자동 검증 불가.
 2. 확인 후 사용자 지시에 따라 develop 병합과 Production 배포를 진행한다.
-3. Production 배포 직후 F8 이름 변경과 F11 썸네일 이전을 각각 dry-run 결과를 보여 주고 승인받은 뒤 실행한다(`api-spec.md` 6절). 2026-10-13 dry-run(읽기 전용)에서 `/images` 썸네일 행은 globber 1개뿐이라 요구사항의 "5개"와 다름. 실행 전 사용자 확인 필요.
+3. Production 배포 직후 F8 이름 변경과 F11 썸네일 이전을 각각 dry-run 결과를 보여 주고 승인받은 뒤 실행한다(`api-spec.md` 6절). 2026-10-13 dry-run(읽기 전용)에서 이전 대상은 썸네일이 있는 모든 항목(사용자 확정, 현재 globber 1개).
 4. F11 확인 후 이전된 원본 이미지, `scripts/migrate-thumbnails.mjs`, `portfolio-service.ts`의 `LEGACY_THUMBNAIL_PATTERN` 분기를 삭제 커밋한다.
 5. 다음 Preview 배포에서 Preview DB 엔드포인트(`ep-snowy-dew-b88kcy4t`) 사용 여부를 확인한다(미확인).
 6. GitHub Secret `E2E_DATABASE_URL`이 e2e 전용 Neon 브랜치를 가리키는지 사용자가 1회 확인한다(Secret이라 값 확인 불가).
