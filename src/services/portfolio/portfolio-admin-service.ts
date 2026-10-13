@@ -134,6 +134,7 @@ const TALKS_LOCK_KEY = 7_301_002;
 
 // 순서 변경 요청이 항상 통과하도록 생성 개수에 같은 상한을 둠
 // batch 단일 트랜잭션 안에서 테이블별 advisory xact lock으로 동시 생성을 직렬화한 뒤 개수를 검사함
+// where를 넘기면 락은 테이블 단위로 유지하고 개수 검사 범위만 조건에 맞는 행으로 좁힘
 // 상한 이상이면 0으로 나누기 오류로 batch 전체가 롤백되고 호출부가 LimitExceededError로 변환함
 function limitGuard(
   table: typeof projects | typeof techTalks | typeof resumeEntries,
