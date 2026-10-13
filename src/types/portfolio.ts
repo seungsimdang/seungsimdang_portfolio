@@ -1,3 +1,5 @@
+import type { ResumeKind } from "@/constants/resume";
+
 export interface Profile {
   name: string;
   title: string;
@@ -7,7 +9,24 @@ export interface Profile {
   // DB 컬럼은 필수이나 읽기 시 http/https가 아닌 값은 제외되어 없을 수 있음
   github?: string;
   skills: string[];
+  tools: string[];
 }
+
+export interface ResumeEntry {
+  // DB uuid, 렌더 key와 API 경로 식별자
+  id: string;
+  kind: ResumeKind;
+  // 입력 원문 그대로, 없으면 ""
+  period: string;
+  title: string;
+  // 없으면 ""
+  subtitle: string;
+  // 없으면 []
+  details: string[];
+}
+
+// 모든 kind 키가 항상 존재하며 각 배열은 sort_order, created_at, id 순
+export type ResumeByKind = Record<ResumeKind, ResumeEntry[]>;
 
 export interface ExperienceLink {
   label: string;

@@ -30,6 +30,7 @@ export const profile = pgTable(
     email: text("email").notNull(),
     github: text("github").notNull(),
     skills: text("skills").array().notNull().default(sql`'{}'::text[]`),
+    tools: text("tools").array().notNull().default(sql`'{}'::text[]`),
     updatedAt: updatedAt(),
   },
   (table) => [check("profile_single_row", sql`${table.id} = 1`)],
@@ -103,6 +104,34 @@ export const techTalks = pgTable(
   (table) => [
     check("tech_talks_slug_format", sql`${table.slug} ~ ${SLUG_PATTERN_SQL}`),
     index("tech_talks_order_idx").on(
+      table.sortOrder,
+      table.createdAt,
+      table.id,
+    ),
+  ],
+);
+
+export const resumeEntries = pgTable(
+  "resume_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").notNull(),
+    sortOrder: integer("sort_order").notNull(),
+    period: text("period").notNull().default(""),
+    title: text("title").notNull(),
+    subtitle: text("subtitle").notNull().default(""),
+    details: text("details").array().notNull().default(sql`'{}'::text[]`),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    // 값 목록은 constants/resume.ts의 RESUME_KINDS와 같게 유지함
+    check(
+      "resume_entries_kind_valid",
+      sql`${table.kind} in ('work','education','activity','award','certification','language')`,
+    ),
+    index("resume_entries_order_idx").on(
+      table.kind,
       table.sortOrder,
       table.createdAt,
       table.id,

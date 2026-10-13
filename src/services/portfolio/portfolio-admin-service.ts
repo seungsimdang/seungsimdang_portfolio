@@ -1,12 +1,15 @@
 import "server-only";
 import { del } from "@vercel/blob";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
+import { z } from "zod";
+import type { ResumeKind } from "@/constants/resume";
 import { db } from "@/db";
 import {
   experiences,
   profile,
   projects,
+  resumeEntries,
   techTalks,
 } from "@/db/schema/portfolio";
 import {
@@ -16,14 +19,23 @@ import {
   type ProfileInput,
   type ProjectCreateInput,
   type ProjectUpdateInput,
+  RESUME_KIND_MAX,
+  type ResumeEntryCreateInput,
+  type ResumeEntryUpdateInput,
   type TalkCreateInput,
   type TalkUpdateInput,
 } from "@/schemas/portfolio.schema";
-import type { Profile, Project, TechTalk } from "@/types/portfolio";
+import type {
+  Profile,
+  Project,
+  ResumeEntry,
+  TechTalk,
+} from "@/types/portfolio";
 import {
   loadProjects,
   PortfolioNotSeededError,
   toProfile,
+  toResumeEntry,
   toTalk,
 } from "./portfolio-service";
 
@@ -342,6 +354,86 @@ export async function reorderTalks(slugs: string[]): Promise<void> {
         .update(techTalks)
         .set({ sortOrder: i, updatedAt: new Date() })
         .where(eq(techTalks.slug, slug)),
+    ),
+  );
+}
+
+const RESUME_LOCK_KEY = 7_301_003;
+
+function isUuid(value: string) {
+  return z.uuid().safeParse(value).success;
+}
+
+// 생성 개수 상한은 kind별로 검사함, 상한 이상이면 0으로 나누기 오류로 batch가 롤백됨
+export async function createResumeEntry(
+  input: ResumeEntryCreateInput,
+): Promise<ResumeEntry> {
+  try {
+    const results = await runBatch([
+      db.execute(sql`select pg_advisory_xact_lock(${RESUME_LOCK_KEY})`),
+      db.execute(
+        sql`select 1 / (c - c) from (select count(*)::int as c from ${resumeEntries} where ${resumeEntries.kind} = ${input.kind}) t where c >= ${RESUME_KIND_MAX}`,
+      ),
+      db
+        .insert(resumeEntries)
+        .values({
+          ...input,
+          sortOrder: sql`(select coalesce(max(${resumeEntries.sortOrder}), -1) + 1 from ${resumeEntries} where ${resumeEntries.kind} = ${input.kind})`,
+        })
+        .returning(),
+    ]);
+    const [row] = results.at(-1) as (typeof resumeEntries.$inferSelect)[];
+    if (!row) throw new Error("insert returned no row");
+    return toResumeEntry(row);
+  } catch (error) {
+    return mapCreateError(error);
+  }
+}
+
+export async function updateResumeEntry(
+  id: string,
+  input: ResumeEntryUpdateInput,
+): Promise<ResumeEntry> {
+  if (!isUuid(id)) throw new NotFoundError();
+  const [row] = await db
+    .update(resumeEntries)
+    .set({ ...input, updatedAt: new Date() })
+    .where(eq(resumeEntries.id, id))
+    .returning();
+  if (!row) throw new NotFoundError();
+  return toResumeEntry(row);
+}
+
+// 삭제 후 sort_order 재번호는 하지 않음, 상대 순서만 의미가 있어 간격을 허용함
+export async function deleteResumeEntry(id: string): Promise<void> {
+  if (!isUuid(id)) throw new NotFoundError();
+  const rows = await db
+    .delete(resumeEntries)
+    .where(eq(resumeEntries.id, id))
+    .returning({ id: resumeEntries.id });
+  if (rows.length === 0) throw new NotFoundError();
+}
+
+// 일치 확인 SELECT와 batch UPDATE 사이에 다른 요청이 목록을 바꾸면 순번이 어긋날 수 있는 한계가 있음
+// 편집자가 한 명인 운영 전제로 별도 락이나 트랜잭션 격리는 두지 않음
+export async function reorderResumeEntries(
+  kind: ResumeKind,
+  ids: string[],
+): Promise<void> {
+  const current = await db
+    .select({ id: resumeEntries.id })
+    .from(resumeEntries)
+    .where(eq(resumeEntries.kind, kind));
+  assertSameSet(
+    current.map((r) => r.id),
+    ids,
+  );
+  await runBatch(
+    ids.map((id, i) =>
+      db
+        .update(resumeEntries)
+        .set({ sortOrder: i, updatedAt: new Date() })
+        .where(and(eq(resumeEntries.id, id), eq(resumeEntries.kind, kind))),
     ),
   );
 }

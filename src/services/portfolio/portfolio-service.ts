@@ -1,15 +1,24 @@
 import "server-only";
 import { asc, eq, inArray } from "drizzle-orm";
 import { cache } from "react";
+import { RESUME_KINDS, type ResumeKind } from "@/constants/resume";
 import { db } from "@/db";
 import {
   experiences,
   profile,
   projects,
+  resumeEntries,
   techTalks,
 } from "@/db/schema/portfolio";
 import { isValidThumbnail } from "@/schemas/portfolio.schema";
-import type { Experience, Profile, Project, TechTalk } from "@/types/portfolio";
+import type {
+  Experience,
+  Profile,
+  Project,
+  ResumeByKind,
+  ResumeEntry,
+  TechTalk,
+} from "@/types/portfolio";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // 썸네일을 Blob으로 이전하기 전까지 남는 로컬 경로, 이전 완료 후 함께 삭제
@@ -117,6 +126,20 @@ export function toProfile(
     email: row.email,
     github: safeHttpUrl(row.github, raw),
     skills: row.skills,
+    tools: row.tools,
+  };
+}
+
+export function toResumeEntry(
+  row: typeof resumeEntries.$inferSelect,
+): ResumeEntry {
+  return {
+    id: row.id,
+    kind: row.kind as ResumeKind,
+    period: row.period,
+    title: row.title,
+    subtitle: row.subtitle,
+    details: row.details,
   };
 }
 
@@ -187,6 +210,25 @@ export const listProjectSlugs = cache(async (): Promise<string[]> => {
     .from(projects)
     .orderBy(...projectOrder);
   return rows.map((r) => r.slug);
+});
+
+// 쿼리 1회로 가져와 메모리에서 kind별로 묶음, 모든 kind 키를 빈 배열로 초기화
+export const getResumeByKind = cache(async (): Promise<ResumeByKind> => {
+  const rows = await db
+    .select()
+    .from(resumeEntries)
+    .orderBy(
+      asc(resumeEntries.kind),
+      asc(resumeEntries.sortOrder),
+      asc(resumeEntries.createdAt),
+      asc(resumeEntries.id),
+    );
+  const byKind = Object.fromEntries(
+    RESUME_KINDS.map((kind) => [kind, [] as ResumeEntry[]]),
+  ) as ResumeByKind;
+  for (const row of rows)
+    byKind[row.kind as ResumeKind]?.push(toResumeEntry(row));
+  return byKind;
 });
 
 export const listTechTalks = cache(async (raw = false): Promise<TechTalk[]> => {

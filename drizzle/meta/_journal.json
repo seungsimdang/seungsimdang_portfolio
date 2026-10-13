@@ -8,6 +8,13 @@
       "when": 1791785772002,
       "tag": "0000_chunky_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791884082871,
+      "tag": "0001_lowly_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

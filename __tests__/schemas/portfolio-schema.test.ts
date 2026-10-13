@@ -56,6 +56,7 @@ const profile = {
   email: "a@b.co",
   github: "https://github.com/x",
   skills: ["a"],
+  tools: [],
 };
 
 describe("slug", () => {
