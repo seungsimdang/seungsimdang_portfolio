@@ -33,6 +33,23 @@ function heading(level: 2 | 3 | 4 | 5 | 6) {
 }
 
 const components = {
+  pre({ node: _node, ...props }: Record<string, unknown>) {
+    // 가로 스크롤 영역은 키보드로 포커스해 스크롤할 수 있어야 함
+    // biome-ignore lint/a11y/noNoninteractiveTabindex: 키보드 스크롤을 위한 포커스
+    return <pre {...props} tabIndex={0} />;
+  },
+  table({ node: _node, ...props }: Record<string, unknown>) {
+    return (
+      <section
+        className="table-scroll"
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: 키보드 스크롤을 위한 포커스
+        tabIndex={0}
+        aria-label="표, 가로로 스크롤 가능"
+      >
+        <table {...props} />
+      </section>
+    );
+  },
   h1: heading(2),
   h2: heading(3),
   h3: heading(4),

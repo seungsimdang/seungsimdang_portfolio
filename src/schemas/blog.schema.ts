@@ -1,9 +1,12 @@
 import { z } from "zod";
-import { POST_CONTENT_MAX, POST_SLUG_MAX } from "@/constants/blog";
+import {
+  POST_CONTENT_MAX,
+  POST_LABEL_MAX,
+  POST_SLUG_MAX,
+} from "@/constants/blog";
 
 const CATEGORY_MAX = 10;
 const TAG_MAX = 20;
-const LABEL_MAX = 50;
 const TITLE_MAX = 200;
 
 export const postSlugSchema = z
@@ -26,7 +29,7 @@ const label = z
   .trim()
   .normalize("NFC")
   .min(1, "필수 입력입니다")
-  .max(LABEL_MAX, `${LABEL_MAX}자 이하로 입력해 주세요`);
+  .max(POST_LABEL_MAX, `${POST_LABEL_MAX}자 이하로 입력해 주세요`);
 
 // 중복 값은 하나로 합침
 const labelList = (max: number) =>

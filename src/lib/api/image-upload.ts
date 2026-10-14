@@ -3,6 +3,7 @@ import { del, put } from "@vercel/blob";
 import { HttpStatusCode } from "axios";
 import { ApiError, apiErrors } from "@/lib/api/api-error";
 import { ok } from "@/lib/api/response";
+import { sniffImage } from "@/lib/blog/image-signature";
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 // Content-Length 없는 chunked 요청의 본문 상한은 Vercel Function 요청 본문 제한(4.5MB)에 의존함
@@ -24,52 +25,6 @@ function invalidFile(message: string): ApiError {
       file: message,
     },
   );
-}
-
-function ascii(bytes: Uint8Array, start: number, end: number): string {
-  return String.fromCharCode(...bytes.slice(start, end));
-}
-
-function sniffImage(
-  bytes: Uint8Array,
-  allowGif: boolean,
-): { extension: string; contentType: string } | undefined {
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return { extension: ".png", contentType: "image/png" };
-  }
-  if (
-    bytes.length >= 3 &&
-    bytes[0] === 0xff &&
-    bytes[1] === 0xd8 &&
-    bytes[2] === 0xff
-  ) {
-    return { extension: ".jpg", contentType: "image/jpeg" };
-  }
-  if (
-    bytes.length >= 12 &&
-    ascii(bytes, 0, 4) === "RIFF" &&
-    ascii(bytes, 8, 12) === "WEBP"
-  ) {
-    return { extension: ".webp", contentType: "image/webp" };
-  }
-  if (
-    allowGif &&
-    bytes.length >= 6 &&
-    (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a")
-  ) {
-    return { extension: ".gif", contentType: "image/gif" };
-  }
-  return undefined;
 }
 
 function tooLarge(): ApiError {

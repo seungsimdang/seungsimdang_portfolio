@@ -131,10 +131,9 @@ export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
       router.push("/admin/blog?deleted=1");
       return null;
     }
-    const message =
-      describeAuthFailure(result) ?? "삭제하지 못했습니다. 다시 시도하세요.";
-    setLocalNotice({ tone: "error", message });
-    return message;
+    return (
+      describeAuthFailure(result) ?? "삭제하지 못했습니다. 다시 시도하세요."
+    );
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -180,7 +179,7 @@ export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
     const baseName = file.name.replace(/\.(md|markdown)$/i, "");
     const name = parsePostFileName(`${baseName}.md`);
     const { frontmatter } = parsed;
-    const title = frontmatter.title ?? name.title;
+    const title = frontmatter.title || name.title;
     const date = name.date ?? frontmatter.date ?? todayInSeoul();
     setDraft({
       // 파일명에 날짜가 있으면 파일명 전체, 없으면 날짜와 제목으로 slug 제안

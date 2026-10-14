@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/common/page-header";
 import { Pagination } from "@/components/common/pagination";
 import { PostRow } from "@/components/common/post-row";
+import { POST_LABEL_MAX } from "@/constants/blog";
 import {
   listPublicCategories,
   listPublicPosts,
@@ -30,7 +31,10 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   const rawCategory = Array.isArray(params.category)
     ? params.category[0]
     : params.category;
-  const category = rawCategory?.trim() || undefined;
+  const trimmed = rawCategory?.trim();
+  // 스키마 상한을 넘는 값은 어떤 글도 가질 수 없으므로 필터를 적용하지 않음
+  const category =
+    trimmed && trimmed.length <= POST_LABEL_MAX ? trimmed : undefined;
   const [result, categories] = await Promise.all([
     listPublicPosts(parsePageParam(params.page), category),
     listPublicCategories(),

@@ -406,10 +406,12 @@ html {
   gap: 8px;
 }
 
-.markdown-body table {
-  display: block;
+.markdown-body .table-scroll {
   max-width: 100%;
   overflow-x: auto;
+}
+
+.markdown-body table {
   border-collapse: collapse;
 }
 

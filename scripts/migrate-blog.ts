@@ -14,6 +14,7 @@ import { inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { posts } from "../src/db/schema/portfolio";
 import { parsePostMarkdown } from "../src/lib/blog/frontmatter";
+import { sniffImage } from "../src/lib/blog/image-signature";
 import { resolveLegacyImage } from "../src/lib/blog/migration/legacy-image-url";
 import {
   collectImageUrls,
@@ -83,37 +84,6 @@ interface ImageBytes {
   extension: string;
   // 로컬 파일 또는 git 복원 여부
   origin: "local" | "git" | "download";
-}
-
-function sniff(bytes: Uint8Array): { contentType: string; ext: string } | null {
-  const head = (from: number, to: number) =>
-    String.fromCharCode(...bytes.slice(from, to));
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    head(1, 4) === "PNG" &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return { contentType: "image/png", ext: ".png" };
-  }
-  if (
-    bytes.length >= 3 &&
-    bytes[0] === 0xff &&
-    bytes[1] === 0xd8 &&
-    bytes[2] === 0xff
-  ) {
-    return { contentType: "image/jpeg", ext: ".jpg" };
-  }
-  if (bytes.length >= 12 && head(0, 4) === "RIFF" && head(8, 12) === "WEBP") {
-    return { contentType: "image/webp", ext: ".webp" };
-  }
-  if (head(0, 6) === "GIF87a" || head(0, 6) === "GIF89a") {
-    return { contentType: "image/gif", ext: ".gif" };
-  }
-  return null;
 }
 
 const hash8 = (text: string) =>
@@ -202,7 +172,7 @@ async function loadRepoImage(
     }
   }
   if (!bytes) return `원본 이미지를 찾지 못함: ${relative}`;
-  const detected = sniff(bytes);
+  const detected = sniffImage(bytes, true);
   if (!detected) return `이미지 시그니처가 아님: ${relative}`;
   return { bytes, contentType: detected.contentType, extension, origin };
 }
@@ -467,8 +437,8 @@ async function main() {
             stats.unresolved.add(recovery.from);
             continue;
           }
-          const detected = sniff(downloaded);
-          if (!detected || detected.ext !== recovery.ext) {
+          const detected = sniffImage(downloaded, true);
+          if (!detected || detected.extension !== recovery.ext) {
             fileWarnings.push(`${recovery.from}: 이미지 형식이 예상과 다름`);
             stats.unresolved.add(recovery.from);
             continue;
@@ -476,7 +446,7 @@ async function main() {
           image = {
             bytes: downloaded,
             contentType: detected.contentType,
-            extension: detected.ext,
+            extension: detected.extension,
             origin: "download",
           };
         } else {
