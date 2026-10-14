@@ -2,7 +2,7 @@
 
 - work-id: `2026-10-14-blog`
 - 브랜치: `feature/blog` (기준 `origin/develop` ac2e26b)
-- 상태: **hold** (T06 병합 재검증 후 사용자 지시로 중단, T07 이후 미착수)
+- 상태: **hold** (T07 1차 리뷰와 orchestrator 재검토 후 사용자 지시로 중단, 재작업·T08 이후 미착수)
 
 ## 단계 상태
 
@@ -14,7 +14,7 @@
 | T04-api-spec | backend-developer | done | `api-spec.md` (58cf8a9) |
 | T06-backend | backend-developer (worktree) | done, 병합 재검증 통과 | 94738c5 |
 | T05-frontend | frontend-developer (worktree) | done, 병합 재검증 통과 | 8f9c209 |
-| T07-code-review | code-reviewer | pending (hold) | - |
+| T07-code-review | code-reviewer | 1차 done, 재작업 판정 (hold) | `code-review-1.md`, `triage-1.md` |
 | T08-security | security-reviewer | pending (hold) | - |
 | T09-qa | qa-engineer | pending (hold) | - |
 
