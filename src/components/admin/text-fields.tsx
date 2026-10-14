@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { describedBy } from "@/lib/admin-client/described-by";
 
 export const inputClassName =
   "min-h-44 w-full rounded-md border border-white/25 bg-transparent px-12 py-8 text-body text-white focus-visible:outline-2 focus-visible:outline-white aria-invalid:border-2 aria-invalid:border-white read-only:opacity-70";
@@ -13,7 +14,7 @@ interface FieldProps {
   error?: string;
 }
 
-function FieldShell({
+export function FieldShell({
   id,
   label,
   required,
@@ -42,11 +43,6 @@ function FieldShell({
       )}
     </div>
   );
-}
-
-function describedBy(id: string, hint: ReactNode, error?: string) {
-  const ids = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean);
-  return ids.length > 0 ? ids.join(" ") : undefined;
 }
 
 interface TextFieldProps extends FieldProps {

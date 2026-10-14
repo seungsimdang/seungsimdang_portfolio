@@ -55,7 +55,7 @@ test("카드를 눌러 상세 페이지로 이동한다", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(first.title);
 });
 
-for (const path of [`/work/${projects[0].id}`, "/blog", "/contact", "/"]) {
+for (const path of [`/work/${projects[0].id}`, "/talks", "/contact", "/"]) {
   test(`${path} 의 외부 링크는 새 탭과 noopener noreferrer를 사용한다`, async ({
     page,
   }) => {
@@ -74,10 +74,10 @@ for (const path of [`/work/${projects[0].id}`, "/blog", "/contact", "/"]) {
   });
 }
 
-test("/blog 에 talks 항목이 데이터 수만큼 표시되고 링크가 맞다", async ({
+test("/talks 에 talks 항목이 데이터 수만큼 표시되고 링크가 맞다", async ({
   page,
 }) => {
-  await page.goto("/blog");
+  await page.goto("/talks");
   await expect(page.locator("article")).toHaveCount(techTalks.length);
   expect(techTalks).toHaveLength(2);
   for (const talk of techTalks) {
@@ -97,7 +97,7 @@ for (const [path, title] of [
   ["/", `${profileData.name} - ${profileData.title}`],
   ["/projects", `projects | ${siteSuffix}`],
   ["/about", `about | ${siteSuffix}`],
-  ["/blog", `talks | ${siteSuffix}`],
+  ["/talks", `talks | ${siteSuffix}`],
   ["/contact", `contact | ${siteSuffix}`],
 ]) {
   test(`${path} 의 title과 canonical이 페이지별로 설정된다`, async ({

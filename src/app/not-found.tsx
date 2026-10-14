@@ -11,22 +11,10 @@ export default function NotFound() {
 
         {/* 404 Display */}
         <section className="w-full max-w-content mx-auto container-padding section-spacing">
-          <div className="relative flex items-center justify-center">
-            <div className="flex items-center justify-center gap-16 md:gap-32">
-              <span className="text-h1">4</span>
-              <span className="text-h1">0</span>
-              <span className="text-h1">4</span>
-            </div>
-            <div className="absolute -bottom-32 -right-32 w-36 h-36 opacity-50">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 36 36"
-                fill="none"
-                className="w-full h-full"
-              >
-                <circle cx="18" cy="18" r="18" fill="currentColor" />
-              </svg>
-            </div>
+          <div className="flex items-center justify-center gap-16 md:gap-32">
+            <span className="text-h1">4</span>
+            <span className="text-h1">0</span>
+            <span className="text-h1">4</span>
           </div>
         </section>
 
@@ -42,23 +30,8 @@ export default function NotFound() {
 
         {/* Button Section */}
         <section className="w-full max-w-content mx-auto container-padding section-spacing">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-            <div className="hidden lg:block lg:col-span-5" />
-            <div className="lg:col-span-3 flex justify-center lg:justify-end">
-              <Button href="/">back to homepage</Button>
-            </div>
-            <div className="lg:col-span-4 flex justify-center lg:justify-end">
-              <div className="w-36 h-36 opacity-50">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 36 36"
-                  fill="none"
-                  className="w-full h-full"
-                >
-                  <circle cx="18" cy="18" r="18" fill="currentColor" />
-                </svg>
-              </div>
-            </div>
+          <div className="flex justify-center">
+            <Button href="/">back to homepage</Button>
           </div>
         </section>
       </div>

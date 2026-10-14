@@ -16,7 +16,7 @@ export const ORDER_SLUGS_MAX = LIST_MAX * 2;
 // kind별 이력 생성 상한이자 정렬 요청 id 상한
 export const RESUME_KIND_MAX = LIST_MAX;
 
-export function isValidThumbnail(value: string): boolean {
+function isBlobUrlUnder(value: string, prefix: string): boolean {
   const hostname = process.env.NEXT_PUBLIC_BLOB_HOSTNAME;
   if (!hostname) return false;
   try {
@@ -26,7 +26,7 @@ export function isValidThumbnail(value: string): boolean {
       url.protocol === "https:" &&
       url.hostname === hostname &&
       authority === hostname &&
-      url.pathname.startsWith("/thumbnails/") &&
+      url.pathname.startsWith(prefix) &&
       !url.username &&
       !url.password &&
       !url.port &&
@@ -36,6 +36,14 @@ export function isValidThumbnail(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function isValidThumbnail(value: string): boolean {
+  return isBlobUrlUnder(value, "/thumbnails/");
+}
+
+export function isValidPostImage(value: string): boolean {
+  return isBlobUrlUnder(value, "/blog/images/");
 }
 
 const shortText = z

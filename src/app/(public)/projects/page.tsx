@@ -39,19 +39,7 @@ export default async function ProjectsPage() {
               <div className="lg:col-span-1" />
               <div className="lg:col-span-4 flex flex-col justify-between min-h-project-info">
                 <div className="sticky top-128">
-                  <p className="text-h3 break-keep mb-32">{project.summary}</p>
-                  <div className="flex justify-end">
-                    <div className="w-36 h-36 opacity-50">
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 36 36"
-                        fill="none"
-                        className="w-full h-full"
-                      >
-                        <circle cx="18" cy="18" r="18" fill="currentColor" />
-                      </svg>
-                    </div>
-                  </div>
+                  <p className="text-h3 break-keep">{project.summary}</p>
                 </div>
               </div>
             </div>

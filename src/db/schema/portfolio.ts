@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -13,6 +15,9 @@ import {
 import type { ExperienceLink } from "@/types/portfolio";
 
 const SLUG_PATTERN_SQL = sql.raw("'^[a-z0-9]+(-[a-z0-9]+)*$'");
+
+// 한글 완성형(가-힣), 영문 소문자, 숫자, 하이픈 조합이며 하이픈 연속과 양끝은 금지
+const POST_SLUG_PATTERN_SQL = sql.raw("'^[a-z0-9가-힣]+(-[a-z0-9가-힣]+)*$'");
 
 const createdAt = () =>
   timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -144,6 +149,31 @@ export const resumeEntries = pgTable(
       table.sortOrder,
       table.createdAt,
       table.id,
+    ),
+  ],
+);
+
+export const posts = pgTable(
+  "posts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    content: text("content").notNull().default(""),
+    categories: text("categories").array().notNull().default(sql`'{}'::text[]`),
+    tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
+    publishedAt: date("published_at", { mode: "string" }).notNull(),
+    published: boolean("published").notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    check("posts_slug_format", sql`${table.slug} ~ ${POST_SLUG_PATTERN_SQL}`),
+    check("posts_slug_length", sql`char_length(${table.slug}) <= 200`),
+    index("posts_list_idx").on(
+      table.published,
+      table.publishedAt.desc(),
+      table.slug.desc(),
     ),
   ],
 );

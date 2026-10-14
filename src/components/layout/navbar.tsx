@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BLOG_PATH } from "@/constants/blog";
 import { cn } from "@/utils/styleUtils";
 
 function isActive(pathname: string, href: string) {
   if (href === "/projects") {
     return pathname === href || pathname.startsWith("/work/");
+  }
+  if (href === BLOG_PATH) {
+    return pathname === href || pathname.startsWith(`${BLOG_PATH}/`);
   }
   return pathname === href;
 }
@@ -18,7 +22,8 @@ export function Navbar({ name }: { name: string }) {
     { href: "/", label: "home" },
     { href: "/projects", label: "projects" },
     { href: "/about", label: "about" },
-    { href: "/blog", label: "talks" },
+    { href: BLOG_PATH, label: "blog" },
+    { href: "/talks", label: "talks" },
     { href: "/contact", label: "contact" },
   ];
 
@@ -39,6 +44,8 @@ export function Navbar({ name }: { name: string }) {
               <Link
                 key={link.href}
                 href={link.href}
+                // 동적 렌더링인 블로그는 prefetch 이득이 없고 이탈 시 중단된 스트림이 서버 오류로 기록되어 끔
+                prefetch={link.href === BLOG_PATH ? false : undefined}
                 className={cn(
                   "text-sm transition-opacity hover:opacity-100",
                   isActive(pathname, link.href) ? "opacity-100" : "opacity-50",
