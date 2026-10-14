@@ -42,7 +42,7 @@ export default async function PostPage({ params }: PostPageProps) {
   return (
     <div className="w-full min-h-screen bg-black text-white">
       <article className="w-full max-w-content mx-auto container-padding section-spacing">
-        <Link href="/blog" className={backLinkClassName}>
+        <Link prefetch={false} href="/blog" className={backLinkClassName}>
           blog 목록으로
         </Link>
         <h1 className="mt-24 text-h3 break-keep max-w-heading">{post.title}</h1>
@@ -66,7 +66,7 @@ export default async function PostPage({ params }: PostPageProps) {
           )}
         </div>
         <div className="mt-64">
-          <Link href="/blog" className={backLinkClassName}>
+          <Link prefetch={false} href="/blog" className={backLinkClassName}>
             blog 목록으로
           </Link>
         </div>

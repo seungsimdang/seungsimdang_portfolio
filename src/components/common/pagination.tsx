@@ -44,6 +44,7 @@ export function Pagination({
     >
       {page > 1 ? (
         <Link
+          prefetch={false}
           href={href(page - 1)}
           className={cn(itemClassName, "opacity-50 hover:opacity-100")}
         >
@@ -61,6 +62,7 @@ export function Pagination({
           </span>
         ) : (
           <Link
+            prefetch={false}
             key={item}
             href={href(item)}
             aria-current={item === page ? "page" : undefined}
@@ -77,6 +79,7 @@ export function Pagination({
       )}
       {page < totalPages ? (
         <Link
+          prefetch={false}
           href={href(page + 1)}
           className={cn(itemClassName, "opacity-50 hover:opacity-100")}
         >

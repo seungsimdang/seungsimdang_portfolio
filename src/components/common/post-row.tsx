@@ -7,6 +7,7 @@ export function PostRow({ post }: { post: PostSummary }) {
   return (
     <li>
       <Link
+        prefetch={false}
         href={`/blog/${encodeURIComponent(post.slug)}`}
         className="group flex flex-col gap-8 py-20 focus-visible:outline-2 focus-visible:outline-white md:grid md:grid-cols-[160px_1fr] md:gap-32 md:py-24"
       >

@@ -5,7 +5,14 @@ import { unified } from "unified";
 const EXCERPT_MAX = 160;
 
 // 요약에서 뺄 노드, 코드 블록과 HTML과 이미지는 본문 문장이 아님
-const SKIP = new Set(["code", "html", "image", "imageReference", "definition"]);
+const SKIP = new Set([
+  "code",
+  "html",
+  "image",
+  "imageReference",
+  "definition",
+  "footnoteDefinition",
+]);
 // 자식을 공백 없이 잇는 인라인 노드, 나머지는 블록이라 공백으로 구분
 const INLINE = new Set([
   "paragraph",
@@ -25,6 +32,8 @@ interface MdNode {
 }
 
 function toText(node: MdNode): string {
+  // 줄바꿈과 인라인 HTML 자리는 단어가 붙지 않도록 공백으로 대체
+  if (node.type === "break" || node.type === "html") return " ";
   if (SKIP.has(node.type)) return "";
   if (typeof node.value === "string") return node.value;
   const parts = (node.children ?? []).map(toText);

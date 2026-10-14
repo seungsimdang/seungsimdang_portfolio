@@ -78,6 +78,16 @@ describe("postExcerpt", () => {
     expect(postExcerpt("[문서][ref]\n\n[ref]: https://a.b")).toBe("문서");
   });
 
+  it("줄바꿈과 인라인 HTML 자리에서 단어가 붙지 않는다", () => {
+    expect(postExcerpt("line  \nbreak 그리고 a<br>b")).toBe(
+      "line break 그리고 a b",
+    );
+  });
+
+  it("각주 본문은 요약에 넣지 않는다", () => {
+    expect(postExcerpt("본문[^1]\n\n[^1]: 각주 내용")).toBe("본문");
+  });
+
   it("이모지를 자르는 위치에서도 서로게이트 쌍을 가르지 않는다", () => {
     const text = postExcerpt("😀".repeat(200));
     expect(Array.from(text)).toHaveLength(160);

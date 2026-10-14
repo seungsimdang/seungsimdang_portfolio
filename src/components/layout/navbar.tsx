@@ -43,6 +43,8 @@ export function Navbar({ name }: { name: string }) {
               <Link
                 key={link.href}
                 href={link.href}
+                // 동적 렌더링인 블로그는 prefetch 이득이 없고 이탈 시 중단된 스트림이 서버 오류로 기록되어 끔
+                prefetch={link.href === "/blog" ? false : undefined}
                 className={cn(
                   "text-sm transition-opacity hover:opacity-100",
                   isActive(pathname, link.href) ? "opacity-100" : "opacity-50",

@@ -60,6 +60,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
               className="flex flex-wrap gap-x-16 gap-y-8 text-small"
             >
               <Link
+                prefetch={false}
                 href="/blog"
                 aria-current={category ? undefined : "page"}
                 className={cn(
@@ -71,6 +72,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
               </Link>
               {categories.map((item) => (
                 <Link
+                  prefetch={false}
                   key={item.name}
                   href={`/blog?category=${encodeURIComponent(item.name)}`}
                   aria-current={item.name === category ? "page" : undefined}
@@ -95,7 +97,11 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                   : "아직 작성한 글이 없습니다."}
               </p>
               {category && (
-                <Link href="/blog" className="text-small underline">
+                <Link
+                  prefetch={false}
+                  href="/blog"
+                  className="text-small underline"
+                >
                   전체 보기
                 </Link>
               )}

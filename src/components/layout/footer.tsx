@@ -43,6 +43,8 @@ export function Footer({ profile }: FooterProps) {
               <li key={link.href}>
                 <Link
                   href={link.href}
+                  // 동적 렌더링인 블로그는 prefetch 이득이 없고 이탈 시 중단된 스트림이 서버 오류로 기록되어 끔
+                  prefetch={link.href === "/blog" ? false : undefined}
                   className="text-small opacity-50 hover:opacity-100 transition-opacity"
                 >
                   {link.name}
