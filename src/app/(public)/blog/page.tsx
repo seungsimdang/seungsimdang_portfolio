@@ -118,6 +118,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                 ))}
               </ul>
               <Pagination
+                prefetch={false}
                 label="블로그 페이지"
                 basePath="/blog"
                 query={category ? { category } : undefined}

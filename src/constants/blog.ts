@@ -1,3 +1,4 @@
+export const BLOG_PATH = "/blog";
 export const POST_PAGE_SIZE = 20; // 공개 목록
 export const POST_ADMIN_PAGE_SIZE = 50; // admin 목록
 export const POST_CONTENT_MAX = 300_000; // 글자 수

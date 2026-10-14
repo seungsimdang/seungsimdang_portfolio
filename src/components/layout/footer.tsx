@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BLOG_PATH } from "@/constants/blog";
 import type { Profile } from "@/types/portfolio";
 
 interface FooterProps {
@@ -21,7 +22,7 @@ export function Footer({ profile }: FooterProps) {
     { name: "Home", href: "/" },
     { name: "Projects", href: "/projects" },
     { name: "About", href: "/about" },
-    { name: "Blog", href: "/blog" },
+    { name: "Blog", href: BLOG_PATH },
     { name: "Talks", href: "/talks" },
     { name: "Contact", href: "/contact" },
   ];
@@ -44,7 +45,7 @@ export function Footer({ profile }: FooterProps) {
                 <Link
                   href={link.href}
                   // 동적 렌더링인 블로그는 prefetch 이득이 없고 이탈 시 중단된 스트림이 서버 오류로 기록되어 끔
-                  prefetch={link.href === "/blog" ? false : undefined}
+                  prefetch={link.href === BLOG_PATH ? false : undefined}
                   className="text-small opacity-50 hover:opacity-100 transition-opacity"
                 >
                   {link.name}

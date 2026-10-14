@@ -7,7 +7,6 @@ const EXCERPT_MAX = 160;
 // 요약에서 뺄 노드, 코드 블록과 HTML과 이미지는 본문 문장이 아님
 const SKIP = new Set([
   "code",
-  "html",
   "image",
   "imageReference",
   "definition",

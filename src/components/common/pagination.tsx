@@ -8,6 +8,8 @@ interface PaginationProps {
   query?: Record<string, string>;
   page: number;
   totalPages: number;
+  // 동적 렌더링 경로의 이탈 시 중단 스트림 오류를 피하려면 false
+  prefetch?: false;
 }
 
 const itemClassName =
@@ -29,6 +31,7 @@ export function Pagination({
   query = {},
   page,
   totalPages,
+  prefetch,
 }: PaginationProps) {
   if (totalPages <= 1) return null;
   const href = (target: number) => {
@@ -44,7 +47,7 @@ export function Pagination({
     >
       {page > 1 ? (
         <Link
-          prefetch={false}
+          prefetch={prefetch}
           href={href(page - 1)}
           className={cn(itemClassName, "opacity-50 hover:opacity-100")}
         >
@@ -62,7 +65,7 @@ export function Pagination({
           </span>
         ) : (
           <Link
-            prefetch={false}
+            prefetch={prefetch}
             key={item}
             href={href(item)}
             aria-current={item === page ? "page" : undefined}
@@ -79,7 +82,7 @@ export function Pagination({
       )}
       {page < totalPages ? (
         <Link
-          prefetch={false}
+          prefetch={prefetch}
           href={href(page + 1)}
           className={cn(itemClassName, "opacity-50 hover:opacity-100")}
         >
