@@ -2,7 +2,7 @@
 
 - work-id: `2026-10-14-blog`
 - 브랜치: `feature/blog` (기준 `origin/develop` ac2e26b)
-- 상태: **hold** (T07 1차 재작업 완료 후 사용자 지시로 중단, T07 재리뷰·T08 이후 미착수)
+- 상태: **hold** (T07 재리뷰 통과 후 사용자 지시로 중단, T08 이후 미착수)
 
 ## 단계 상태
 
@@ -15,7 +15,8 @@
 | T06-backend | backend-developer (worktree) | done, 병합 재검증 통과 | 94738c5 |
 | T05-frontend | frontend-developer (worktree) | done, 병합 재검증 통과 | 8f9c209 |
 | T07-code-review | code-reviewer | 1차 done, 재작업 판정 | `code-review-1.md`, `triage-1.md` |
-| T07 재작업 1 | frontend-developer (worktree) | done, 병합 재검증 통과, 재리뷰 대기 (hold) | 3bf60c3 |
+| T07 재작업 1 | frontend-developer (worktree) | done, 병합 재검증 통과 | 3bf60c3 |
+| T07 재리뷰 | code-reviewer | 통과, Low N-1 사용자 결정으로 포함·수정 | `code-review-2.md`, `triage-2.md`, 6f5e0b7 |
 | T08-security | security-reviewer | pending (hold) | - |
 | T09-qa | qa-engineer | pending (hold) | - |
 
@@ -48,4 +49,4 @@
 - 처리: `triage-1.md`의 F-2~F-6. F-1은 T09 이관.
 - F-2 지시안 `div role="region"`은 biome `useSemanticElements`가 막아 `aria-label`을 가진 `section`(암묵적 region)으로 구현. `pre`·표 래퍼의 `tabIndex`는 biome `noNoninteractiveTabindex` 예외 주석으로 허용. 렌더러 `components`는 sanitize 이후 단계라 보안 경계 변화 없음.
 - orchestrator 병합 재검증: `pnpm type-check`, `pnpm exec vitest run`(247 통과), `pnpm check`, `pnpm knip`, react-doctor staged, `pnpm harness:test`(43 통과) 모두 통과. e2e는 재실행하지 않음.
-- 다음 단계: T07 재리뷰(이전 finding 해결 여부와 재작업 diff만), 이후 사이클 전체 최종 리뷰, T08.
+- 다음 단계: T08 1차(사이클 전체), 재작업 시 재리뷰, 이후 T07·T08 사이클 전체 최종 리뷰(CodeRabbit 포함), T09.
