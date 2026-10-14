@@ -2,7 +2,7 @@
 
 - work-id: `2026-10-14-blog`
 - 브랜치: `feature/blog` (기준 `origin/develop` ac2e26b)
-- 상태: **done** (T09 QA 완료, 사용자 지시로 `develop`에 `--no-ff` 병합)
+- 상태: **done** (T09 QA 완료, 사용자 지시로 `develop`·`main` 병합과 운영 이관 완료)
 
 ## 단계 상태
 
@@ -44,16 +44,17 @@
 - headless 브라우저로 공개 8개 경로와 `/admin/login` 방문 시 CSP 위반 0건 (로컬 `next start`에는 `/_vercel/*` 분석 스크립트가 없어 MIME 거부만 발생, CSP 무관).
 - `The destination stream closed early` 서버 로그: develop 기준 e2e 0건, 수정 전 feature/blog 31건. 동적 `/blog` 링크 prefetch 스트림이 페이지 이탈로 중단되는 것을 headless로 재현. 블로그 경로 링크 prefetch를 끈 뒤 0건 (93921de, daeacf2에서 재확인).
 
-## 이관 상태 (미실행)
+## 이관 실행 (2026-10-14, 사용자 지시)
 
-- 이관 스크립트 `pnpm blog:migrate -- --source <원본 저장소>`는 dry-run 기본. T06 dry-run: INSERT 297 / SKIP 0 / FAIL 0, 이미지 로컬 124·git 복원 4·다운로드 3·외부 유지 6·미해결 0.
-- `--apply`(운영 DB 삽입, Blob 업로드, 외부 원본 다운로드)는 사용자 승인 전 실행 금지. 실행 전 `DATABASE_URL`을 준 dry-run 재실행과 `user-attachments` 원본 2건 재확인 필요.
-- `develop` push 시 Vercel Preview 빌드가 Preview DB에 `posts` 테이블 생성 마이그레이션을 적용. `main` 병합 시 운영 DB에도 적용됨 (추가만, drop·alter 없음).
+- `main` 병합 60a9317 push 후 운영 빌드가 `0003` 마이그레이션을 적용해 운영 DB에 `posts` 테이블 생성 확인 (적용 마이그레이션 4개).
+- 운영 DB 기준 dry-run: INSERT 297 / SKIP 0 / FAIL 0, 이미지 로컬 124·git 복원 4·다운로드 3·외부 유지 6·미해결 0. 복구 원본 URL 3건 200 재확인.
+- `--apply` 실행 (대상 호스트 확인 후): INSERT 297 / FAIL 0. 롤백용 리포트는 `migrate-apply-report.json` (삽입 slug 목록과 원본 파일명별 Blob 경로).
+- 검증: 운영 DB `posts` 297행 모두 공개, 본문 Blob 이미지 URL 131개 전부 200, 예전 저장소 이미지 참조 잔존 0건, 재실행 dry-run은 SKIP 297로 멱등 확인.
+- 운영 사이트 `https://seungsimdang.vercel.app`: `/blog`("총 297개 중 1-20번째", 20행), `/blog?page=15`, 한글 slug 상세, 날짜 없던 글 상세, `/talks` 200, 없는 slug 404, CSP 헤더 적용. headless로 이미지 있는 글 6개의 본문 이미지 17개가 스크롤 후 모두 로드, CSP 위반 0건.
 
 ## 미검증으로 남은 항목 (qa-report-1)
 
-- 이관 스크립트 멱등성: `scripts/migrate-blog.ts`가 export 없는 `main()` 하나라 단위 테스트 불가. dry-run 실행과 `--apply` 인자 가드만 확인.
-- git 복원·외부 다운로드·Blob 업로드 실제 실행.
+- 이관 스크립트 멱등성 단위 테스트: `scripts/migrate-blog.ts`가 export 없는 `main()` 하나라 불가. 운영 재실행 dry-run(SKIP 297)으로만 확인.
 - posts API 라우트의 CRUD·409·404와 DB unique 위반 변환 (DB 모킹 필요).
 - admin 블로그 화면 (GitHub OAuth 필요): 목록·편집·삭제·notice 위치, 이미지 업로드 삽입, 미리보기, .md import.
 - e2e에 `/blog` 목록·상세 시나리오 없음 (orchestrator가 빌드 서버에서 `/blog`, 한글 slug 상세 200, 없는 slug 404만 수동 확인).
