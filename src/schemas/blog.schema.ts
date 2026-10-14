@@ -15,7 +15,8 @@ export const postSlugSchema = z
   .regex(
     /^[a-z0-9가-힣]+(-[a-z0-9가-힣]+)*$/u,
     "한글, 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다",
-  );
+  )
+  .refine((v) => v !== "new", "사용할 수 없는 값입니다");
 
 function isRealDate(value: string): boolean {
   const date = new Date(`${value}T00:00:00Z`);
