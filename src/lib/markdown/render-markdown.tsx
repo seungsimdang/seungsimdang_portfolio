@@ -44,7 +44,7 @@ const components = {
         className="table-scroll"
         // biome-ignore lint/a11y/noNoninteractiveTabindex: 키보드 스크롤을 위한 포커스
         tabIndex={0}
-        aria-label="표, 가로로 스크롤 가능"
+        aria-label="표"
       >
         <table {...props} />
       </section>
