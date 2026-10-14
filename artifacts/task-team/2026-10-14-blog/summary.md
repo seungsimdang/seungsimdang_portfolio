@@ -2,7 +2,7 @@
 
 - work-id: `2026-10-14-blog`
 - 브랜치: `feature/blog` (기준 `origin/develop` ac2e26b)
-- 상태: **hold** (T07 1차 리뷰와 orchestrator 재검토 후 사용자 지시로 중단, 재작업·T08 이후 미착수)
+- 상태: **hold** (T07 1차 재작업 완료 후 사용자 지시로 중단, T07 재리뷰·T08 이후 미착수)
 
 ## 단계 상태
 
@@ -14,7 +14,8 @@
 | T04-api-spec | backend-developer | done | `api-spec.md` (58cf8a9) |
 | T06-backend | backend-developer (worktree) | done, 병합 재검증 통과 | 94738c5 |
 | T05-frontend | frontend-developer (worktree) | done, 병합 재검증 통과 | 8f9c209 |
-| T07-code-review | code-reviewer | 1차 done, 재작업 판정 (hold) | `code-review-1.md`, `triage-1.md` |
+| T07-code-review | code-reviewer | 1차 done, 재작업 판정 | `code-review-1.md`, `triage-1.md` |
+| T07 재작업 1 | frontend-developer (worktree) | done, 병합 재검증 통과, 재리뷰 대기 (hold) | 3bf60c3 |
 | T08-security | security-reviewer | pending (hold) | - |
 | T09-qa | qa-engineer | pending (hold) | - |
 
@@ -41,3 +42,10 @@
 - 표 가로 스크롤은 CSS만 적용되어 키보드 스크롤 불가 (T05 보고). T07 판단 대상.
 - 이관 `--apply`, Blob 업로드, 운영 DB 마이그레이션은 사용자 승인 전 실행 금지. `user-attachments` 원본 2건은 `--apply` 직전 재확인.
 - `feature/blog` push 시 Vercel Preview 빌드가 Preview DB에 `posts` 테이블 생성 마이그레이션을 적용함 (추가만, drop/alter 없음).
+
+## T07 1차 재작업 (3bf60c3)
+
+- 처리: `triage-1.md`의 F-2~F-6. F-1은 T09 이관.
+- F-2 지시안 `div role="region"`은 biome `useSemanticElements`가 막아 `aria-label`을 가진 `section`(암묵적 region)으로 구현. `pre`·표 래퍼의 `tabIndex`는 biome `noNoninteractiveTabindex` 예외 주석으로 허용. 렌더러 `components`는 sanitize 이후 단계라 보안 경계 변화 없음.
+- orchestrator 병합 재검증: `pnpm type-check`, `pnpm exec vitest run`(247 통과), `pnpm check`, `pnpm knip`, react-doctor staged, `pnpm harness:test`(43 통과) 모두 통과. e2e는 재실행하지 않음.
+- 다음 단계: T07 재리뷰(이전 finding 해결 여부와 재작업 diff만), 이후 사이클 전체 최종 리뷰, T08.
