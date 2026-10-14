@@ -8,6 +8,9 @@ function isActive(pathname: string, href: string) {
   if (href === "/projects") {
     return pathname === href || pathname.startsWith("/work/");
   }
+  if (href === "/blog") {
+    return pathname === href || pathname.startsWith("/blog/");
+  }
   return pathname === href;
 }
 
@@ -18,7 +21,8 @@ export function Navbar({ name }: { name: string }) {
     { href: "/", label: "home" },
     { href: "/projects", label: "projects" },
     { href: "/about", label: "about" },
-    { href: "/blog", label: "talks" },
+    { href: "/blog", label: "blog" },
+    { href: "/talks", label: "talks" },
     { href: "/contact", label: "contact" },
   ];
 

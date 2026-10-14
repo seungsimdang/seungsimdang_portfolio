@@ -21,7 +21,8 @@ export function Footer({ profile }: FooterProps) {
     { name: "Home", href: "/" },
     { name: "Projects", href: "/projects" },
     { name: "About", href: "/about" },
-    { name: "Talks", href: "/blog" },
+    { name: "Blog", href: "/blog" },
+    { name: "Talks", href: "/talks" },
     { name: "Contact", href: "/contact" },
   ];
 

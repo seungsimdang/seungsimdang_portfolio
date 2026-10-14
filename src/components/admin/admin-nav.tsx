@@ -8,6 +8,7 @@ import { cn } from "@/utils/styleUtils";
 const LINKS = [
   { href: "/admin/projects", label: "프로젝트" },
   { href: "/admin/talks", label: "발표" },
+  { href: "/admin/blog", label: "블로그" },
   { href: "/admin/resume", label: "이력" },
   { href: "/admin/profile", label: "프로필" },
 ];
