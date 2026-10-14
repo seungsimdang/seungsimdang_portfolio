@@ -45,6 +45,12 @@ describe("insertImageMarkdown", () => {
       "![a](https://x/a%20b.png)",
     );
   });
+
+  it("URL의 괄호를 퍼센트 인코딩해 이미지 문법이 닫히지 않게 한다", () => {
+    expect(insertImageMarkdown("", 0, "a", "https://x/a(1).png").text).toBe(
+      "![a](https://x/a%281%29.png)",
+    );
+  });
 });
 
 describe("todayInSeoul", () => {

@@ -9,7 +9,12 @@ function escapeAlt(alt: string) {
 }
 
 function escapeUrl(url: string) {
-  return url.replace(/[\s()]/g, (char) => encodeURIComponent(char));
+  // encodeURIComponent는 괄호를 인코딩하지 않아 코드값으로 직접 변환
+  return url.replace(
+    /[\s()]/g,
+    (char) =>
+      `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`,
+  );
 }
 
 // position 위치에 이미지 마크다운을 넣고, 줄 중간이면 앞뒤에 줄바꿈을 보강

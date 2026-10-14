@@ -196,4 +196,9 @@ describe("collectImageUrls와 replaceImageUrls", () => {
     expect(result.replaced).toBe(1);
     expect(result.markdown).toContain("https://blob/a b.png");
   });
+
+  it("꺾쇠 괄호 표기는 치환 후에도 유지해 공백 URL이 깨지지 않는다", () => {
+    const result = replaceImageUrls("![a](<https://old/a b.png>)", map, "글");
+    expect(result.markdown).toBe("![a](<https://blob/a b.png>)");
+  });
 });

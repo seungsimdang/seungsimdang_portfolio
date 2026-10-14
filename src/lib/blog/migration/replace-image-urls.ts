@@ -102,7 +102,9 @@ function rewriteMarkdown(
   if (newUrl !== undefined) {
     const dest = rest.match(/^\]\(\s*(<[^>]*>|[^\s)]+)/);
     if (dest?.[1]) {
-      rest = rest.replace(dest[1], () => newUrl);
+      // 꺾쇠로 감싼 원래 표기는 공백 포함 URL을 위해 유지
+      const wrapped = dest[1].startsWith("<") ? `<${newUrl}>` : newUrl;
+      rest = rest.replace(dest[1], () => wrapped);
     } else {
       return source;
     }

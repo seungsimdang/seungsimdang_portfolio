@@ -59,4 +59,28 @@ describe("postExcerpt", () => {
   it("빈 본문은 빈 문자열이다", () => {
     expect(postExcerpt("")).toBe("");
   });
+
+  it("밑줄과 별표가 든 식별자는 훼손하지 않는다", () => {
+    expect(postExcerpt("use_state와 a*b 그리고 `snake_case`")).toBe(
+      "use_state와 a*b 그리고 snake_case",
+    );
+  });
+
+  it("닫히지 않은 코드 펜스 안의 코드는 요약에 넣지 않는다", () => {
+    expect(postExcerpt("설명\n\n```js\nconst a = 1;")).toBe("설명");
+  });
+
+  it("부등호가 있는 문장은 태그로 오인하지 않는다", () => {
+    expect(postExcerpt("a < b 이고 c > d 이다")).toBe("a < b 이고 c > d 이다");
+  });
+
+  it("참조형 링크는 링크 텍스트만 남긴다", () => {
+    expect(postExcerpt("[문서][ref]\n\n[ref]: https://a.b")).toBe("문서");
+  });
+
+  it("이모지를 자르는 위치에서도 서로게이트 쌍을 가르지 않는다", () => {
+    const text = postExcerpt("😀".repeat(200));
+    expect(Array.from(text)).toHaveLength(160);
+    expect(text.endsWith("😀…")).toBe(true);
+  });
 });
