@@ -176,3 +176,52 @@ export const techTalks: FixtureTalk[] = [
     link: "https://example.com/talk-2",
   },
 ];
+
+interface FixturePost {
+  slug: string;
+  title: string;
+  content: string;
+  categories: string[];
+  tags: string[];
+  publishedAt: string;
+  published: boolean;
+}
+
+export const posts: FixturePost[] = [
+  {
+    slug: "2025-01-02-fixture-post-1",
+    title: "테스트 글 1",
+    content: "# 제목\n\n본문 첫 단락.\n\n```ts\nconst a = 1;\n```\n",
+    categories: ["Fixture"],
+    tags: ["test"],
+    publishedAt: "2025-01-02",
+    published: true,
+  },
+  {
+    slug: "2025-01-01-fixture-post-2",
+    title: "테스트 글 2",
+    content: "두 번째 글 본문.",
+    categories: ["Fixture", "Other"],
+    tags: [],
+    publishedAt: "2025-01-01",
+    published: true,
+  },
+  {
+    slug: "2024-12-31-한글-주소-글",
+    title: "한글 주소 글",
+    content: "한글 slug 본문.",
+    categories: ["Other"],
+    tags: [],
+    publishedAt: "2024-12-31",
+    published: true,
+  },
+  {
+    slug: "2024-12-30-fixture-draft",
+    title: "비공개 글",
+    content: "비공개 본문.",
+    categories: ["Fixture"],
+    tags: [],
+    publishedAt: "2024-12-30",
+    published: false,
+  },
+];

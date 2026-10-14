@@ -5,7 +5,7 @@ for (const [path, heading] of [
   ["/", profileData.title],
   ["/projects", "projects"],
   ["/about", "about"],
-  ["/blog", "talks"],
+  ["/talks", "talks"],
   ["/contact", "contact"],
 ]) {
   test(`${path} 페이지가 정상적으로 표시된다`, async ({ page }) => {

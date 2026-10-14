@@ -32,6 +32,7 @@ type AdminButtonProps =
       disabled?: boolean;
       onClick?: () => void;
       "aria-label"?: string;
+      "aria-pressed"?: boolean;
     });
 
 // 제출과 액션용 버튼, href가 있으면 같은 모양의 링크
@@ -52,6 +53,7 @@ export function AdminButton(props: AdminButtonProps) {
       disabled={props.disabled}
       onClick={props.onClick}
       aria-label={props["aria-label"]}
+      aria-pressed={props["aria-pressed"]}
     >
       {props.children}
     </button>
