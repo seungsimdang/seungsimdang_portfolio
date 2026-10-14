@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MarkdownBody } from "@/components/common/markdown-body";
+import { postExcerpt } from "@/lib/blog/excerpt";
 import { decodePostSlug } from "@/lib/blog/slug";
 import { renderMarkdown } from "@/lib/markdown/render-markdown";
 import { postSlugSchema } from "@/schemas/blog.schema";
@@ -26,6 +27,7 @@ export async function generateMetadata({
   if (!post) return {};
   return {
     title: post.title,
+    description: postExcerpt(post.content) || post.title,
     alternates: { canonical: `/blog/${encodeURIComponent(post.slug)}` },
   };
 }

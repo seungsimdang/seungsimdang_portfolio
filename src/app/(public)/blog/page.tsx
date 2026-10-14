@@ -13,6 +13,7 @@ import { cn } from "@/utils/styleUtils";
 
 export const metadata: Metadata = {
   title: "blog",
+  description: "개발하며 배운 것과 알고리즘 풀이를 정리한 글 목록",
   alternates: { canonical: "/blog" },
 };
 
