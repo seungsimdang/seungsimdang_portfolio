@@ -17,7 +17,7 @@
 | T07-code-review | code-reviewer | 1차 done, 재작업 판정 | `code-review-1.md`, `triage-1.md` |
 | T07 재작업 1 | frontend-developer (worktree) | done, 병합 재검증 통과 | 3bf60c3 |
 | T07 재리뷰 | code-reviewer | 통과, Low N-1 사용자 결정으로 포함·수정 | `code-review-2.md`, `triage-2.md`, 6f5e0b7 |
-| T08-security | security-reviewer | 1차 done, 배포 승인, SEC-02 재작업 대상 (hold) | `security-review-1.md`, `triage-security-1.md` |
+| T08-security | security-reviewer | 1차 done, 배포 승인, SEC-01·SEC-02 재작업 후 재리뷰 대상 (hold) | `security-review-1.md`, `triage-security-1.md` |
 | T09-qa | qa-engineer | pending (hold) | - |
 
 ## 병합·재검증 (orchestrator)
@@ -49,4 +49,10 @@
 - 처리: `triage-1.md`의 F-2~F-6. F-1은 T09 이관.
 - F-2 지시안 `div role="region"`은 biome `useSemanticElements`가 막아 `aria-label`을 가진 `section`(암묵적 region)으로 구현. `pre`·표 래퍼의 `tabIndex`는 biome `noNoninteractiveTabindex` 예외 주석으로 허용. 렌더러 `components`는 sanitize 이후 단계라 보안 경계 변화 없음.
 - orchestrator 병합 재검증: `pnpm type-check`, `pnpm exec vitest run`(247 통과), `pnpm check`, `pnpm knip`, react-doctor staged, `pnpm harness:test`(43 통과) 모두 통과. e2e는 재실행하지 않음.
-- 다음 단계: T08 1차(사이클 전체), 재작업 시 재리뷰, 이후 T07·T08 사이클 전체 최종 리뷰(CodeRabbit 포함), T09.
+
+## 다음 단계 (재개 시)
+
+1. T08 재작업: SEC-01(nonce 기반 `script-src` CSP를 공개·admin 경로에 적용), SEC-02(블로그 slug `new` 금지). SEC-01은 착수 전 `node_modules/next/dist/docs/`에서 CSP·nonce 적용 방법과 영향(현재 `src/proxy.ts` matcher가 `/admin`·`/api/admin` 한정이라 공개 경로 확장 필요, nonce 사용 시 정적 렌더링에서 동적 렌더링으로 바뀌는 범위)을 확인하고, 영향이 크면 사용자에게 먼저 보고.
+2. T08 재리뷰(`security-review-2.md`): 범위는 SEC-01·SEC-02 해결 여부와 재작업 diff만.
+3. T07·T08 사이클 전체 최종 리뷰 각 1회(`ac2e26b..HEAD`, T07은 CodeRabbit 포함). T07 재리뷰 이후의 N-1 수정(6f5e0b7)과 T08 재작업도 여기서 함께 확인.
+4. T09 QA: `triage-1.md`의 F-1(신규 단위 테스트) 작성, `The destination stream closed early` 로그의 develop 기준 e2e 대조.
