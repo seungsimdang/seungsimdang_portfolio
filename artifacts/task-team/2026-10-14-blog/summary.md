@@ -2,7 +2,7 @@
 
 - work-id: `2026-10-14-blog`
 - 브랜치: `feature/blog` (기준 `origin/develop` ac2e26b)
-- 상태: **hold** (T08 1차 리뷰와 orchestrator 재검토 후 사용자 지시로 중단, SEC-02 재작업·SEC-01 사용자 결정 대기)
+- 상태: **hold** (T08 1차 리뷰와 orchestrator 재검토 후 사용자 지시로 중단, SEC-01·SEC-02 재작업 대기, SEC-01은 사용자 결정으로 포함)
 
 ## 단계 상태
 
