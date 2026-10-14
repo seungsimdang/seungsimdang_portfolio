@@ -9,6 +9,7 @@ const BODY_MAX_BYTES = 256 * 1024;
 export async function parseJsonBody<T>(
   request: Request,
   schema: ZodType<T>,
+  maxBytes = BODY_MAX_BYTES,
 ): Promise<T> {
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().startsWith("application/json")) {
@@ -20,10 +21,10 @@ export async function parseJsonBody<T>(
   }
 
   const declared = Number(request.headers.get("content-length") ?? 0);
-  if (declared > BODY_MAX_BYTES) throw payloadTooLarge();
+  if (declared > maxBytes) throw payloadTooLarge();
 
   const text = await request.text();
-  if (new TextEncoder().encode(text).length > BODY_MAX_BYTES) {
+  if (new TextEncoder().encode(text).length > maxBytes) {
     throw payloadTooLarge();
   }
 

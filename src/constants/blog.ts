@@ -1,0 +1,6 @@
+export const POST_PAGE_SIZE = 20; // 공개 목록
+export const POST_ADMIN_PAGE_SIZE = 50; // admin 목록
+export const POST_CONTENT_MAX = 300_000; // 글자 수
+export const POST_BODY_MAX_BYTES = 2 * 1024 * 1024; // posts 라우트 요청 본문 상한
+export const POST_IMPORT_MAX_BYTES = 1024 * 1024; // .md import 파일 크기 상한 (클라이언트 검사용)
+export const POST_SLUG_MAX = 200;

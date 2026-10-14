@@ -67,11 +67,11 @@ export class LimitExceededError extends Error {
   }
 }
 
-const PG_UNIQUE_VIOLATION = "23505";
+export const PG_UNIQUE_VIOLATION = "23505";
 const PG_FOREIGN_KEY_VIOLATION = "23503";
 
 // Neon 직접 에러는 err.code, drizzle 래핑 에러는 err.cause.code에 PG 코드가 있음
-function getPgErrorCode(error: unknown): string | undefined {
+export function getPgErrorCode(error: unknown): string | undefined {
   const read = (value: unknown) =>
     typeof value === "object" && value !== null && "code" in value
       ? String((value as { code: unknown }).code)

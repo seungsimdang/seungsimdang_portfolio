@@ -7,6 +7,7 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
   experiences,
+  posts,
   profile,
   projects,
   resumeEntries,
@@ -14,6 +15,7 @@ import {
 } from "../../../src/db/schema/portfolio";
 import {
   profileData,
+  posts as seedPosts,
   projects as seedProjects,
   resumeEntries as seedResume,
   techTalks as seedTalks,
@@ -44,12 +46,13 @@ async function main() {
   }
 
   const db = drizzle(neon(url));
-  const [[hasProfile], [hasProject], [hasTalk], [hasResume]] =
+  const [[hasProfile], [hasProject], [hasTalk], [hasResume], [hasPost]] =
     await Promise.all([
       db.select({ id: profile.id }).from(profile).limit(1),
       db.select({ id: projects.id }).from(projects).limit(1),
       db.select({ id: techTalks.id }).from(techTalks).limit(1),
       db.select({ id: resumeEntries.id }).from(resumeEntries).limit(1),
+      db.select({ id: posts.id }).from(posts).limit(1),
     ]);
 
   const statements = [];
@@ -140,6 +143,13 @@ async function main() {
       ),
     );
     summary.push(`resume_entries: ${seedResume.length}건`);
+  }
+
+  if (hasPost) {
+    summary.push("posts: 건너뜀(이미 존재)");
+  } else {
+    statements.push(db.insert(posts).values(seedPosts));
+    summary.push(`posts: ${seedPosts.length}건`);
   }
 
   if (statements.length > 0) {
