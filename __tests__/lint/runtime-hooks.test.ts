@@ -1,10 +1,32 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "vitest";
 
 // pre-commit 안에서는 GIT_DIR 등이 설정돼 임시 저장소 대신 실제 저장소를 가리키므로 제거
+// 이전 사이클 폴더에 리뷰 3개, 최근 사이클 폴더에 recent개를 두어 현재 사이클만 세는지 확인함
+function reviewCycles(prefix: string, recent: number) {
+  const fixture = mkdtempSync(join(tmpdir(), prefix));
+  const write = (cycle: string, count: number) => {
+    const directory = join(fixture, "artifacts/task-team", cycle);
+    mkdirSync(directory, { recursive: true });
+    for (let number = 1; number <= count; number++)
+      writeFileSync(join(directory, `code-review-${number}.md`), "review");
+    return directory;
+  };
+  const old = write("2026-01-01-old", 3);
+  utimesSync(old, new Date("2026-01-01"), new Date("2026-01-01"));
+  write("2026-01-02-recent", recent);
+  return fixture;
+}
+
 const env = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")),
 ) as NodeJS.ProcessEnv;
@@ -351,23 +373,25 @@ test("클로드 리뷰 누락·영어 응답 훅이 위반을 검출한다", () 
       last_assistant_message: "검증 결과를 확인했습니다.",
     }).stdout.trim(),
   ).toBe("");
-  const fixture = mkdtempSync(join(tmpdir(), "portfolio-review-hooks-"));
-  try {
-    const directory = join(fixture, "artifacts/task-team");
-    mkdirSync(directory, { recursive: true });
-    for (const number of [1, 2, 3])
-      writeFileSync(join(directory, `code-review-${number}.md`), "review");
-    const review = run(
-      ".claude",
-      "confirm-repeated-review",
-      { tool_input: { subagent_type: "code-reviewer" } },
-      fixture,
-    );
-    expect(
-      JSON.parse(review.stdout).hookSpecificOutput.permissionDecision,
-    ).toBe("ask");
-  } finally {
-    rmSync(fixture, { recursive: true, force: true });
+  for (const [recent, expected] of [
+    [3, "ask"],
+    [1, ""],
+  ] as const) {
+    const fixture = reviewCycles("portfolio-review-hooks-", recent);
+    try {
+      const review = run(
+        ".claude",
+        "confirm-repeated-review",
+        { tool_input: { subagent_type: "code-reviewer" } },
+        fixture,
+      );
+      expect(
+        review.stdout.trim() &&
+          JSON.parse(review.stdout).hookSpecificOutput.permissionDecision,
+      ).toBe(expected);
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+    }
   }
 });
 
@@ -436,12 +460,8 @@ test("코덱스 어댑터가 apply_patch와 spawn_agent 입력을 같은 훅 판
       "This response describes the complete implementation and verification results in English.",
   });
   expect(JSON.parse(stop.stdout).decision).toBe("block");
-  const fixture = mkdtempSync(join(tmpdir(), "portfolio-codex-review-"));
+  const fixture = reviewCycles("portfolio-codex-review-", 3);
   try {
-    const directory = join(fixture, "artifacts/task-team");
-    mkdirSync(directory, { recursive: true });
-    for (const number of [1, 2, 3])
-      writeFileSync(join(directory, `code-review-${number}.md`), "review");
     const review = adapt(
       "confirm-repeated-review",
       { tool_name: "spawn_agent", tool_input: { agent_type: "code-reviewer" } },

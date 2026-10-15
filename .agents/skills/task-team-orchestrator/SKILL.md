@@ -114,9 +114,11 @@ Hybrid. 요구사항·설계·API 명세·리뷰·QA는 Agent Team으로 진행 
 - 수정 범위가 단순하고 복잡한 도메인 판단이 필요 없는 경우(예: 조건문 수정, 예외 처리 추가, 주석/문서 갱신)
 - 단독 편집이라 다른 세션·subagent와의 동시 편집 충돌 위험이 없는 경우(현재 worktree에 다른 active subagent가 없음 - `docs/agent-rules/git-safety.md` 원칙과 동일선상). 확인 방법: `git status`에 자신이 만들지 않은 미커밋 변경(수정·삭제·신규)이 없고, `ListAgents`에 같은 저장소를 쓰는 다른 세션이 없을 것. 둘 중 하나라도 해당하면 이 예외를 쓰지 않고 `Agent(isolation: "worktree")`로 위임한다(사용자가 직접 진행을 지시한 경우 제외)
 
-이 경우에도 수정 후 재검증(`pnpm type-check`/`tsc`, `pnpm exec vitest run`, 필요 시 `biome`/`knip`)과 T07/T08 재리뷰는 위임 여부와 무관하게 그대로 수행한다.
+이 경우에도 수정 후 재검증(`pnpm type-check`/`tsc`, `pnpm exec vitest run`, 필요 시 `biome`/`knip`)은 위임 여부와 무관하게 그대로 수행하고, T07/T08 재리뷰는 11번 기준(Low 이하만 수정했으면 생략)을 따른다.
 10. Phase 전환마다 `TaskGet`으로 완료 상태를 확인하고 지연이 있으면 `SendMessage`로 원인을 파악한다.
 11. 9-1 게이트에서 재작업이 결정된 finding은 해당 개발자에게 수정 지시 후 관련 리뷰(T07/T08)를 재실행한다. 재리뷰 지시문의 검토 범위는 (a) 이전 finding의 해결 여부와 (b) 이번 재작업 diff가 새로 만든 코드로 한정하고, 재작업 diff 주변의 기존 코드를 새로 훑게 하지 않는다. 재작업이 끝나 더 고칠 Medium 이상이 없으면, T09로 넘어가기 전에 사이클 전체 diff(사이클 시작 커밋부터 현재까지)를 대상으로 T07/T08 최종 리뷰를 1회 실행한다. 최종 리뷰 파일도 `code-review-{n}.md`/`security-review-{n}.md` 번호 규칙을 따르고, 지시문에 "사이클 전체 최종 리뷰"임을 명시한다. 최종 리뷰의 finding도 9-1의 2차 이후 기준을 따른다. 재작업도 병렬이거나 다른 세션이 같은 브랜치를 공유 편집 중이라는 신호(`git branch -a`/`git worktree list`)가 보이면 T05/T06처럼 `Agent(... isolation: "worktree" ...)`로 격리해 스폰한 뒤 orchestrator가 병합한다. 단독·소범위 수정이고 동시 편집 위험이 없으면 9-1 게이트 예외 규정에 따라 orchestrator가 메인 체크아웃에서 직접 수정할 수 있다.
+
+   **Low 이하만 수정한 재작업은 재리뷰를 생략한다.** 이번 재작업에서 고친 finding이 모두 Low 이하(9-1에서 사용자가 이번 사이클 포함으로 결정한 Low 포함)면 그 재작업에 대한 T07/T08 재리뷰를 실행하지 않는다. 재검증(`tsc`, `pnpm exec vitest run`, `biome`, `knip`, 주석 검사)은 그대로 수행하고, `triage-N.md`에 재리뷰 생략과 그 근거(고친 finding 목록과 심각도)를 남긴다. Medium 이상이 하나라도 섞여 있으면 생략하지 않는다. 사이클 전체 최종 리뷰 뒤 Low 이하만 고쳤으면 최종 리뷰를 다시 실행하지 않고 T09로 넘어간다.
 12. security-reviewer 자체 차단 기준(Critical 미수정 시 배포 비승인)과 9-1 게이트의 재작업 판단은 별개다 - reviewer는 배포 승인/비승인만 판단하고, orchestrator는 "당장 고칠지 백로그로 미룰지"를 9-1 게이트로 최종 결정한다. Critical이 남아있으면 재작업 없이 다음 단계로 진행하지 않는다.
 13. T09 완료 후 `artifacts/task-team/summary.md`에 최종 상태를 정리한다.
 14. 실행 완료 후 `artifacts/task-team/improvement-log.md`를 갱신하고 `TeamDelete`로 팀을 정리한다.
@@ -138,7 +140,7 @@ Hybrid. 요구사항·설계·API 명세·리뷰·QA는 Agent Team으로 진행 
 
 - **블로킹 질문은 AskUserQuestion으로**: 진행 여부가 실제로 사용자의 결정에 막힌 경우(승인 게이트 포함), 일반 텍스트로 질문을 남기고 다음 응답을 기다리지 않는다. AskUserQuestion 도구로 명시적으로 묻는다.
 - 팀원 1명 실패 시: `TaskGet`으로 상태 확인 → `SendMessage`로 원인 파악 → 1회 재시도 또는 재할당.
-- 코드/보안 리뷰 재작업 판정 시(reviewer 자체 판정이든 9-1 게이트에서 orchestrator가 재작업 대상으로 정한 finding이든): 수정 후 해당 리뷰 Task만 11번의 재리뷰 범위로 재실행.
+- 코드/보안 리뷰 재작업 판정 시(reviewer 자체 판정이든 9-1 게이트에서 orchestrator가 재작업 대상으로 정한 finding이든): 수정 후 해당 리뷰 Task만 11번의 재리뷰 범위로 재실행. Low 이하만 고쳤으면 11번에 따라 재리뷰를 생략하고 재검증만 수행.
 - 과반 작업 실패 시: 현재 상태와 선택지를 사용자에게 보고 후 확인.
 - 입력 부족 시: 추측하지 않고 필요한 정보를 사용자에게 질문한다.
 - **T05/T06 worktree 병합 충돌 시**: orchestrator가 임의로 어느 한쪽을 선택하지 않고 충돌 파일과 각 변경 내용을 사람에게 보고한 뒤 지시를 받는다.
