@@ -174,7 +174,8 @@ export function BlogForm({ post, defaultDate }: BlogFormProps) {
     anchor.href = url;
     anchor.download = POST_TEMPLATE_FILE_NAME;
     anchor.click();
-    URL.revokeObjectURL(url);
+    // 동기 해제 시 일부 브라우저에서 다운로드 시작 전에 URL이 무효화되므로 다음 작업으로 미룸
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   async function importFile(file: File) {
