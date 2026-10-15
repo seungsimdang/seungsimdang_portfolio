@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-15 - 재리뷰 확인 훅 사이클 판단을 스폰 프롬프트 기준으로 변경
+
+`confirm-repeated-review.sh`(Claude·Codex)가 `$CLAUDE_PROJECT_DIR/artifacts/task-team/`에서 가장 최근에 바뀐 하위 폴더를 현재 사이클로 세어, 메인 체크아웃을 다른 세션이 쓰는 동안 `/private/tmp` worktree에서 진행한 사이클(admin-blog-md-template)의 3번째 리뷰 스폰에 이전 사이클(admin-tabs-by-page)의 리뷰 5개를 근거로 확인 요청을 띄웠다. 스폰 프롬프트의 `tool_input.prompt`(Codex는 `message`도 확인)에 적힌 리뷰 저장 경로(`.../artifacts/task-team/<work-id>/{code,security}-review-N.md`)로 사이클 폴더를 먼저 정하고, 저장 경로가 없으면 처음 나온 사이클 경로, 둘 다 없거나 폴더가 없으면 기존 수정 시각 기준으로 센다. 절대 경로는 그대로, 상대 경로는 프로젝트 폴더 기준으로 해석한다. 확인 요청 사유에 센 폴더 경로를 넣었다. `__tests__/lint/runtime-hooks.test.ts`에 프로젝트 밖 사이클 우선, 상대 경로, 경로 없음 폴백 사례를 추가했다. Codex `spawn_agent`의 프롬프트 필드 이름은 이 저장소에서 확인하지 못해 `message`는 미검증이다.
+
 ## 2026-10-15 - 재리뷰 확인 훅 사이클 폴더 기준 수정과 Low 수정 재리뷰 생략
 
 `confirm-repeated-review.sh`(Claude·Codex)가 `artifacts/task-team/` 최상위만 세어, 산출물이 사이클별 하위 폴더로 바뀐 뒤 리뷰 파일이 늘 0개로 잡혀 확인 요청을 한 번도 띄우지 못했다(admin-tabs-by-page 사이클 3~5차 리뷰에서 실제로 미작동). 가장 최근에 바뀐 하위 폴더를 현재 사이클로 세도록 고치고, 하위 폴더가 없으면 최상위를 센다. `task-team-orchestrator` 템플릿 2벌의 11번에 Low 이하만 고친 재작업은 T07/T08 재리뷰를 생략하고 재검증과 triage 기록만 남기는 규칙을 추가했고, 9-1 예외 절과 실패 처리도 맞췄다. `__tests__/lint/runtime-hooks.test.ts`에 이전 사이클 폴더만 3개일 때 통과, 현재 사이클 3개일 때 확인 요청 사례를 추가했다.

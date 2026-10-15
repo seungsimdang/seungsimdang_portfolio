@@ -395,6 +395,40 @@ test("클로드 리뷰 누락·영어 응답 훅이 위반을 검출한다", () 
   }
 });
 
+test("재리뷰 확인 훅이 스폰 프롬프트의 리뷰 저장 경로로 현재 사이클을 판단한다", () => {
+  // 프로젝트 폴더 밖 worktree의 사이클 폴더가 가장 최근 프로젝트 폴더보다 우선되는지 확인함
+  const fixture = reviewCycles("portfolio-review-prompt-", 3);
+  const outside = mkdtempSync(join(tmpdir(), "portfolio-review-outside-"));
+  try {
+    const cycle = join(outside, "artifacts/task-team/2026-01-03-worktree");
+    mkdirSync(cycle, { recursive: true });
+    writeFileSync(join(cycle, "code-review-1.md"), "review");
+    const decide = (prompt: string) => {
+      const { stdout } = run(
+        ".claude",
+        "confirm-repeated-review",
+        { tool_input: { subagent_type: "code-reviewer", prompt } },
+        fixture,
+      );
+      return stdout.trim()
+        ? JSON.parse(stdout).hookSpecificOutput.permissionDecision
+        : "";
+    };
+    expect(
+      decide(
+        `참고 artifacts/task-team/2026-01-01-old/summary.md, 출력 \`${cycle}/code-review-2.md\``,
+      ),
+    ).toBe("");
+    expect(
+      decide("출력: artifacts/task-team/2026-01-01-old/code-review-4.md"),
+    ).toBe("ask");
+    expect(decide("저장 경로 없음")).toBe("ask");
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
 test("코덱스 어댑터가 apply_patch와 spawn_agent 입력을 같은 훅 판정으로 변환한다", () => {
   const adapt = (hook: string, input: object, cwd = process.cwd()) =>
     spawnSync("node", [resolve(".codex/hooks/codex-tool-adapter.mjs"), hook], {
