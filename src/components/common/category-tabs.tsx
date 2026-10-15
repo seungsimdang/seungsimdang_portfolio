@@ -6,6 +6,8 @@ interface CategoryTabsProps {
   basePath: string;
   categories: string[];
   current?: string;
+  // 링크에 유지할 추가 쿼리 (예: q), 비어 있으면 기존 링크와 같음
+  query?: Record<string, string>;
   // 동적 렌더링 경로의 이탈 시 중단 스트림 오류를 피하려면 false
   prefetch?: false;
 }
@@ -18,14 +20,25 @@ export function CategoryTabs({
   basePath,
   categories,
   current,
+  query = {},
   prefetch,
 }: CategoryTabsProps) {
   if (categories.length === 0) return null;
+  const hrefFor = (category?: string) => {
+    const pairs = [
+      ...(category ? [["category", category]] : []),
+      ...Object.entries(query),
+    ];
+    if (pairs.length === 0) return basePath;
+    return `${basePath}?${pairs
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join("&")}`;
+  };
   const items = [
-    { name: "전체", href: basePath, active: current === undefined },
+    { name: "전체", href: hrefFor(), active: current === undefined },
     ...categories.map((name) => ({
       name,
-      href: `${basePath}?category=${encodeURIComponent(name)}`,
+      href: hrefFor(name),
       active: name === current,
     })),
   ];

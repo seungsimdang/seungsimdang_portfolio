@@ -1,7 +1,6 @@
 import "server-only";
-import { and, asc, count, desc, eq, gt, lt, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, lt, or, sql } from "drizzle-orm";
 import { cache } from "react";
-import { POST_LABEL_MAX } from "@/constants/blog";
 import { db } from "@/db";
 import { posts } from "@/db/schema/portfolio";
 import type {
@@ -11,6 +10,7 @@ import type {
   PostPage,
   PostSummary,
 } from "@/types/blog";
+import { escapeLikePattern } from "@/utils/blog-query-params";
 
 type PostRow = typeof posts.$inferSelect;
 
@@ -30,32 +30,27 @@ export function toPost(row: PostRow): Post {
   return { ...toPostSummary(row), content: row.content };
 }
 
-// 배열이면 첫 값을 쓰고 1-999999 범위의 정수가 아니면 1페이지로 취급함
-export function parsePageParam(raw: string | string[] | undefined): number {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  return value && /^[1-9]\d{0,5}$/.test(value) ? Number(value) : 1;
-}
-
-// 공개와 admin 페이지가 공유하는 category 쿼리 해석 지점
-// 배열이면 첫 값을 쓰고 trim 후 NFC로 정규화함
-// 빈 값이나 라벨 길이 상한 초과는 필터 없음으로 취급함
-export function normalizeCategoryParam(
-  raw: string | string[] | undefined,
-): string | undefined {
-  const value = (Array.isArray(raw) ? raw[0] : raw)?.trim().normalize("NFC");
-  return value && value.length <= POST_LABEL_MAX ? value : undefined;
-}
-
-// category는 normalizeCategoryParam을 거친 값만 받음
+// category는 normalizeCategoryParam, query는 normalizeSearchQuery를 거친 값만 받음
+// query는 이스케이프 전 값이며 LIKE 메타문자 처리는 여기서만 하고 값은 바인딩 파라미터로 전달됨
+// 제목과 본문 구절 일치이며 content는 select하지 않음
 export const listPosts = cache(
   async (
     page: number,
     pageSize: number,
     category?: string,
+    query?: string,
   ): Promise<PostPage> => {
-    const where = category
+    const categoryCondition = category
       ? sql`${posts.categories} @> array[${category}]::text[]`
       : undefined;
+    const trimmedQuery = query?.trim();
+    const pattern = trimmedQuery
+      ? `%${escapeLikePattern(trimmedQuery)}%`
+      : undefined;
+    const searchCondition = pattern
+      ? or(ilike(posts.title, pattern), ilike(posts.content, pattern))
+      : undefined;
+    const where = and(categoryCondition, searchCondition);
     const [{ total = 0 } = {}] = await db
       .select({ total: count() })
       .from(posts)

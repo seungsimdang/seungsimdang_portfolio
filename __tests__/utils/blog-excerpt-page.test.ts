@@ -4,7 +4,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/db", () => ({ db: {} }));
 
 import { postExcerpt } from "@/lib/blog/excerpt";
-import { parsePageParam } from "@/services/blog/blog-service";
+import { parsePageParam } from "@/utils/blog-query-params";
 
 describe("parsePageParam", () => {
   it.each([
