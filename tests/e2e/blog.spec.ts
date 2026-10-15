@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
 import { posts } from "./fixtures/portfolio";
+import { expect, test } from "./fixtures/test";
 
 const [first, second, third] = posts;
 

@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
 import { encode } from "next-auth/jwt";
 import { profileData } from "./fixtures/portfolio";
+import { expect, test } from "./fixtures/test";
 
 try {
   process.loadEnvFile(".env.local");
@@ -239,6 +239,9 @@ test.describe("인증된 관리자 화면", () => {
     });
 
     await page.goto("/admin/about");
+    await expect(page.locator('input[name="skills.0.value"]')).toHaveValue(
+      profileData.skills[0],
+    );
     await page.locator('input[name="skills.0.value"]').fill("QA 스킬");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect.poll(() => bodies).toHaveLength(1);
@@ -248,6 +251,7 @@ test.describe("인증된 관리자 화면", () => {
     ]);
 
     await page.goto("/admin/contact");
+    await expect(page.getByLabel("이메일")).toHaveValue(profileData.email);
     await page.getByLabel("이메일").fill("qa@example.com");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect.poll(() => bodies).toHaveLength(2);
