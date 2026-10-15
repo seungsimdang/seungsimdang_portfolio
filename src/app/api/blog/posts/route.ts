@@ -2,6 +2,7 @@ import "server-only";
 import { POST_PAGE_SIZE } from "@/constants/blog";
 import { apiErrors } from "@/lib/api/api-error";
 import { fail, ok } from "@/lib/api/response";
+import { summarizeErrorForLog } from "@/lib/api/safe-error-log";
 import { listPosts } from "@/services/blog/blog-service";
 import { parseBlogListParams } from "@/utils/blog-query-params";
 
@@ -17,17 +18,8 @@ export async function GET(request: Request) {
     response.headers.set("Cache-Control", "no-store");
     return response;
   } catch (error) {
-    // DrizzleQueryError 메시지에 SQL 파라미터(검색어)가 포함되므로 메시지는 남기지 않고 오류 이름과 원인의 PG 코드만 기록함
-    const cause = error instanceof Error ? error.cause : undefined;
-    const pgCode =
-      cause && typeof cause === "object" && "code" in cause
-        ? String(cause.code)
-        : undefined;
-    console.error(
-      "[api/blog/posts] 목록 조회 실패",
-      error instanceof Error ? error.name : "unknown",
-      pgCode,
-    );
+    const { name, pgCode } = summarizeErrorForLog(error);
+    console.error("[api/blog/posts] 목록 조회 실패", name, pgCode);
     return fail(apiErrors.internal());
   }
 }
