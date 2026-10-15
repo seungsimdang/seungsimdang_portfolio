@@ -2,6 +2,7 @@ import "server-only";
 import { HttpStatusCode } from "axios";
 import { ApiError, apiErrors } from "@/lib/api/api-error";
 import { fail } from "@/lib/api/response";
+import { summarizeErrorForLog } from "@/lib/api/safe-error-log";
 import { consumeAdminWriteQuota } from "@/services/admin/rate-limit-service";
 import {
   LimitExceededError,
@@ -95,10 +96,8 @@ export function adminRoute<
         return fail(apiErrors.limitExceeded());
       if (error instanceof PortfolioNotSeededError)
         return fail(apiErrors.notSeeded());
-      console.error(
-        "admin route error:",
-        error instanceof Error ? `${error.name}: ${error.message}` : "unknown",
-      );
+      const { name, pgCode } = summarizeErrorForLog(error);
+      console.error("admin route error:", name, pgCode);
       return fail(apiErrors.internal());
     }
   };

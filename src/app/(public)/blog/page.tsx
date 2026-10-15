@@ -1,39 +1,42 @@
+import { QueriesHydration } from "@suspensive/react-query-5";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CategoryTabs } from "@/components/common/category-tabs";
+import { Suspense } from "react";
+import { BlogListView } from "@/components/common/blog-list-view";
 import { PageHeader } from "@/components/common/page-header";
-import { Pagination } from "@/components/common/pagination";
-import { PostRow } from "@/components/common/post-row";
+import { QueryProvider } from "@/components/common/query-provider";
 import { POST_PAGE_SIZE } from "@/constants/blog";
+import { blogPostsKeys } from "@/lib/query/blog-posts-keys";
+import { listCategories, listPosts } from "@/services/blog/blog-service";
 import {
-  listCategories,
-  listPosts,
-  normalizeCategoryParam,
-  parsePageParam,
-} from "@/services/blog/blog-service";
-
-export const metadata: Metadata = {
-  title: "blog",
-  description: "개발하며 배운 것과 알고리즘 풀이를 정리한 글 목록",
-  alternates: { canonical: "/blog" },
-};
+  normalizeSearchQuery,
+  parseBlogListSearchParams,
+} from "@/utils/blog-query-params";
 
 interface BlogPageProps {
   searchParams: Promise<{
     page?: string | string[];
     category?: string | string[];
+    q?: string | string[];
   }>;
 }
 
+export async function generateMetadata({
+  searchParams,
+}: BlogPageProps): Promise<Metadata> {
+  const q = normalizeSearchQuery((await searchParams).q);
+  return {
+    title: "blog",
+    description: "개발하며 배운 것과 알고리즘 풀이를 정리한 글 목록",
+    alternates: { canonical: "/blog" },
+    // 검색 결과 페이지는 색인하지 않되 글 링크 발견은 허용함
+    ...(q ? { robots: { index: false, follow: true } } : {}),
+  };
+}
+
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const params = await searchParams;
-  const category = normalizeCategoryParam(params.category);
-  const [result, categories] = await Promise.all([
-    listPosts(parsePageParam(params.page), POST_PAGE_SIZE, category),
-    listCategories(),
-  ]);
-  const first = (result.page - 1) * result.pageSize + 1;
-  const range = `${first}-${first + result.items.length - 1}번째`;
+  const raw = await searchParams;
+  const params = parseBlogListSearchParams(raw);
+  const categories = await listCategories();
 
   return (
     <div className="w-full min-h-screen bg-black text-white">
@@ -46,51 +49,30 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             <div className="flex-1 h-px bg-white/25" />
           </div>
 
-          <CategoryTabs
-            prefetch={false}
-            basePath="/blog"
-            categories={categories.map((item) => item.name)}
-            current={category}
-          />
-
-          {result.items.length === 0 ? (
-            <div className="space-y-12">
-              <p className="text-body text-white/50">
-                {category
-                  ? "이 카테고리에 글이 없습니다."
-                  : "아직 작성한 글이 없습니다."}
-              </p>
-              {category && (
-                <Link
-                  prefetch={false}
-                  href="/blog"
-                  className="text-small underline"
-                >
-                  전체 보기
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div>
-              <p className="text-small text-white/50">
-                {category ? `${category} 카테고리 ` : ""}총 {result.total}개 중{" "}
-                {range}
-              </p>
-              <ul className="mt-16 divide-y divide-white/10">
-                {result.items.map((post) => (
-                  <PostRow key={post.slug} post={post} />
-                ))}
-              </ul>
-              <Pagination
-                prefetch={false}
-                label="블로그 페이지"
-                basePath="/blog"
-                query={category ? { category } : undefined}
-                page={result.page}
-                totalPages={result.totalPages}
-              />
-            </div>
-          )}
+          <QueryProvider>
+            <QueriesHydration
+              queries={[
+                {
+                  queryKey: blogPostsKeys.list(params),
+                  queryFn: () =>
+                    listPosts(
+                      params.page,
+                      POST_PAGE_SIZE,
+                      params.category,
+                      params.q,
+                    ),
+                },
+              ]}
+            >
+              <Suspense fallback={null}>
+                <BlogListView
+                  variant="public"
+                  basePath="/blog"
+                  categories={categories.map((item) => item.name)}
+                />
+              </Suspense>
+            </QueriesHydration>
+          </QueryProvider>
         </div>
       </section>
     </div>
