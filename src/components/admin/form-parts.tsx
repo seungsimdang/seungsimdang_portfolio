@@ -3,9 +3,13 @@
 import { useEffect, useRef } from "react";
 import { AdminButton } from "./admin-button";
 
-interface FormActionBarProps {
+// 목록이 있는 폼은 목록으로 나가는 링크, 폼 자체가 페이지인 탭은 마지막 저장값으로 되돌리는 버튼
+type CancelAction =
+  | { cancelHref: string; onDiscard?: undefined; discardDisabled?: undefined }
+  | { cancelHref?: undefined; onDiscard: () => void; discardDisabled: boolean };
+
+type FormActionBarProps = CancelAction & {
   saving: boolean;
-  cancelHref: string;
   // 편집 화면에서만 전달
   onDelete?: () => void;
   deleteLabel?: string;
@@ -13,12 +17,14 @@ interface FormActionBarProps {
   busyMessage?: string;
   // 저장 외 작업 중에 저장 버튼을 막을 때 사용
   saveDisabled?: boolean;
-}
+};
 
 // 긴 폼에서도 저장 버튼에 닿도록 하단에 고정되는 액션 바, 결과는 토스트로 알림
 export function FormActionBar({
   saving,
   cancelHref,
+  onDiscard,
+  discardDisabled,
   onDelete,
   deleteLabel,
   busyMessage,
@@ -52,7 +58,13 @@ export function FormActionBar({
       >
         {saving ? "저장 중..." : "저장"}
       </AdminButton>
-      <AdminButton href={cancelHref}>취소</AdminButton>
+      {onDiscard ? (
+        <AdminButton onClick={onDiscard} disabled={discardDisabled}>
+          변경 취소
+        </AdminButton>
+      ) : (
+        <AdminButton href={cancelHref}>취소</AdminButton>
+      )}
       {busyMessage && (
         <span role="status" className="text-small">
           {busyMessage}

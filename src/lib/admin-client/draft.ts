@@ -1,21 +1,24 @@
-import type { ExperienceDraft } from "@/components/admin/experience-list-editor";
 import type { Experience } from "@/types/portfolio";
 
-let keySeed = 0;
-
-// 목록 편집용 클라이언트 전용 key, 서버로 보내지 않음
-export function newKey() {
-  keySeed += 1;
-  return `k${keySeed}`;
+// 문자열 목록은 입력 칸 이름이 목록.0.value 꼴이 되도록 { value } 객체로 들고 있음
+export function toValueItems(values: string[]) {
+  return values.map((value) => ({ value }));
 }
 
-export interface StringItem {
-  key: string;
-  value: string;
-}
-
-export function toStringItems(values: string[]): StringItem[] {
-  return values.map((value) => ({ key: newKey(), value }));
+export function toExperienceValues(experience: Experience) {
+  return {
+    title: experience.title,
+    problem: experience.problem,
+    solution: experience.solution,
+    tradeoff: {
+      advantages: experience.tradeoff.advantages,
+      disadvantages: experience.tradeoff.disadvantages,
+      rationale: experience.tradeoff.rationale,
+    },
+    result: experience.result,
+    learning: experience.learning,
+    links: (experience.links ?? []).map(({ label, url }) => ({ label, url })),
+  };
 }
 
 export function moveItem<T>(items: T[], index: number, delta: -1 | 1): T[] {
@@ -24,19 +27,4 @@ export function moveItem<T>(items: T[], index: number, delta: -1 | 1): T[] {
   const next = [...items];
   [next[index], next[target]] = [next[target], next[index]];
   return next;
-}
-
-export function toExperienceDraft(experience: Experience): ExperienceDraft {
-  return {
-    key: experience.id,
-    title: experience.title,
-    problem: experience.problem,
-    solution: experience.solution,
-    advantages: experience.tradeoff.advantages,
-    disadvantages: experience.tradeoff.disadvantages,
-    rationale: experience.tradeoff.rationale,
-    result: experience.result,
-    learning: experience.learning,
-    links: (experience.links ?? []).map((link) => ({ key: newKey(), ...link })),
-  };
 }

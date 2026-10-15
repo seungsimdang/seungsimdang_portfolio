@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 type Variant = "primary" | "secondary" | "danger" | "icon";
 
@@ -24,7 +24,10 @@ interface CommonProps {
 }
 
 type AdminButtonProps =
-  | (CommonProps & { href: string })
+  | (CommonProps & {
+      href: string;
+      onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+    })
   | (CommonProps & {
       href?: undefined;
       type?: "button" | "submit";
@@ -40,7 +43,7 @@ export function AdminButton(props: AdminButtonProps) {
   const className = `${base} ${variants[props.variant ?? "secondary"]} ${props.className ?? ""}`;
   if (props.href !== undefined) {
     return (
-      <Link href={props.href} className={className}>
+      <Link href={props.href} className={className} onClick={props.onClick}>
         {props.children}
       </Link>
     );

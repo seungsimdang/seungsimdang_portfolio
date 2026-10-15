@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { describedBy } from "@/lib/admin-client/described-by";
+import { useFieldError } from "@/lib/admin-client/form-errors";
 import { cn } from "@/utils/styleUtils";
 
 export const inputClassName =
@@ -61,9 +63,13 @@ export function FieldShell({
   );
 }
 
-interface TextFieldProps extends FieldProps {
-  value: string;
-  onChange: (value: string) => void;
+// 값과 오류는 react-hook-form 컨텍스트에서 name으로 읽음
+type RegisteredFieldProps = Omit<FieldProps, "error"> & { name: string };
+
+interface TextFieldProps extends Omit<RegisteredFieldProps, "name"> {
+  // name 없이 value만 주면 폼 밖의 읽기 전용 표시 칸
+  name?: string;
+  value?: string;
   type?: "text" | "email" | "url";
   readOnly?: boolean;
   placeholder?: string;
@@ -71,62 +77,91 @@ interface TextFieldProps extends FieldProps {
 }
 
 export function TextField({
+  name,
   value,
-  onChange,
   type = "text",
   readOnly,
   placeholder,
   maxLength,
   ...field
 }: TextFieldProps) {
+  const { register } = useFormContext();
+  const error = useFieldError(name ?? "");
   return (
-    <FieldShell {...field}>
+    <FieldShell {...field} error={error}>
       <input
+        {...(name ? register(name) : { value })}
         id={field.id}
         type={type}
-        value={value}
         readOnly={readOnly}
         placeholder={placeholder}
         maxLength={maxLength}
         required={field.required}
         aria-required={field.required}
-        aria-invalid={field.error ? true : undefined}
-        aria-describedby={describedBy(field.id, field.hint, field.error)}
-        onChange={(event) => onChange(event.target.value)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(field.id, field.hint, error)}
         className={inputClassName}
       />
     </FieldShell>
   );
 }
 
-interface TextAreaFieldProps extends FieldProps {
-  value: string;
-  onChange: (value: string) => void;
+interface TextAreaFieldProps extends RegisteredFieldProps {
   maxLength: number;
   rows?: number;
 }
 
 export function TextAreaField({
-  value,
-  onChange,
+  name,
   maxLength,
   rows = 4,
   ...field
 }: TextAreaFieldProps) {
+  const { register } = useFormContext();
+  const error = useFieldError(name);
+  const length = String(useWatch({ name }) ?? "").length;
   return (
-    <FieldShell {...field} counter={`${value.length}/${maxLength}`}>
+    <FieldShell {...field} error={error} counter={`${length}/${maxLength}`}>
       <textarea
+        {...register(name)}
         id={field.id}
-        value={value}
         rows={rows}
         aria-label={field.label}
         required={field.required}
         aria-required={field.required}
-        aria-invalid={field.error ? true : undefined}
-        aria-describedby={describedBy(field.id, field.hint, field.error)}
-        onChange={(event) => onChange(event.target.value)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(field.id, field.hint, error)}
         className={inputClassName}
       />
     </FieldShell>
+  );
+}
+
+interface ListInputProps {
+  name: string;
+  label: string;
+  type?: "text" | "url";
+  placeholder?: string;
+}
+
+// 목록 항목 한 칸, 오류 문구를 입력 칸 아래에 붙이고 Enter로 폼이 제출되지 않게 함
+export function ListInput({ name, label, type, placeholder }: ListInputProps) {
+  const { register } = useFormContext();
+  const error = useFieldError(name);
+  return (
+    <div className="min-w-0 flex-1 space-y-4">
+      <input
+        {...register(name)}
+        type={type}
+        placeholder={placeholder}
+        aria-label={label}
+        aria-invalid={error ? true : undefined}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.preventDefault();
+        }}
+        className={inputClassName}
+      />
+      {error && <p className="text-small">오류: {error}</p>}
+    </div>
   );
 }

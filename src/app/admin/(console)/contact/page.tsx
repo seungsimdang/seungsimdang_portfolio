@@ -5,16 +5,16 @@ import { requireAdminPage } from "@/lib/auth/require-admin";
 import { getProfile } from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
-  title: { absolute: "profile - admin" },
+  title: { absolute: "contact - admin" },
 };
 
-export default async function AdminProfilePage() {
+export default async function AdminContactPage() {
   await requireAdminPage();
   const profile = await getProfile(true);
   return (
     <>
-      <AdminPageHeader title="profile" />
-      <ProfileForm profile={profile} />
+      <AdminPageHeader title="contact" />
+      <ProfileForm profile={profile} section="contact" />
     </>
   );
 }
