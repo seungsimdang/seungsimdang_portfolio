@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, gt, ilike, lt, or, sql } from "drizzle-orm";
 import { cache } from "react";
+import { POST_SEARCH_TIMEOUT_MS } from "@/constants/blog";
 import { db } from "@/db";
 import { posts } from "@/db/schema/portfolio";
 import type {
@@ -30,6 +31,15 @@ export function toPost(row: PostRow): Post {
   return { ...toPostSummary(row), content: row.content };
 }
 
+// neon-http는 쿼리마다 별도 HTTP 요청이라 세션 SET이 유지되지 않음
+// batch가 한 트랜잭션으로 실행되므로 set_config의 is_local=true(SET LOCAL과 같음)가 뒤따르는 쿼리에만 적용됨
+// 시간 초과는 PG 57014 오류로 던져지고 호출한 Route Handler가 500으로 응답함
+function searchTimeout() {
+  return db.execute(
+    sql`select set_config('statement_timeout', ${String(POST_SEARCH_TIMEOUT_MS)}, true)`,
+  );
+}
+
 // category는 normalizeCategoryParam, query는 normalizeSearchQuery를 거친 값만 받음
 // query는 이스케이프 전 값이며 LIKE 메타문자 처리는 여기서만 하고 값은 바인딩 파라미터로 전달됨
 // 제목과 본문 구절 일치이며 content는 select하지 않음
@@ -51,28 +61,31 @@ export const listPosts = cache(
       ? or(ilike(posts.title, pattern), ilike(posts.content, pattern))
       : undefined;
     const where = and(categoryCondition, searchCondition);
-    const [{ total = 0 } = {}] = await db
-      .select({ total: count() })
-      .from(posts)
-      .where(where);
+    const countQuery = db.select({ total: count() }).from(posts).where(where);
+    const [{ total = 0 } = {}] = pattern
+      ? (await db.batch([searchTimeout(), countQuery]))[1]
+      : await countQuery;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const current = Math.min(Math.max(1, page), totalPages);
-    const rows =
-      total === 0
-        ? []
-        : await db
-            .select({
-              slug: posts.slug,
-              title: posts.title,
-              publishedAt: posts.publishedAt,
-              categories: posts.categories,
-              tags: posts.tags,
-            })
-            .from(posts)
-            .where(where)
-            .orderBy(desc(posts.publishedAt), desc(posts.slug))
-            .limit(pageSize)
-            .offset((current - 1) * pageSize);
+    const rowsQuery = db
+      .select({
+        slug: posts.slug,
+        title: posts.title,
+        publishedAt: posts.publishedAt,
+        categories: posts.categories,
+        tags: posts.tags,
+      })
+      .from(posts)
+      .where(where)
+      .orderBy(desc(posts.publishedAt), desc(posts.slug))
+      .limit(pageSize)
+      .offset((current - 1) * pageSize);
+    let rows: Awaited<typeof rowsQuery> = [];
+    if (total > 0) {
+      rows = pattern
+        ? (await db.batch([searchTimeout(), rowsQuery]))[1]
+        : await rowsQuery;
+    }
     return {
       items: rows.map(toPostSummary),
       total,

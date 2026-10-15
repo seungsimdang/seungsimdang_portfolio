@@ -29,7 +29,8 @@ export function BlogSearchBox({ query }: BlogSearchBoxProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const composingRef = useRef(false);
-  // 자신이 URL에 반영한 q, 같은 값이 query로 돌아오면 입력창을 덮어쓰지 않기 위해 보관함
+  // 입력창과 URL이 일치한 마지막 q, 같은 값이 query로 돌아오면 입력창을 덮어쓰지 않기 위해 보관함
+  // 조합 중 URL이 바뀌면 동기화를 미루고, 조합이 끝나면 입력값이 URL에 반영되어 다시 일치함
   const committedRef = useRef(query);
 
   useEffect(() => {
@@ -46,6 +47,8 @@ export function BlogSearchBox({ query }: BlogSearchBoxProps) {
     const next = normalizeSearchQuery(raw) ?? "";
     const url = new URL(window.location.href);
     if (next === (normalizeSearchQuery(url.searchParams.get("q")) ?? "")) {
+      // 조합 중 URL이 바뀌어 건너뛴 동기화의 기준값을 입력과 일치한 URL 값으로 되돌림
+      committedRef.current = next;
       return;
     }
     if (next) url.searchParams.set("q", next);

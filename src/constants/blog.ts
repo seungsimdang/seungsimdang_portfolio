@@ -7,3 +7,4 @@ export const POST_IMPORT_MAX_BYTES = 1024 * 1024; // .md import 파일 크기 �
 export const POST_SLUG_MAX = 200;
 export const POST_LABEL_MAX = 50; // 카테고리·태그 글자 수
 export const POST_SEARCH_MAX = 100; // 검색어 코드포인트 수
+export const POST_SEARCH_TIMEOUT_MS = 2000; // 검색어가 있는 목록 쿼리의 DB 실행 시간 상한

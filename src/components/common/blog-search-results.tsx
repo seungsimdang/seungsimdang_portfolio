@@ -43,7 +43,8 @@ function announcementText(
   return hadQuery ? `검색을 해제했습니다. 총 ${data.total}개` : "";
 }
 
-// 로딩 중에는 이전 낭독 문구를 유지하고 확정된 시점에만 갱신하려고 DOM을 직접 갱신함
+// 로딩 중에는 이전 낭독 문구를 유지하고 검색 조건이 바뀌어 확정된 시점에만 갱신하려고 DOM을 직접 갱신함
+// 같은 조건의 재조회·재시도·페이지 이동과 직접 진입 직후에는 다시 낭독하지 않음
 function SearchAnnouncer({
   busy,
   data,
@@ -55,15 +56,17 @@ function SearchAnnouncer({
 }) {
   const regionRef = useRef<HTMLDivElement>(null);
   const { category, q } = params;
-  const previousQ = useRef(q);
+  const announced = useRef({ category, q });
   useEffect(() => {
     if (busy || !data || !regionRef.current) return;
+    const previous = announced.current;
+    if (previous.q === q && previous.category === category) return;
     regionRef.current.textContent = announcementText(
       data,
       { page: 1, category, q },
-      Boolean(previousQ.current),
+      Boolean(previous.q),
     );
-    previousQ.current = q;
+    announced.current = { category, q };
   }, [busy, data, category, q]);
 
   return (
@@ -169,10 +172,47 @@ function EmptyState({
   );
 }
 
+function ResultPagination({
+  isAdmin,
+  basePath,
+  params: { category, q },
+  data: { page, totalPages },
+  busy,
+}: {
+  isAdmin: boolean;
+  basePath: string;
+  params: BlogListParams;
+  data: PostPage;
+  busy: boolean;
+}) {
+  const query: Record<string, string> = {
+    ...(category ? { category } : {}),
+    ...(q ? { q } : {}),
+  };
+  const pagination = (
+    <Pagination
+      prefetch={isAdmin ? undefined : false}
+      label={isAdmin ? "블로그 관리 페이지" : "블로그 페이지"}
+      basePath={basePath}
+      query={Object.keys(query).length > 0 ? query : undefined}
+      page={page}
+      totalPages={totalPages}
+    />
+  );
+  // 로딩 중에는 이전 결과의 page·totalPages가 새 검색 조건과 섞인 링크가 되므로 자리만 유지하고 상호작용을 막음
+  return busy ? (
+    <div inert className="invisible">
+      {pagination}
+    </div>
+  ) : (
+    pagination
+  );
+}
+
 function ResultList({
   variant,
   basePath,
-  params: { category, q },
+  params,
   data,
   busy,
 }: {
@@ -182,15 +222,12 @@ function ResultList({
   data: PostPage;
   busy: boolean;
 }) {
+  const { category, q } = params;
   const isAdmin = variant === "admin";
-  const { items, total, page, pageSize, totalPages } = data;
+  const { items, total, page, pageSize } = data;
   const first = (page - 1) * pageSize + 1;
   const range = `${first}-${first + items.length - 1}번째`;
   const categoryPrefix = category ? `${category} 카테고리 ` : "";
-  const paginationQuery: Record<string, string> = {
-    ...(category ? { category } : {}),
-    ...(q ? { q } : {}),
-  };
 
   const countLine = busy
     ? LOADING_TEXT
@@ -225,15 +262,12 @@ function ResultList({
           ),
         )}
       </ul>
-      <Pagination
-        prefetch={isAdmin ? undefined : false}
-        label={isAdmin ? "블로그 관리 페이지" : "블로그 페이지"}
+      <ResultPagination
+        isAdmin={isAdmin}
         basePath={basePath}
-        query={
-          Object.keys(paginationQuery).length > 0 ? paginationQuery : undefined
-        }
-        page={page}
-        totalPages={totalPages}
+        params={params}
+        data={data}
+        busy={busy}
       />
     </>
   );
@@ -261,7 +295,12 @@ export function BlogSearchResults({
   } else if (!data) {
     body = <LoadingText />;
   } else if (data.items.length === 0) {
-    body = <EmptyState variant={variant} basePath={basePath} params={params} />;
+    // 0건은 응답이 확정된 뒤에만 보여주고, 이전 검색의 placeholder 0건은 새 검색어의 결과로 오인되지 않게 함
+    body = busy ? (
+      <LoadingText />
+    ) : (
+      <EmptyState variant={variant} basePath={basePath} params={params} />
+    );
   } else {
     body = (
       <ResultList

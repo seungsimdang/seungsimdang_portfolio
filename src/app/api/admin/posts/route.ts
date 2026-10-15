@@ -13,7 +13,10 @@ export const GET = adminRoute(async ({ request }) => {
   const { page, category, q } = parseBlogListParams(
     new URL(request.url).searchParams,
   );
-  return ok(await listPosts(page, POST_ADMIN_PAGE_SIZE, category, q));
+  const response = ok(await listPosts(page, POST_ADMIN_PAGE_SIZE, category, q));
+  // proxy의 no-store에만 기대지 않고 응답에서 직접 CDN·브라우저 캐시를 막음
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 });
 
 export const POST = adminRoute(async ({ request }) => {

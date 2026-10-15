@@ -1,7 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("server-only", () => ({}));
-vi.mock("@/db", () => ({ db: {} }));
+import { describe, expect, it } from "vitest";
 
 import { postExcerpt } from "@/lib/blog/excerpt";
 import { parsePageParam } from "@/utils/blog-query-params";
