@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-15 - Claude·Codex 시작 문서 정렬
+
+`AGENTS.md`에만 있던 "사용자 지정 제약"(승인 전 제안, 담당 파일만 수정 등)은 Claude에 전달되지 않았고, `CLAUDE.md`에만 있던 Task Team·Bug Team 자연어 라우팅은 Codex에 없었다. 제약은 두 도구가 모두 읽는 `docs/agent-rules/README.md`의 "공통 작업 제약"으로 옮겼고(`CLAUDE.md`는 이 파일을 import), 라우팅은 Codex 경로(`.agents/skills/`, `.codex/agents/*.toml`)로 `AGENTS.md`에 추가했다.
+
 ## 2026-10-15 - Codex에서 판정 대상이 없는 훅 제거
 
 Codex `spawn_agent`에는 `isolation` 인자와 `fork` 유형이 없고 `EnterWorktree` 도구도 없어 `require-isolation-when-dirty.sh`·`block-fork-spawn.sh`·`orchestrator-no-worktree.sh`는 Codex에서 등록만 되고 검사할 입력이 생기지 않았다. 세 훅을 `.codex/hooks.json`과 `.codex/hooks/`에서 제거하고 테스트를 Claude 전용으로 옮겼다. Claude 쪽 훅은 그대로 유지한다.
