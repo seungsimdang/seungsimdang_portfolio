@@ -194,6 +194,20 @@ for (const tool of [".claude", ".codex"]) {
         tool_input: { command: "kill $(lsof -ti tcp:3100)" },
       }).status,
     ).toBe(0);
+    for (const command of [
+      "python3 - <<'EOF'\nnote = '프로세스 이름 기준 종료(pkill, killall) 금지'\nEOF",
+      'git commit -m "docs: (pkill) 차단 문구 정리"',
+      "echo 'x; killall node'",
+    ]) {
+      expect(
+        run(tool, "git-safety-guard", { tool_input: { command } }).status,
+      ).toBe(0);
+    }
+    expect(
+      run(tool, "git-safety-guard", {
+        tool_input: { command: "cat <<'EOF'\n본문\nEOF\nkillall node" },
+      }).status,
+    ).toBe(2);
   });
   test(`${tool} 새 브랜치 생성은 브랜치 수와 무관하고 살아 있는 worktree에만 차단된다`, () => {
     const repo = mkdtempSync(join(tmpdir(), "portfolio-branch-"));

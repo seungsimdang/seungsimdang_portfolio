@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-15 - git-safety-guard 프로세스 종료 차단 오탐 수정
+
+프로세스 이름 기준 종료 차단이 명령 전체 문자열을 검사해, heredoc 본문이나 커밋 메시지 안에 `(pkill, killall)` 같은 글자만 있어도 Bash 호출을 막았다(하네스 주석 정리 중 python heredoc이 실제로 차단됨). `enforce-commit-msg-style.sh`와 같은 방식으로 heredoc 본문을 빼고 따옴표 문자열을 지운 실행 구문만 검사하도록 Claude·Codex 훅을 함께 고쳤다. `sh -c "..."` 안의 명령도 함께 빠지는 한계가 있지만 실수 방지용 훅이라 허용한다. 오탐 사례와 heredoc 뒤 실제 명령 차단을 `__tests__/lint/runtime-hooks.test.ts`에 추가했다.
+
 ## 2026-10-15 - Claude·Codex 시작 문서 정렬
 
 `AGENTS.md`에만 있던 "사용자 지정 제약"(승인 전 제안, 담당 파일만 수정 등)은 Claude에 전달되지 않았고, `CLAUDE.md`에만 있던 Task Team·Bug Team 자연어 라우팅은 Codex에 없었다. 제약은 두 도구가 모두 읽는 `docs/agent-rules/README.md`의 "공통 작업 제약"으로 옮겼고(`CLAUDE.md`는 이 파일을 import), 라우팅은 Codex 경로(`.agents/skills/`, `.codex/agents/*.toml`)로 `AGENTS.md`에 추가했다.

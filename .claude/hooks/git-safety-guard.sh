@@ -12,8 +12,21 @@
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
+# 커밋 메시지·heredoc 본문 속 글자를 명령으로 오인하지 않도록 heredoc 본문과 따옴표 문자열을 지운 실행 구문
+# ponytail: sh -c "..." 안의 명령도 함께 지워져 통과하지만 이 훅은 실수 방지용이라 허용
+exec_cmd=$(printf '%s\n' "$cmd" | awk '
+  in_doc { if ($0 ~ "^[ \t]*" delim "[ \t]*$") in_doc = 0; next }
+  {
+    print
+    if (match($0, /<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
+      d = substr($0, RSTART, RLENGTH)
+      sub(/^<<-?[ \t]*["\047]?/, "", d); sub(/["\047]$/, "", d)
+      delim = d; in_doc = 1
+    }
+  }' | tr '\n' '\036' | sed -e 's/"[^"]*"//g' -e "s/'[^']*'//g" | tr '\036' '\n')
+
 # 0) 이름 패턴 종료는 git 명령 여부와 무관하게 차단
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(]\s*)(pkill|killall)\b'; then
+if printf '%s' "$exec_cmd" | grep -qE '(^|[;&|(]\s*)(pkill|killall)\b'; then
   echo "차단: pkill/killall 금지. 다른 세션이나 사용자가 띄운 프로세스까지 종료됩니다. 직접 띄운 서버는 포트로 지정해 종료하세요: kill \$(lsof -ti tcp:<port>)" >&2
   exit 2
 fi
