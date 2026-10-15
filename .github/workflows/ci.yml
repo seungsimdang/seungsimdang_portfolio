@@ -7,6 +7,10 @@ env:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      NEXTAUTH_URL: http://127.0.0.1:3100
+      NEXTAUTH_SECRET: ci-e2e-only-secret-not-for-production
+      ADMIN_GITHUB_ID: "123456789"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
