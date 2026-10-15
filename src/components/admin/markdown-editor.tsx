@@ -38,6 +38,8 @@ interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  // 제출이 실패할 때마다 늘어나는 신호, 오류가 남은 채 다시 실패해도 작성 탭으로 되돌림
+  focusTick: number;
   // 서버 검증과 같은 문자열 길이 기준의 상한
   maxLength: number;
   saving: boolean;
@@ -51,6 +53,7 @@ export function MarkdownEditor({
   value,
   onChange,
   error,
+  focusTick,
   maxLength,
   saving,
   onNotice,
@@ -63,10 +66,10 @@ export function MarkdownEditor({
   const [tab, setTab] = useState<EditorTab>("write");
   // 비동기 업로드 완료 시점의 탭을 읽기 위한 참조
   const tabRef = useRef<EditorTab>("write");
-  // 오류가 새로 생기면 렌더 중에 작성 탭으로 되돌려, 부모의 포커스 effect가 보이는 textarea를 찾도록 함
-  const [hadError, setHadError] = useState(Boolean(error));
-  if (Boolean(error) !== hadError) {
-    setHadError(Boolean(error));
+  // 제출 실패 때 오류가 있으면 렌더 중에 작성 탭으로 되돌려, 부모의 포커스 effect가 보이는 textarea를 찾도록 함
+  const [seenTick, setSeenTick] = useState(focusTick);
+  if (focusTick !== seenTick) {
+    setSeenTick(focusTick);
     if (error) setTab("write");
   }
   useEffect(() => {

@@ -305,6 +305,7 @@ export function BlogForm({ post, defaultDate }: BlogFormProps) {
         value={draft.content}
         onChange={(v) => set("content", v)}
         error={errors.content}
+        focusTick={form.focusTick}
         maxLength={POST_CONTENT_MAX}
         saving={form.saving}
         onNotice={form.notify}

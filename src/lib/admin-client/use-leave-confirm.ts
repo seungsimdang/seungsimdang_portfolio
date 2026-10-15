@@ -11,7 +11,7 @@ interface LeaveConfirmOptions {
   guardBack?: boolean;
 }
 
-// 확인 후 이동이 끝날 때까지 beforeunload 기본 창을 우회하는 최대 시간
+// 확인 후 기록 이동이 끝날 때까지 beforeunload 기본 창을 우회하는 최대 시간
 const LEAVE_MS = 5000;
 
 // 이동 방향과 단계 수를 몰라도 기록 항목 키로 정확히 위치를 지정하는 Navigation API 접근
@@ -36,12 +36,24 @@ export function useLeaveConfirm(
     setPending(next);
   }, []);
 
-  function allowLeaving(ms: number) {
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // 우회 종료, 대기 중인 타이머도 함께 치워 이후 호출의 우회를 일찍 끝내지 않게 함
+  const endLeaving = useCallback(() => {
+    clearTimeout(timerRef.current);
+    leavingRef.current = false;
+    bypassPopRef.current = false;
+  }, []);
+
+  // 기록 이동은 확정 신호를 기다리되, 신호가 오지 않는 경우를 위한 상한
+  function allowLeaving() {
+    clearTimeout(timerRef.current);
     leavingRef.current = true;
-    setTimeout(() => {
-      leavingRef.current = false;
-    }, ms);
+    timerRef.current = setTimeout(endLeaving, LEAVE_MS);
   }
+
+  // 이동 없이 화면만 남는 경우를 위해 언마운트 시 우회 해제
+  useEffect(() => endLeaving, [endLeaving]);
 
   useEffect(() => {
     if (!active) return;
@@ -111,25 +123,28 @@ export function useLeaveConfirm(
     if (!current) return null;
     if (current.type === "link") {
       if (!current.anchor.isConnected) return null;
-      allowLeaving(LEAVE_MS);
+      leavingRef.current = true;
       bypassClickRef.current = true;
       try {
         current.anchor.click();
       } finally {
         bypassClickRef.current = false;
       }
+      // 문서 이동의 beforeunload는 클릭 처리 중에 끝나므로 라우터 이동이 남아도 우회는 여기서 종료
+      endLeaving();
       return null;
     }
-    allowLeaving(LEAVE_MS);
+    allowLeaving();
     bypassPopRef.current = true;
-    setTimeout(() => {
-      bypassPopRef.current = false;
-    }, LEAVE_MS);
-    getNavigation()
-      ?.traverseTo(current.targetKey)
-      ?.finished?.catch(() => {
-        bypassPopRef.current = false;
-      });
+    const result = getNavigation()?.traverseTo(current.targetKey);
+    if (!result) {
+      endLeaving();
+      return null;
+    }
+    // 이동이 확정되거나 거부되면 어느 쪽이든 우회 종료, 두 promise의 거부는 여기서 소비
+    void Promise.allSettled([result.committed, result.finished]).then(
+      endLeaving,
+    );
     return null;
   }
 

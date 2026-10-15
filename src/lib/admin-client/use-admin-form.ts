@@ -218,6 +218,7 @@ export function useAdminForm<D, I, R>({
     formRef,
     errors,
     errorCount,
+    focusTick,
     saving,
     submit,
     leaveGuard,
