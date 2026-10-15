@@ -10,6 +10,7 @@ interface ProjectCardProps {
   textColor: string;
   href: string;
   thumbnail?: string;
+  preserveThumbnailText?: boolean;
   eager?: boolean;
   className?: string;
 }
@@ -22,6 +23,7 @@ export function ProjectCard({
   textColor,
   href,
   thumbnail,
+  preserveThumbnailText = false,
   eager = false,
   className = "",
 }: ProjectCardProps) {
@@ -38,15 +40,34 @@ export function ProjectCard({
       }}
     >
       {thumbnail && (
-        <div className="absolute inset-0">
-          <Image
-            src={thumbnail}
-            alt={`${title} 프로젝트 썸네일`}
-            fill
-            sizes="(min-width: 1024px) 60vw, 100vw"
-            loading={eager ? "eager" : "lazy"}
-            className="object-cover"
-          />
+        <div
+          className="absolute inset-0"
+          style={preserveThumbnailText ? { containerType: "size" } : undefined}
+        >
+          <div
+            className="absolute inset-0"
+            style={
+              preserveThumbnailText
+                ? {
+                    width: "min(100%, 100cqh)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                  }
+                : undefined
+            }
+          >
+            <Image
+              src={thumbnail}
+              alt={`${title} 프로젝트 썸네일`}
+              fill
+              sizes="(min-width: 1024px) 60vw, 100vw"
+              loading={eager ? "eager" : "lazy"}
+              className="object-cover"
+              style={
+                preserveThumbnailText ? { objectPosition: "top" } : undefined
+              }
+            />
+          </div>
           <div className="absolute inset-0 bg-linear-to-t from-black/70 from-50% to-transparent" />
         </div>
       )}
