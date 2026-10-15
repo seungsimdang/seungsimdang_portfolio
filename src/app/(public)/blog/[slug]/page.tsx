@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/common/back-link";
 import { MarkdownBody } from "@/components/common/markdown-body";
 import { postExcerpt } from "@/lib/blog/excerpt";
 import { decodePostSlug } from "@/lib/blog/slug";
@@ -36,9 +37,6 @@ export async function generateMetadata({
 const neighborLinkClassName =
   "flex flex-col gap-4 rounded-md border border-white/10 p-16 transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-white";
 
-const backLinkClassName =
-  "text-small text-white/50 hover:text-white focus-visible:outline-2 focus-visible:outline-white";
-
 export default async function PostPage({ params }: PostPageProps) {
   const post = await loadPost(params);
   if (!post) notFound();
@@ -47,63 +45,63 @@ export default async function PostPage({ params }: PostPageProps) {
   return (
     <div className="w-full min-h-screen bg-black text-white">
       <article className="w-full max-w-content mx-auto container-padding section-spacing">
-        <Link prefetch={false} href="/blog" className={backLinkClassName}>
-          blog 목록으로
-        </Link>
-        <h1 className="mt-24 text-h3 break-keep max-w-heading">{post.title}</h1>
-        <div className="mt-16 flex flex-wrap items-center gap-x-16 gap-y-8 text-small text-white/50">
-          <time dateTime={post.publishedAt}>
-            {formatPostDate(post.publishedAt)}
-          </time>
-          {post.categories.length > 0 && (
-            <span>{post.categories.join(" / ")}</span>
-          )}
-          {post.tags.map((tag) => (
-            <span key={tag}>#{tag}</span>
-          ))}
-        </div>
-        <div className="mt-32 h-px bg-white/25" />
-        <div className="mt-32 md:mt-48 max-w-800">
-          {post.content.trim() ? (
-            <MarkdownBody>{renderMarkdown(post.content)}</MarkdownBody>
-          ) : (
-            <p className="text-white/50">본문이 없습니다.</p>
-          )}
-        </div>
-        {(older || newer) && (
-          <nav
-            aria-label="이전·다음 글"
-            className="mt-64 grid gap-16 border-t border-white/10 pt-32 md:grid-cols-2 md:gap-32"
-          >
-            {older && (
-              <Link
-                prefetch={false}
-                href={`/blog/${encodeURIComponent(older.slug)}`}
-                className={neighborLinkClassName}
-              >
-                <span className="text-small text-white/50">이전 글</span>
-                <span className="text-body font-medium break-keep break-words">
-                  {older.title}
-                </span>
-              </Link>
+        <div className="mx-auto max-w-800">
+          <BackLink href="/blog" label="blog" prefetch={false} />
+          <h1 className="mt-32 md:mt-48 text-h3 break-keep">{post.title}</h1>
+          <div className="mt-16 flex flex-wrap items-center gap-x-16 gap-y-8 text-small text-white/50">
+            <time dateTime={post.publishedAt}>
+              {formatPostDate(post.publishedAt)}
+            </time>
+            {post.categories.length > 0 && (
+              <span>{post.categories.join(" / ")}</span>
             )}
-            {newer && (
-              <Link
-                prefetch={false}
-                href={`/blog/${encodeURIComponent(newer.slug)}`}
-                className={cn(
-                  neighborLinkClassName,
-                  "md:col-start-2 md:text-right",
-                )}
-              >
-                <span className="text-small text-white/50">다음 글</span>
-                <span className="text-body font-medium break-keep break-words">
-                  {newer.title}
-                </span>
-              </Link>
+            {post.tags.map((tag) => (
+              <span key={tag}>#{tag}</span>
+            ))}
+          </div>
+          <div className="mt-32 h-px bg-white/25" />
+          <div className="mt-32 md:mt-48">
+            {post.content.trim() ? (
+              <MarkdownBody>{renderMarkdown(post.content)}</MarkdownBody>
+            ) : (
+              <p className="text-white/50">본문이 없습니다.</p>
             )}
-          </nav>
-        )}
+          </div>
+          {(older || newer) && (
+            <nav
+              aria-label="이전·다음 글"
+              className="mt-64 grid gap-16 border-t border-white/10 pt-32 md:grid-cols-2 md:gap-32"
+            >
+              {older && (
+                <Link
+                  prefetch={false}
+                  href={`/blog/${encodeURIComponent(older.slug)}`}
+                  className={neighborLinkClassName}
+                >
+                  <span className="text-small text-white/50">이전 글</span>
+                  <span className="text-body font-medium break-keep break-words">
+                    {older.title}
+                  </span>
+                </Link>
+              )}
+              {newer && (
+                <Link
+                  prefetch={false}
+                  href={`/blog/${encodeURIComponent(newer.slug)}`}
+                  className={cn(
+                    neighborLinkClassName,
+                    "md:col-start-2 md:text-right",
+                  )}
+                >
+                  <span className="text-small text-white/50">다음 글</span>
+                  <span className="text-body font-medium break-keep break-words">
+                    {newer.title}
+                  </span>
+                </Link>
+              )}
+            </nav>
+          )}
+        </div>
       </article>
     </div>
   );
