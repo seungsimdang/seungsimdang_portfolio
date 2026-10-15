@@ -9,12 +9,7 @@ import { POST_ADMIN_PAGE_SIZE } from "@/constants/blog";
 import { requireAdminPage } from "@/lib/auth/require-admin";
 import { adminBlogPostsKeys } from "@/lib/query/blog-posts-keys";
 import { listCategories, listPosts } from "@/services/blog/blog-service";
-import {
-  type BlogListParams,
-  normalizeCategoryParam,
-  normalizeSearchQuery,
-  parsePageParam,
-} from "@/utils/blog-query-params";
+import { parseBlogListSearchParams } from "@/utils/blog-query-params";
 
 export const metadata: Metadata = {
   title: { absolute: "blog - admin" },
@@ -33,11 +28,7 @@ export default async function AdminBlogPage({
 }: AdminBlogPageProps) {
   await requireAdminPage();
   const raw = await searchParams;
-  const params: BlogListParams = {
-    page: parsePageParam(raw.page),
-    category: normalizeCategoryParam(raw.category),
-    q: normalizeSearchQuery(raw.q),
-  };
+  const params = parseBlogListSearchParams(raw);
   const categories = await listCategories();
 
   return (

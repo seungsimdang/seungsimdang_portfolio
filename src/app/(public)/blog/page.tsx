@@ -8,10 +8,8 @@ import { POST_PAGE_SIZE } from "@/constants/blog";
 import { blogPostsKeys } from "@/lib/query/blog-posts-keys";
 import { listCategories, listPosts } from "@/services/blog/blog-service";
 import {
-  type BlogListParams,
-  normalizeCategoryParam,
   normalizeSearchQuery,
-  parsePageParam,
+  parseBlogListSearchParams,
 } from "@/utils/blog-query-params";
 
 interface BlogPageProps {
@@ -37,11 +35,7 @@ export async function generateMetadata({
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
   const raw = await searchParams;
-  const params: BlogListParams = {
-    page: parsePageParam(raw.page),
-    category: normalizeCategoryParam(raw.category),
-    q: normalizeSearchQuery(raw.q),
-  };
+  const params = parseBlogListSearchParams(raw);
   const categories = await listCategories();
 
   return (

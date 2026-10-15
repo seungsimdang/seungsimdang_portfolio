@@ -68,3 +68,16 @@ export function parseBlogListParams(searchParams: {
     ...(q ? { q } : {}),
   };
 }
+
+// 서버 페이지의 searchParams(값이 배열일 수 있음)를 클라이언트와 같은 파서로 해석함
+// 같은 규칙을 거쳐야 prefetch queryKey가 클라이언트 queryKey와 키 생략 여부까지 일치함
+export function parseBlogListSearchParams(
+  raw: Record<string, string | string[] | undefined>,
+): BlogListParams {
+  return parseBlogListParams({
+    get(name) {
+      const value = raw[name];
+      return (Array.isArray(value) ? value[0] : value) ?? null;
+    },
+  });
+}

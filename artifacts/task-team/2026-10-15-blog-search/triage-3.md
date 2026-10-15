@@ -16,3 +16,11 @@
 ## 기타
 
 - CodeRabbit은 이번 최종 리뷰에서 미실행. 리뷰어가 사유를 확인하지 않았다고 보고함.
+
+## 재작업 결과
+
+- 사용자 결정: S3-01, F3-03, F3-02 모두 이번 사이클 포함.
+- S3-01: `get-query-client.ts`의 `retry`를 `shouldRetry`로 교체, axios 5xx 응답은 재시도하지 않고 그 외 실패만 1회 재시도. 시간 초과 시 느린 쿼리 실행은 SSR 1회와 클라이언트 1회로 줄어듦.
+- F3-03: `blog-query-params.ts`에 `parseBlogListSearchParams` 추가, 두 서버 페이지가 클라이언트와 같은 `parseBlogListParams`를 거쳐 키 생략 여부까지 같은 queryKey를 만듦.
+- F3-02: `blog-service.ts` 주석에 Route Handler 경로와 서버 페이지 폴백 경로를 구분해 기록.
+- 재리뷰 생략: 고친 finding이 모두 Low라 11번 규칙에 따라 T07/T08 재리뷰 생략. 재검증 `pnpm type-check` 통과, `pnpm exec vitest run` 431개 통과, `pnpm knip` 통과, `biome check src` 통과, react-doctor 경고 0.

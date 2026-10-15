@@ -33,7 +33,9 @@ export function toPost(row: PostRow): Post {
 
 // neon-http는 쿼리마다 별도 HTTP 요청이라 세션 SET이 유지되지 않음
 // batch가 한 트랜잭션으로 실행되므로 set_config의 is_local=true(SET LOCAL과 같음)가 뒤따르는 쿼리에만 적용됨
-// 시간 초과는 PG 57014 오류로 던져지고 호출한 Route Handler가 500으로 응답함
+// 시간 초과는 PG 57014 오류로 던져짐
+// Route Handler 경로는 500으로 응답하고 클라이언트는 5xx를 재시도하지 않음
+// 서버 페이지 경로는 QueriesHydration이 fetchQuery 실패를 잡아 skipSsrOnError 기본값에 따라 ClientOnly로 폴백하고 클라이언트 조회로 넘어감
 function searchTimeout() {
   return db.execute(
     sql`select set_config('statement_timeout', ${String(POST_SEARCH_TIMEOUT_MS)}, true)`,
