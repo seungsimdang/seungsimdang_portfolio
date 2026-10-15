@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
 import { profileData } from "./fixtures/portfolio";
+import { expect, test } from "./fixtures/test";
 
 for (const [path, heading] of [
   ["/", profileData.title],
