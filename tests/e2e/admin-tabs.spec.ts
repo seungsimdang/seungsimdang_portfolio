@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
 import { encode } from "next-auth/jwt";
 import { profileData } from "./fixtures/portfolio";
+import { expect, test } from "./fixtures/test";
 
 try {
   process.loadEnvFile(".env.local");
@@ -101,6 +101,7 @@ test.describe("인증된 관리자 화면", () => {
   test("변경 취소는 마지막 저장값으로 폼을 되돌린다", async ({ page }) => {
     await page.goto("/admin");
     const name = page.getByLabel("이름");
+    await expect(name).toHaveValue(profileData.name);
     const savedName = await name.inputValue();
     await name.fill("폐기할 변경");
     await page.getByRole("button", { name: "변경 취소" }).click();
@@ -205,6 +206,7 @@ test.describe("인증된 관리자 화면", () => {
     });
 
     await page.goto("/admin");
+    await expect(page.getByLabel("직함")).toHaveValue(profileData.title);
     const expected = {
       title: await page.getByLabel("직함").inputValue(),
       tagline: await page.getByLabel("tagline").inputValue(),
@@ -237,6 +239,9 @@ test.describe("인증된 관리자 화면", () => {
     });
 
     await page.goto("/admin/about");
+    await expect(page.locator('input[name="skills.0.value"]')).toHaveValue(
+      profileData.skills[0],
+    );
     await page.locator('input[name="skills.0.value"]').fill("QA 스킬");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect.poll(() => bodies).toHaveLength(1);
@@ -246,6 +251,7 @@ test.describe("인증된 관리자 화면", () => {
     ]);
 
     await page.goto("/admin/contact");
+    await expect(page.getByLabel("이메일")).toHaveValue(profileData.email);
     await page.getByLabel("이메일").fill("qa@example.com");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect.poll(() => bodies).toHaveLength(2);

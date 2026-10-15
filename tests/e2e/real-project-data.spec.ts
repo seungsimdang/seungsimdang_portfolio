@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
 import { profileData, projects, techTalks } from "./fixtures/portfolio";
+import { expect, test } from "./fixtures/test";
 
 const siteSuffix = profileData.name;
 
@@ -53,6 +53,20 @@ test("카드를 눌러 상세 페이지로 이동한다", async ({ page }) => {
   await page.locator(`main a[href='/work/${first.id}']`).click();
   await expect(page).toHaveURL(`/work/${first.id}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(first.title);
+});
+
+test("홈 카드의 fixture 썸네일이 정상적으로 표시된다", async ({ page }) => {
+  await page.goto("/");
+  const thumbnail = page.getByRole("img", {
+    name: `${projects[0].title} 프로젝트 썸네일`,
+  });
+  await thumbnail.scrollIntoViewIfNeeded();
+  await expect(thumbnail).toBeVisible();
+  await expect
+    .poll(() =>
+      thumbnail.evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
 });
 
 for (const path of [`/work/${projects[0].id}`, "/talks", "/contact", "/"]) {
