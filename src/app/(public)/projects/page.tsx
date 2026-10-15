@@ -30,6 +30,7 @@ export default async function ProjectsPage() {
                   role={project.role}
                   period={project.period}
                   thumbnail={project.thumbnail}
+                  preserveThumbnailText={project.slug === "candanta"}
                   href={`/work/${project.slug}`}
                   eager={index === 0}
                   {...getProjectCardTheme(index)}
