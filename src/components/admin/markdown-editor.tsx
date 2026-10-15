@@ -63,6 +63,15 @@ export function MarkdownEditor({
   const [tab, setTab] = useState<EditorTab>("write");
   // 비동기 업로드 완료 시점의 탭을 읽기 위한 참조
   const tabRef = useRef<EditorTab>("write");
+  // 오류가 새로 생기면 렌더 중에 작성 탭으로 되돌려, 부모의 포커스 effect가 보이는 textarea를 찾도록 함
+  const [hadError, setHadError] = useState(Boolean(error));
+  if (Boolean(error) !== hadError) {
+    setHadError(Boolean(error));
+    if (error) setTab("write");
+  }
+  useEffect(() => {
+    tabRef.current = tab;
+  }, [tab]);
   // 업로드 시작 시점의 커서, 포커스가 버튼으로 옮겨져도 유지
   const savedPosition = useRef<number | null>(null);
   // 비동기 업로드가 끝난 시점의 최신 본문을 읽기 위한 참조
