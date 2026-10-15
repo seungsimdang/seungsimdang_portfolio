@@ -8,28 +8,19 @@ import { requireAdminPage } from "@/lib/auth/require-admin";
 import { getResumeByKind } from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
-  title: { absolute: "이력 - admin" },
+  title: { absolute: "resume - admin" },
 };
 
-interface ResumePageProps {
-  searchParams: Promise<{ deleted?: string }>;
-}
-
-export default async function AdminResumePage({
-  searchParams,
-}: ResumePageProps) {
+export default async function AdminResumePage() {
   await requireAdminPage();
-  const [{ deleted }, resume] = await Promise.all([
-    searchParams,
-    getResumeByKind(),
-  ]);
+  const resume = await getResumeByKind();
   return (
     <>
-      <AdminPageHeader title="이력" />
+      <AdminPageHeader title="resume" />
       <p className="text-small opacity-70">
         스킬과 툴은{" "}
         <Link href="/admin/profile" className="underline">
-          프로필
+          profile
         </Link>
         에서 편집합니다.
       </p>
@@ -56,7 +47,6 @@ export default async function AdminResumePage({
               resumeKind={kind}
               noun={noun}
               headingId={`resume-${kind}-heading`}
-              initialMessage={deleted === kind ? "삭제했습니다." : ""}
               items={resume[kind].map((entry) => ({
                 id: entry.id,
                 title: entry.title,

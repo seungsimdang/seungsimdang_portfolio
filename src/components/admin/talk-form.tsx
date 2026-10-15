@@ -15,8 +15,10 @@ import {
 } from "@/schemas/portfolio.schema";
 import type { TechTalk } from "@/types/portfolio";
 import { ConfirmDialog } from "./confirm-dialog";
-import { FormActionBar, FormStatus } from "./form-parts";
+import { FormActionBar } from "./form-parts";
+import { LeaveDialog } from "./leave-dialog";
 import { TextAreaField, TextField } from "./text-fields";
+import { useToast } from "./toast-provider";
 
 interface TalkDraft {
   slug: string;
@@ -47,15 +49,19 @@ function toInput(draft: TalkDraft) {
 
 interface TalkFormProps {
   talk?: TechTalk;
-  initialSaved?: boolean;
 }
 
-export function TalkForm({ talk, initialSaved }: TalkFormProps) {
+export function TalkForm({ talk }: TalkFormProps) {
   const router = useRouter();
+  const { notify } = useToast();
   const isEdit = talk !== undefined;
   const savedSlug = useRef(talk?.slug ?? "");
   const [draft, setDraft] = useState(() => toDraft(talk));
   const [deleting, setDeleting] = useState(false);
+  const [slugChange, setSlugChange] = useState<{
+    from: string;
+    to: string;
+  } | null>(null);
   const set = <K extends keyof TalkDraft>(key: K, value: TalkDraft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
 
@@ -83,11 +89,10 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
         }
         return toDraft(saved);
       }
-      router.push(`/admin/talks/${saved.slug}?saved=1`);
+      router.push(`/admin/talks/${saved.slug}`);
       return undefined;
     },
     listHref: "/admin/talks",
-    initialSaved,
   });
   const { errors } = form;
 
@@ -98,7 +103,8 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
       `/api/admin/talks/${savedSlug.current}`,
     );
     if (result.ok || result.status === HttpStatusCode.NotFound) {
-      router.push("/admin/talks?deleted=1");
+      notify({ tone: "success", message: "삭제했습니다." });
+      router.push("/admin/talks");
       return null;
     }
     return (
@@ -107,14 +113,10 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
-    if (
-      isEdit &&
-      draft.slug !== savedSlug.current &&
-      !window.confirm(
-        `발표 slug가 ${savedSlug.current}에서 ${draft.slug}(으)로 변경됩니다. 발표에는 slug별 공개 상세 주소가 없으며 자동 이동도 제공되지 않습니다. 저장할까요?`,
-      )
-    ) {
+    // 검증보다 먼저 묻고, 확인하면 모달에서 저장을 이어감
+    if (isEdit && draft.slug !== savedSlug.current) {
       event.preventDefault();
+      setSlugChange({ from: savedSlug.current, to: draft.slug });
       return;
     }
     return form.submit(event);
@@ -128,7 +130,6 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
       onSubmit={submit}
       className="space-y-24"
     >
-      <FormStatus notice={form.notice} />
       <TextField
         id="talk-slug"
         label="slug"
@@ -198,10 +199,29 @@ export function TalkForm({ talk, initialSaved }: TalkFormProps) {
       />
       <FormActionBar
         saving={form.saving}
-        notice={form.notice}
         cancelHref="/admin/talks"
         onDelete={isEdit ? () => setDeleting(true) : undefined}
         deleteLabel="발표 삭제"
+      />
+      <LeaveDialog guard={form.leaveGuard} />
+      <ConfirmDialog
+        open={slugChange !== null}
+        title="주소를 바꿀까요?"
+        description={
+          <p>
+            발표 slug가 {slugChange?.from}에서 {slugChange?.to}(으)로
+            변경됩니다. 발표에는 slug별 공개 상세 주소가 없으며 자동 이동도
+            제공되지 않습니다. 저장할까요?
+          </p>
+        }
+        confirmLabel="저장"
+        busyLabel="저장 중..."
+        variant="primary"
+        onConfirm={async () => {
+          void form.submit();
+          return null;
+        }}
+        onClose={() => setSlugChange(null)}
       />
       {talk && (
         <ConfirmDialog

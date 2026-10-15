@@ -13,7 +13,6 @@ import { type StringItem, toStringItems } from "@/lib/admin-client/draft";
 import { todayInSeoul } from "@/lib/admin-client/post-editing";
 import {
   describeAuthFailure,
-  type Notice,
   useAdminForm,
 } from "@/lib/admin-client/use-admin-form";
 import { validateWith } from "@/lib/admin-client/validate";
@@ -27,9 +26,11 @@ import type { Post } from "@/types/blog";
 import { AdminButton } from "./admin-button";
 import { ConfirmDialog } from "./confirm-dialog";
 import { FormActionBar } from "./form-parts";
+import { LeaveDialog } from "./leave-dialog";
 import { MarkdownEditor } from "./markdown-editor";
 import { StringListEditor } from "./string-list-editor";
 import { TextField } from "./text-fields";
+import { useToast } from "./toast-provider";
 
 interface BlogDraft {
   slug: string;
@@ -38,7 +39,6 @@ interface BlogDraft {
   publishedAt: string;
   categories: StringItem[];
   tags: StringItem[];
-  published: boolean;
   content: string;
 }
 
@@ -51,7 +51,6 @@ function toDraft(post?: Post, defaultDate = ""): BlogDraft {
     publishedAt: toDotDate(post?.publishedAt ?? defaultDate),
     categories: toStringItems(post?.categories ?? []),
     tags: toStringItems(post?.tags ?? []),
-    published: post?.published ?? true,
     content: post?.content ?? "",
   };
 }
@@ -63,7 +62,6 @@ function toInput(draft: BlogDraft) {
     publishedAt: draft.publishedAt.trim().replaceAll(".", "-"),
     categories: draft.categories.map((item) => item.value),
     tags: draft.tags.map((item) => item.value),
-    published: draft.published,
     content: draft.content,
   };
 }
@@ -76,19 +74,22 @@ function toUpdateInput(draft: BlogDraft) {
 
 interface BlogFormProps {
   post?: Post;
-  initialSaved?: boolean;
   // 새 글의 발행일 초기값 (YYYY-MM-DD)
   defaultDate?: string;
 }
 
-export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
+export function BlogForm({ post, defaultDate }: BlogFormProps) {
   const router = useRouter();
+  const { notify } = useToast();
   const isEdit = post !== undefined;
   const [draft, setDraft] = useState(() => toDraft(post, defaultDate));
   const [deleting, setDeleting] = useState(false);
   const [uploading, setUploading] = useState(false);
-  // 업로드, 가져오기, 삭제 결과처럼 저장 훅 밖에서 생기는 알림
-  const [localNotice, setLocalNotice] = useState<Notice | null>(null);
+  // 덮어쓰기 확인을 기다리는 가져오기 파일
+  const [pendingImport, setPendingImport] = useState<{
+    text: string;
+    name: string;
+  } | null>(null);
   const [importedName, setImportedName] = useState("");
   const importInputRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof BlogDraft>(key: K, value: BlogDraft[K]) =>
@@ -112,14 +113,12 @@ export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
     // 생성 후에는 편집 화면으로 이동
     onSaved: (saved) => {
       if (isEdit) return toDraft(saved);
-      router.push(`/admin/blog/${encodeURIComponent(saved.slug)}?saved=1`);
+      router.push(`/admin/blog/${encodeURIComponent(saved.slug)}`);
       return undefined;
     },
     listHref: "/admin/blog",
-    initialSaved,
   });
   const { errors } = form;
-  const notice = localNotice ?? form.notice;
 
   async function remove(): Promise<string | null> {
     if (!post) return null;
@@ -128,7 +127,8 @@ export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
       `/api/admin/posts/${encodeURIComponent(post.slug)}`,
     );
     if (result.ok || result.status === HttpStatusCode.NotFound) {
-      router.push("/admin/blog?deleted=1");
+      notify({ tone: "success", message: "삭제했습니다." });
+      router.push("/admin/blog");
       return null;
     }
     return (
@@ -141,13 +141,48 @@ export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
       event.preventDefault();
       return;
     }
-    setLocalNotice(null);
     return form.submit(event);
   }
 
+  function applyImport(text: string, fileName: string) {
+    const parsed = parsePostMarkdown(text);
+    const baseName = fileName.replace(/\.(md|markdown)$/i, "");
+    const name = parsePostFileName(`${baseName}.md`);
+    const { frontmatter } = parsed;
+    const title = frontmatter.title || name.title;
+    const date = name.date ?? frontmatter.date ?? todayInSeoul();
+    setDraft({
+      // 파일명에 날짜가 있으면 파일명 전체, 없으면 날짜와 제목으로 slug 제안
+      slug: slugifyPostName(name.date ? baseName : `${date}-${title}`),
+      title,
+      publishedAt: toDotDate(date),
+      categories: toStringItems(frontmatter.categories ?? []),
+      tags: toStringItems(frontmatter.tags ?? []),
+      content: parsed.body,
+    });
+    setImportedName(fileName);
+    if (parsed.error) {
+      form.notify({
+        tone: "error",
+        message:
+          "frontmatter를 읽지 못해 전체를 본문으로 불러왔습니다. 내용을 확인하고 저장하세요.",
+      });
+    } else if (frontmatter.unpublished) {
+      form.notify({
+        tone: "warning",
+        message:
+          "파일을 불러왔습니다. 이 파일은 비공개(published: false)였지만 저장하면 공개 글이 됩니다. 내용을 확인하고 저장하세요.",
+      });
+    } else {
+      form.notify({
+        tone: "success",
+        message: "파일을 불러왔습니다. 내용을 확인하고 저장하세요.",
+      });
+    }
+  }
+
   async function importFile(file: File) {
-    const fail = (message: string) =>
-      setLocalNotice({ tone: "error", message });
+    const fail = (message: string) => form.notify({ tone: "error", message });
     if (!/\.(md|markdown)$/i.test(file.name)) {
       fail(".md 또는 .markdown 파일만 가져올 수 있습니다.");
       return;
@@ -169,41 +204,11 @@ export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
       draft.title.trim() !== "" ||
       draft.content.trim() !== "" ||
       draft.slug.trim() !== "";
-    if (
-      hasInput &&
-      !window.confirm("입력한 내용이 .md 파일 내용으로 바뀝니다. 계속할까요?")
-    ) {
+    if (hasInput) {
+      setPendingImport({ text, name: file.name });
       return;
     }
-    const parsed = parsePostMarkdown(text);
-    const baseName = file.name.replace(/\.(md|markdown)$/i, "");
-    const name = parsePostFileName(`${baseName}.md`);
-    const { frontmatter } = parsed;
-    const title = frontmatter.title || name.title;
-    const date = name.date ?? frontmatter.date ?? todayInSeoul();
-    setDraft({
-      // 파일명에 날짜가 있으면 파일명 전체, 없으면 날짜와 제목으로 slug 제안
-      slug: slugifyPostName(name.date ? baseName : `${date}-${title}`),
-      title,
-      publishedAt: toDotDate(date),
-      categories: toStringItems(frontmatter.categories ?? []),
-      tags: toStringItems(frontmatter.tags ?? []),
-      published: frontmatter.published ?? true,
-      content: parsed.body,
-    });
-    setImportedName(file.name);
-    setLocalNotice(
-      parsed.error
-        ? {
-            tone: "error",
-            message:
-              "frontmatter를 읽지 못해 전체를 본문으로 불러왔습니다. 내용을 확인하고 저장하세요.",
-          }
-        : {
-            tone: "success",
-            message: "파일을 불러왔습니다. 내용을 확인하고 저장하세요.",
-          },
-    );
+    applyImport(text, file.name);
   }
 
   return (
@@ -218,9 +223,9 @@ export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
         <div className="space-y-8">
           <p className="text-small">.md 가져오기</p>
           <p className="text-small opacity-70">
-            frontmatter(title, categories, tags, published)와 본문을 폼에
-            채웁니다. 저장은 직접 눌러야 합니다. 본문 이미지는 자동으로 올라가지
-            않으니 필요하면 본문의 이미지 삽입을 사용하세요.
+            frontmatter(title, categories, tags)와 본문을 폼에 채웁니다. 저장은
+            직접 눌러야 합니다. 본문 이미지는 자동으로 올라가지 않으니 필요하면
+            본문의 이미지 삽입을 사용하세요.
           </p>
           <div className="flex flex-wrap items-center gap-12">
             <AdminButton onClick={() => importInputRef.current?.click()}>
@@ -295,47 +300,46 @@ export function BlogForm({ post, initialSaved, defaultDate }: BlogFormProps) {
         errors={errors}
         path="tags"
       />
-      <div className="space-y-8">
-        <label className="flex items-center gap-8 text-small">
-          <input
-            type="checkbox"
-            checked={draft.published}
-            aria-describedby="post-published-hint"
-            onChange={(event) => set("published", event.target.checked)}
-          />
-          공개
-        </label>
-        <p id="post-published-hint" className="text-small opacity-70">
-          해제하면 공개 목록에서 즉시 사라집니다.
-        </p>
-      </div>
       <MarkdownEditor
         id="post-content"
         value={draft.content}
         onChange={(v) => set("content", v)}
         error={errors.content}
-        hint={`마크다운. 최대 ${POST_CONTENT_MAX.toLocaleString("ko-KR")}자.`}
+        focusTick={form.focusTick}
+        maxLength={POST_CONTENT_MAX}
         saving={form.saving}
-        onNotice={setLocalNotice}
+        onNotice={form.notify}
         onUploadStateChange={setUploading}
       />
       <FormActionBar
         saving={form.saving}
         saveDisabled={uploading}
-        notice={notice}
-        detailed
         busyMessage={uploading ? "이미지 업로드 중..." : undefined}
         cancelHref="/admin/blog"
         onDelete={isEdit ? () => setDeleting(true) : undefined}
         deleteLabel="글 삭제"
       />
+      <LeaveDialog guard={form.leaveGuard} />
+      <ConfirmDialog
+        open={pendingImport !== null}
+        title=".md 파일로 덮어쓸까요?"
+        description={
+          <p>입력한 내용이 .md 파일 내용으로 바뀝니다. 계속할까요?</p>
+        }
+        confirmLabel="덮어쓰기"
+        busyLabel="덮어쓰는 중..."
+        onConfirm={async () => {
+          if (pendingImport)
+            applyImport(pendingImport.text, pendingImport.name);
+          return null;
+        }}
+        onClose={() => setPendingImport(null)}
+      />
       {post && (
         <ConfirmDialog
           open={deleting}
           title={`${post.title}을 삭제할까요?`}
-          description={
-            <p>되돌릴 수 없습니다. 공개 글이면 공개 주소도 사라집니다.</p>
-          }
+          description={<p>되돌릴 수 없습니다. 글 주소도 함께 사라집니다.</p>}
           onConfirm={remove}
           onClose={() => setDeleting(false)}
         />

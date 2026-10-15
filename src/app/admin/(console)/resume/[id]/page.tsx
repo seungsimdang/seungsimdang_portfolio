@@ -12,19 +12,13 @@ export const metadata: Metadata = {
 
 interface EditResumePageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string }>;
 }
 
 export default async function AdminEditResumePage({
   params,
-  searchParams,
 }: EditResumePageProps) {
   await requireAdminPage();
-  const [{ id }, { saved }, resume] = await Promise.all([
-    params,
-    searchParams,
-    getResumeByKind(),
-  ]);
+  const [{ id }, resume] = await Promise.all([params, getResumeByKind()]);
   const entry = RESUME_KINDS.flatMap((kind) => resume[kind]).find(
     (item) => item.id === id,
   );
@@ -32,11 +26,7 @@ export default async function AdminEditResumePage({
   return (
     <>
       <AdminPageHeader title="이력 편집" />
-      <ResumeEntryForm
-        kind={entry.kind}
-        entry={entry}
-        initialSaved={saved === "1"}
-      />
+      <ResumeEntryForm kind={entry.kind} entry={entry} />
     </>
   );
 }

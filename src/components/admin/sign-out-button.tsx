@@ -6,7 +6,7 @@ import { AdminButton } from "./admin-button";
 export function SignOutButton() {
   return (
     <AdminButton onClick={() => signOut({ callbackUrl: "/admin/login" })}>
-      로그아웃
+      logout
     </AdminButton>
   );
 }

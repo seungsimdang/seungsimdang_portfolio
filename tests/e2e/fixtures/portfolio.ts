@@ -184,7 +184,6 @@ interface FixturePost {
   categories: string[];
   tags: string[];
   publishedAt: string;
-  published: boolean;
 }
 
 export const posts: FixturePost[] = [
@@ -195,7 +194,6 @@ export const posts: FixturePost[] = [
     categories: ["Fixture"],
     tags: ["test"],
     publishedAt: "2025-01-02",
-    published: true,
   },
   {
     slug: "2025-01-01-fixture-post-2",
@@ -204,7 +202,6 @@ export const posts: FixturePost[] = [
     categories: ["Fixture", "Other"],
     tags: [],
     publishedAt: "2025-01-01",
-    published: true,
   },
   {
     slug: "2024-12-31-한글-주소-글",
@@ -213,15 +210,5 @@ export const posts: FixturePost[] = [
     categories: ["Other"],
     tags: [],
     publishedAt: "2024-12-31",
-    published: true,
-  },
-  {
-    slug: "2024-12-30-fixture-draft",
-    title: "비공개 글",
-    content: "비공개 본문.",
-    categories: ["Fixture"],
-    tags: [],
-    publishedAt: "2024-12-30",
-    published: false,
   },
 ];

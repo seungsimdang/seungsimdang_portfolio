@@ -10,15 +10,23 @@ interface ConfirmDialogProps {
   // 성공이면 null, 실패면 대화상자에 보일 오류 문구
   onConfirm: () => Promise<string | null>;
   onClose: () => void;
+  confirmLabel?: string;
+  busyLabel?: string;
+  cancelLabel?: string;
+  variant?: "danger" | "primary";
 }
 
-// 네이티브 dialog 기반 삭제 확인, 기본 포커스는 취소 버튼
+// 네이티브 dialog 기반 확인 창, 기본값은 삭제 확인이며 기본 포커스는 취소 버튼
 export function ConfirmDialog({
   open,
   title,
   description,
   onConfirm,
   onClose,
+  confirmLabel = "삭제",
+  busyLabel = "삭제 중...",
+  cancelLabel = "취소",
+  variant = "danger",
 }: ConfirmDialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -82,12 +90,12 @@ export function ConfirmDialog({
             오류: {error}
           </p>
         )}
-        <div className="flex justify-end gap-8">
+        <div className="flex flex-wrap justify-end gap-8">
           <AdminButton id={cancelId} disabled={busy} onClick={close}>
-            취소
+            {cancelLabel}
           </AdminButton>
-          <AdminButton variant="danger" disabled={busy} onClick={confirm}>
-            {busy ? "삭제 중..." : "삭제"}
+          <AdminButton variant={variant} disabled={busy} onClick={confirm}>
+            {busy ? busyLabel : confirmLabel}
           </AdminButton>
         </div>
       </div>

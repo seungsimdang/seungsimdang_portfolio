@@ -11,21 +11,19 @@ export const metadata: Metadata = {
 
 interface EditProjectPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ saved?: string }>;
 }
 
 export default async function AdminEditProjectPage({
   params,
-  searchParams,
 }: EditProjectPageProps) {
   await requireAdminPage();
-  const [{ slug }, { saved }] = await Promise.all([params, searchParams]);
+  const { slug } = await params;
   const project = await getProjectBySlug(slug, true);
   if (!project) notFound();
   return (
     <>
       <AdminPageHeader title="프로젝트 편집" />
-      <ProjectForm project={project} initialSaved={saved === "1"} />
+      <ProjectForm project={project} />
     </>
   );
 }
