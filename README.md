@@ -12,6 +12,7 @@ Framer에서 디자인된 포트폴리오를 Next.js와 TypeScript로 구현한 
 - **Language**: TypeScript 7.0.2
 - **Styling**: Tailwind CSS 4.3.3
 - **UI Library**: React 19.3.0
+- **Form / Validation**: React Hook Form 7.89.0, @hookform/resolvers 5.9.1, Zod 4.6.5
 - **Build Tool**: Turbopack
 - **Package Manager**: pnpm 11.18.0
 - **Lint / Format**: Biome 2.5.14
@@ -81,7 +82,6 @@ Framer에서 디자인된 포트폴리오를 Next.js와 TypeScript로 구현한 
 - **ProjectCard**: Sticky 스크롤 프로젝트 카드
 - **Button**: Primary/Secondary 버튼 변형
 - **HeroSection**: 히어로 섹션 (가용성 인디케이터 포함)
-- **AboutSection**: About 섹션 (그리드 레이아웃)
 - **BlogPreview**: 블로그 포스트 미리보기
 
 ## 📁 디렉토리 구조

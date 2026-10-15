@@ -96,9 +96,15 @@ const slugSchema = z
   .regex(SLUG_PATTERN, "영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다")
   .refine((v) => v !== "new", "사용할 수 없는 값입니다");
 
-const stringList = z
-  .array(shortText)
-  .max(LIST_MAX, `${LIST_MAX}개 이하로 입력해 주세요`);
+const limitedList = <T extends z.ZodType>(item: T) =>
+  z.array(item).max(LIST_MAX, `${LIST_MAX}개 이하로 입력해 주세요`);
+
+const stringList = limitedList(shortText);
+
+// 폼은 입력 칸 이름이 skills.0.value 꼴이 되도록 문자열을 { value } 객체로 들고 있다가 서버 입력 모양으로 되돌림
+const formStringList = limitedList(z.object({ value: shortText })).transform(
+  (items) => items.map((item) => item.value),
+);
 
 // 비어 있으면 null 저장, 값이 있으면 우리 Blob URL만 허용
 const thumbnail = z
@@ -131,6 +137,14 @@ export const profileInputSchema = z.strictObject({
   skills: stringList,
   tools: stringList,
 });
+
+// 탭별 폼이 보낸 항목만 갱신하므로 모든 키를 선택으로 두고, 값이 있는 항목이 없으면 거부함
+export const profileUpdateInputSchema = profileInputSchema
+  .partial()
+  .refine(
+    (v) => Object.values(v).some((value) => value !== undefined),
+    "변경할 항목이 없습니다",
+  );
 
 // 빈 문자열 허용
 const optionalShortText = z
@@ -224,7 +238,46 @@ export const orderInputSchema = z.strictObject({
     .refine((v) => new Set(v).size === v.length, "중복된 항목이 있습니다"),
 });
 
-export type ProfileInput = z.infer<typeof profileInputSchema>;
+const profileFormSchema = profileInputSchema.extend({
+  skills: formStringList,
+  tools: formStringList,
+});
+
+const PROFILE_SECTION_KEYS = {
+  home: ["name", "title", "tagline", "description"],
+  about: ["skills", "tools"],
+  contact: ["email", "github"],
+} as const;
+
+export type ProfileFormValues = z.input<typeof profileFormSchema>;
+export type ProfileFormInput = Partial<z.output<typeof profileFormSchema>>;
+
+// 폼 값에는 다른 탭 항목도 들어 있어, 해당 섹션 키만 골라 느슨한 객체로 검증하고 내보냄
+export function profileSectionFormSchema(
+  section: keyof typeof PROFILE_SECTION_KEYS,
+): z.ZodType<ProfileFormInput, ProfileFormValues> {
+  const shape = profileFormSchema.shape;
+  return z.object(
+    Object.fromEntries(
+      PROFILE_SECTION_KEYS[section].map((key) => [key, shape[key]]),
+    ),
+  ) as unknown as z.ZodType<ProfileFormInput, ProfileFormValues>;
+}
+
+export const resumeEntryFormSchema = resumeEntryUpdateInputSchema.extend({
+  details: formStringList,
+});
+
+export const projectFormSchema = projectUpdateInputSchema.extend({
+  techStack: formStringList,
+});
+
+// 수정 화면에서 썸네일을 바꾸지 않았으면 서버에 보내지 않으므로 기존 값은 형식을 따지지 않음
+export const projectFormKeepThumbnailSchema = projectFormSchema.extend({
+  thumbnail: z.string().trim(),
+});
+
+export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>;
 export type ExperienceInput = z.infer<typeof experienceInputSchema>;
 export type ProjectUpdateInput = z.infer<typeof projectUpdateInputSchema>;
 export type ProjectCreateInput = z.infer<typeof projectCreateInputSchema>;

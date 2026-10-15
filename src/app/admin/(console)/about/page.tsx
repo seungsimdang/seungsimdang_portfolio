@@ -1,29 +1,28 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { AdminButton } from "@/components/admin/admin-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { ProfileForm } from "@/components/admin/profile-form";
 import { RESUME_ADMIN_SECTIONS } from "@/components/admin/resume-labels";
 import { SortableList } from "@/components/admin/sortable-list";
 import { requireAdminPage } from "@/lib/auth/require-admin";
-import { getResumeByKind } from "@/services/portfolio/portfolio-service";
+import {
+  getProfile,
+  getResumeByKind,
+} from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
-  title: { absolute: "resume - admin" },
+  title: { absolute: "about - admin" },
 };
 
-export default async function AdminResumePage() {
+export default async function AdminAboutPage() {
   await requireAdminPage();
-  const resume = await getResumeByKind();
+  const [resume, profile] = await Promise.all([
+    getResumeByKind(),
+    getProfile(true),
+  ]);
   return (
     <>
-      <AdminPageHeader title="resume" />
-      <p className="text-small opacity-70">
-        스킬과 툴은{" "}
-        <Link href="/admin/profile" className="underline">
-          profile
-        </Link>
-        에서 편집합니다.
-      </p>
+      <AdminPageHeader title="about" />
       <div className="space-y-48">
         {RESUME_ADMIN_SECTIONS.map(({ kind, noun }) => (
           <section key={kind} className="space-y-16">
@@ -36,7 +35,7 @@ export default async function AdminResumePage() {
                 {noun}
               </h2>
               <AdminButton
-                href={`/admin/resume/new?kind=${kind}`}
+                href={`/admin/about/resume/new?kind=${kind}`}
                 variant="primary"
               >
                 {noun} 추가
@@ -57,6 +56,10 @@ export default async function AdminResumePage() {
             />
           </section>
         ))}
+        <section className="space-y-16">
+          <h2 className="text-body">스킬과 툴</h2>
+          <ProfileForm profile={profile} section="about" />
+        </section>
       </div>
     </>
   );
