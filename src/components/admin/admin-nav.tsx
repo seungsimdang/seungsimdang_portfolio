@@ -6,11 +6,11 @@ import { cn } from "@/utils/styleUtils";
 
 // 자주 편집하는 콘텐츠를 앞에 두고 /admin 기본 이동 대상인 프로젝트를 첫 탭으로 배치
 const LINKS = [
-  { href: "/admin/projects", label: "프로젝트" },
-  { href: "/admin/talks", label: "발표" },
-  { href: "/admin/blog", label: "블로그" },
-  { href: "/admin/resume", label: "이력" },
-  { href: "/admin/profile", label: "프로필" },
+  { href: "/admin/projects", label: "projects" },
+  { href: "/admin/talks", label: "talks" },
+  { href: "/admin/blog", label: "blog" },
+  { href: "/admin/resume", label: "resume" },
+  { href: "/admin/profile", label: "profile" },
 ];
 
 export function AdminNav() {

@@ -11,21 +11,17 @@ export const metadata: Metadata = {
 
 interface EditTalkPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ saved?: string }>;
 }
 
-export default async function AdminEditTalkPage({
-  params,
-  searchParams,
-}: EditTalkPageProps) {
+export default async function AdminEditTalkPage({ params }: EditTalkPageProps) {
   await requireAdminPage();
-  const [{ slug }, { saved }] = await Promise.all([params, searchParams]);
+  const { slug } = await params;
   const talk = (await listTechTalks(true)).find((item) => item.slug === slug);
   if (!talk) notFound();
   return (
     <>
       <AdminPageHeader title="발표 편집" />
-      <TalkForm talk={talk} initialSaved={saved === "1"} />
+      <TalkForm talk={talk} />
     </>
   );
 }

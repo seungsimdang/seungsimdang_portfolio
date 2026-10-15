@@ -11,7 +11,6 @@ const valid = {
   categories: ["알고리즘"],
   tags: ["bfs"],
   publishedAt: "2024-10-06",
-  published: true,
 };
 
 describe("postSlugSchema", () => {
@@ -141,9 +140,9 @@ describe("postUpdateInputSchema", () => {
     ).toBe(true);
   });
 
-  it("published가 불리언이 아니면 거부한다", () => {
+  it("published 키 자체를 거부한다", () => {
     expect(
-      postUpdateInputSchema.safeParse({ ...valid, published: "true" }).success,
+      postUpdateInputSchema.safeParse({ ...valid, published: true }).success,
     ).toBe(false);
   });
 });

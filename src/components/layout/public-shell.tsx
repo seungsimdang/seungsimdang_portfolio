@@ -8,7 +8,7 @@ export async function PublicShell({ children }: { children: ReactNode }) {
   return (
     <>
       <Navbar name={profile.name} />
-      <main className="pt-header">{children}</main>
+      <main className="pt-header-mobile md:pt-header">{children}</main>
       <Footer profile={profile} />
     </>
   );

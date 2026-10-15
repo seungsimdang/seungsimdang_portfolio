@@ -1,16 +1,11 @@
 "use client";
 
 import { HttpStatusCode } from "axios";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { type Notice, useToast } from "@/components/admin/toast-provider";
 import type { AdminResult } from "./admin-request";
+import { useLeaveConfirm } from "./use-leave-confirm";
 import type { Validation } from "./validate";
-
-export interface Notice {
-  tone: "success" | "error";
-  message: string;
-  link?: { href: string; label: string };
-  signOut?: boolean;
-}
 
 const SAVE_FAILED = "저장하지 못했습니다. 잠시 후 다시 시도하세요.";
 const SAVED_MESSAGE = "저장했습니다. 공개 페이지에 반영되었습니다.";
@@ -140,7 +135,6 @@ interface UseAdminFormOptions<D, I, R> {
   // 저장 성공 후 폼 기준값으로 삼을 draft, 화면을 떠나는 경우 undefined
   onSaved: (result: R) => D | undefined;
   listHref: string;
-  initialSaved?: boolean;
 }
 
 // 검증, 저장, 오류 매핑, 미저장 이탈 경고를 묶은 admin 폼 공통 상태
@@ -151,15 +145,14 @@ export function useAdminForm<D, I, R>({
   save,
   onSaved,
   listHref,
-  initialSaved = false,
 }: UseAdminFormOptions<D, I, R>) {
   const formRef = useRef<HTMLFormElement>(null);
   const [baseline, setBaseline] = useState(() => JSON.stringify(draft));
   const [submitted, setSubmitted] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
-  const [notice, setNotice] = useState<Notice | null>(
-    initialSaved ? { tone: "success", message: SAVED_MESSAGE } : null,
-  );
+  const { notify, clearGroup } = useToast();
+  // 같은 폼의 이전 오류 알림만 치우기 위한 식별자
+  const toastGroup = useId();
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [focusTick, setFocusTick] = useState(0);
@@ -171,41 +164,7 @@ export function useAdminForm<D, I, R>({
   const errors = { ...serverErrors, ...clientErrors };
   const errorCount = Object.keys(errors).length;
 
-  useEffect(() => {
-    if (!dirty) return;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
-    const onClick = (event: MouseEvent) => {
-      // 뒤로가기와 router.push 이동은 click 이벤트가 없어 보호하지 못하는 한계가 있음
-      if (
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      )
-        return;
-      const anchor = (event.target as Element).closest("a[href]");
-      if (
-        !anchor ||
-        anchor.getAttribute("target") === "_blank" ||
-        anchor.hasAttribute("download") ||
-        anchor.getAttribute("href")?.startsWith("#")
-      )
-        return;
-      if (
-        !window.confirm("저장하지 않은 변경 사항이 사라집니다. 이동할까요?")
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    document.addEventListener("click", onClick, true);
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      document.removeEventListener("click", onClick, true);
-    };
-  }, [dirty]);
+  const leaveGuard = useLeaveConfirm(dirty);
 
   useEffect(() => {
     if (focusTick === 0) return;
@@ -214,22 +173,25 @@ export function useAdminForm<D, I, R>({
       ?.focus();
   }, [focusTick]);
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  async function submit(event?: FormEvent) {
+    event?.preventDefault();
     if (savingRef.current) return;
     setSubmitted(true);
     setServerErrors({});
+    clearGroup(toastGroup);
     if (!validation.success) {
-      setNotice({
-        tone: "error",
-        message: `${Object.keys(validation.errors).length}개 항목을 확인하세요.`,
-      });
+      notify(
+        {
+          tone: "error",
+          message: `${Object.keys(validation.errors).length}개 항목을 확인하세요.`,
+        },
+        toastGroup,
+      );
       setFocusTick((tick) => tick + 1);
       return;
     }
     savingRef.current = true;
     setSaving(true);
-    setNotice(null);
     let result: Awaited<ReturnType<typeof save>>;
     try {
       result = await save(validation.data);
@@ -240,24 +202,27 @@ export function useAdminForm<D, I, R>({
     if (!result.ok) {
       const failure = describeFailure(result, listHref);
       setServerErrors(failure.fieldErrors);
-      setNotice(failure.notice);
+      notify(failure.notice, toastGroup);
       setFocusTick((tick) => tick + 1);
       return;
     }
+    // 저장 직후 화면이 바뀌는 경로에서도 알림이 남도록 이동 전에 먼저 띄움
+    notify({ tone: "success", message: SAVED_MESSAGE }, toastGroup);
     const next = onSaved(result.data);
     if (next !== undefined) setDraft(next);
     setBaseline(JSON.stringify(next ?? draft));
     setSubmitted(false);
-    setNotice({ tone: "success", message: SAVED_MESSAGE });
   }
 
   return {
     formRef,
     errors,
     errorCount,
-    // 성공 알림은 이후 편집이 시작되면 숨김
-    notice: notice?.tone === "success" && dirty ? null : notice,
+    focusTick,
     saving,
     submit,
+    leaveGuard,
+    // 저장 훅 밖(업로드, 가져오기)에서 생긴 결과도 같은 폼의 알림으로 묶음
+    notify: (notice: Notice) => notify(notice, toastGroup),
   };
 }

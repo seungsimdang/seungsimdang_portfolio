@@ -24,10 +24,12 @@ import {
   type ExperienceDraft,
   ExperienceListEditor,
 } from "./experience-list-editor";
-import { FormActionBar, FormStatus } from "./form-parts";
+import { FormActionBar } from "./form-parts";
+import { LeaveDialog } from "./leave-dialog";
 import { StringListEditor } from "./string-list-editor";
 import { TextAreaField, TextField } from "./text-fields";
 import { ThumbnailField } from "./thumbnail-field";
+import { useToast } from "./toast-provider";
 
 interface ProjectDraft {
   slug: string;
@@ -82,16 +84,20 @@ function toInput(draft: ProjectDraft, originalThumbnail?: string) {
 
 interface ProjectFormProps {
   project?: Project;
-  initialSaved?: boolean;
 }
 
-export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
+export function ProjectForm({ project }: ProjectFormProps) {
   const router = useRouter();
+  const { notify } = useToast();
   const isEdit = project !== undefined;
   const savedSlug = useRef(project?.slug ?? "");
   const savedThumbnail = useRef(project?.thumbnail ?? "");
   const [draft, setDraft] = useState(() => toDraft(project));
   const [deleting, setDeleting] = useState(false);
+  const [slugChange, setSlugChange] = useState<{
+    from: string;
+    to: string;
+  } | null>(null);
   const [uploading, setUploading] = useState(false);
   const uploadingRef = useRef(false);
   const set = <K extends keyof ProjectDraft>(key: K, value: ProjectDraft[K]) =>
@@ -125,11 +131,10 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
         savedThumbnail.current = saved.thumbnail ?? "";
         return toDraft(saved);
       }
-      router.push(`/admin/projects/${saved.slug}?saved=1`);
+      router.push(`/admin/projects/${saved.slug}`);
       return undefined;
     },
     listHref: "/admin/projects",
-    initialSaved,
   });
   const { errors } = form;
 
@@ -140,7 +145,8 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
       `/api/admin/projects/${savedSlug.current}`,
     );
     if (result.ok || result.status === HttpStatusCode.NotFound) {
-      router.push("/admin/projects?deleted=1");
+      notify({ tone: "success", message: "삭제했습니다." });
+      router.push("/admin/projects");
       return null;
     }
     return (
@@ -153,14 +159,10 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
       event.preventDefault();
       return;
     }
-    if (
-      isEdit &&
-      draft.slug !== savedSlug.current &&
-      !window.confirm(
-        `프로젝트 주소가 /work/${savedSlug.current}에서 /work/${draft.slug}(으)로 변경됩니다. 이전 주소는 더 이상 열리지 않으며 자동 이동도 제공되지 않습니다. 저장할까요?`,
-      )
-    ) {
+    // 검증보다 먼저 묻고, 확인하면 모달에서 저장을 이어감
+    if (isEdit && draft.slug !== savedSlug.current) {
       event.preventDefault();
+      setSlugChange({ from: savedSlug.current, to: draft.slug });
       return;
     }
     return form.submit(event);
@@ -174,7 +176,6 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
       onSubmit={submit}
       className="space-y-24"
     >
-      <FormStatus notice={form.notice} />
       <TextField
         id="project-slug"
         label="slug"
@@ -256,10 +257,29 @@ export function ProjectForm({ project, initialSaved }: ProjectFormProps) {
       />
       <FormActionBar
         saving={form.saving || uploading}
-        notice={form.notice}
         cancelHref="/admin/projects"
         onDelete={isEdit ? () => setDeleting(true) : undefined}
         deleteLabel="프로젝트 삭제"
+      />
+      <LeaveDialog guard={form.leaveGuard} />
+      <ConfirmDialog
+        open={slugChange !== null}
+        title="주소를 바꿀까요?"
+        description={
+          <p>
+            프로젝트 주소가 /work/{slugChange?.from}에서 /work/{slugChange?.to}
+            (으)로 변경됩니다. 이전 주소는 더 이상 열리지 않으며 자동 이동도
+            제공되지 않습니다. 저장할까요?
+          </p>
+        }
+        confirmLabel="저장"
+        busyLabel="저장 중..."
+        variant="primary"
+        onConfirm={async () => {
+          void form.submit();
+          return null;
+        }}
+        onClose={() => setSlugChange(null)}
       />
       {project && (
         <ConfirmDialog

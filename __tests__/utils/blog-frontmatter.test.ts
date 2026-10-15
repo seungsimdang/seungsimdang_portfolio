@@ -11,7 +11,7 @@ describe("parsePostMarkdown", () => {
       title: "제목",
       categories: ["a", "b"],
       tags: ["x"],
-      published: false,
+      unpublished: true,
     });
     expect(result.body).toBe("본문");
   });
@@ -69,11 +69,33 @@ describe("parsePostMarkdown", () => {
 
   it.each([
     ["title이 객체", "title: {a: 1}"],
-    ["published가 문자열", "published: yes-please"],
     ["tags에 객체", "tags: [{a: 1}]"],
     ["최상위가 배열", "- a\n- b"],
   ])("%s이면 오류다", (_name, yaml) => {
     expect(parsePostMarkdown(`---\n${yaml}\n---\nb`).error).toBeTruthy();
+  });
+
+  it("boolean이 아닌 published는 오류 없이 무시한다", () => {
+    const result = parsePostMarkdown("---\npublished: yes-please\n---\nb");
+    expect(result.error).toBeUndefined();
+    expect(result.frontmatter).toEqual({});
+  });
+
+  it('문자열 "false"와 숫자 0은 비공개로 보지 않는다', () => {
+    for (const value of ['"false"', "0", "no"]) {
+      const result = parsePostMarkdown(`---\npublished: ${value}\n---\nb`);
+      expect(result.error).toBeUndefined();
+      expect(result.frontmatter.unpublished).toBeUndefined();
+    }
+  });
+
+  it("published가 true이거나 없으면 unpublished 키가 없다", () => {
+    expect(
+      parsePostMarkdown("---\npublished: true\n---\nb").frontmatter,
+    ).toEqual({});
+    expect(parsePostMarkdown("---\ntitle: t\n---\nb").frontmatter).toEqual({
+      title: "t",
+    });
   });
 
   it("BOM과 CRLF를 흡수한다", () => {

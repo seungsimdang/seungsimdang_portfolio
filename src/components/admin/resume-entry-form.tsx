@@ -17,10 +17,12 @@ import {
 } from "@/schemas/portfolio.schema";
 import type { ResumeEntry } from "@/types/portfolio";
 import { ConfirmDialog } from "./confirm-dialog";
-import { FormActionBar, FormStatus } from "./form-parts";
+import { FormActionBar } from "./form-parts";
+import { LeaveDialog } from "./leave-dialog";
 import { RESUME_ADMIN_SECTIONS, RESUME_FIELD_HINTS } from "./resume-labels";
 import { StringListEditor } from "./string-list-editor";
 import { TextField } from "./text-fields";
+import { useToast } from "./toast-provider";
 
 interface ResumeDraft {
   period: string;
@@ -45,15 +47,11 @@ function toInput(draft: ResumeDraft) {
 interface ResumeEntryFormProps {
   kind: ResumeKind;
   entry?: ResumeEntry;
-  initialSaved?: boolean;
 }
 
-export function ResumeEntryForm({
-  kind,
-  entry,
-  initialSaved,
-}: ResumeEntryFormProps) {
+export function ResumeEntryForm({ kind, entry }: ResumeEntryFormProps) {
   const router = useRouter();
+  const { notify } = useToast();
   const isEdit = entry !== undefined;
   const [draft, setDraft] = useState(() => toDraft(entry));
   const [deleting, setDeleting] = useState(false);
@@ -80,11 +78,10 @@ export function ResumeEntryForm({
     // 생성 후에는 편집 화면으로 이동
     onSaved: (saved) => {
       if (isEdit) return toDraft(saved);
-      router.push(`/admin/resume/${saved.id}?saved=1`);
+      router.push(`/admin/resume/${saved.id}`);
       return undefined;
     },
     listHref: "/admin/resume",
-    initialSaved,
   });
   const { errors } = form;
 
@@ -95,7 +92,8 @@ export function ResumeEntryForm({
       `/api/admin/resume-entries/${entry.id}`,
     );
     if (result.ok || result.status === HttpStatusCode.NotFound) {
-      router.push(`/admin/resume?deleted=${entry.kind}`);
+      notify({ tone: "success", message: "삭제했습니다." });
+      router.push("/admin/resume");
       return null;
     }
     return (
@@ -111,7 +109,6 @@ export function ResumeEntryForm({
       onSubmit={form.submit}
       className="space-y-24"
     >
-      <FormStatus notice={form.notice} />
       <TextField
         id="resume-kind"
         label="구분"
@@ -157,11 +154,11 @@ export function ResumeEntryForm({
       />
       <FormActionBar
         saving={form.saving}
-        notice={form.notice}
         cancelHref="/admin/resume"
         onDelete={isEdit ? () => setDeleting(true) : undefined}
         deleteLabel="이력 삭제"
       />
+      <LeaveDialog guard={form.leaveGuard} />
       {entry && (
         <ConfirmDialog
           open={deleting}

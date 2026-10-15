@@ -4,7 +4,6 @@ export interface PostSummary {
   publishedAt: string; // "YYYY-MM-DD"
   categories: string[];
   tags: string[];
-  published: boolean; // 공개 조회에서는 항상 true
 }
 
 export interface Post extends PostSummary {
@@ -21,5 +20,15 @@ export interface PostPage {
 
 export interface PostCategory {
   name: string;
-  count: number; // 공개 글 기준
+  count: number; // 전체 글 기준
+}
+
+interface PostLink {
+  slug: string;
+  title: string;
+}
+
+export interface PostNeighbors {
+  older: PostLink | null; // 더 오래된 글, 목록에서 뒤쪽
+  newer: PostLink | null; // 더 최신 글, 목록에서 앞쪽
 }

@@ -4,6 +4,8 @@
   --background: #000000;
   --foreground: #ffffff;
   --danger: #ff6b6b;
+  /* admin 저장바가 있으면 실제 높이 위 16px, 없으면 화면 하단에서 96px */
+  --admin-toast-bottom: calc(var(--admin-action-bar-h, 80px) + 16px);
 }
 
 @theme inline {
@@ -16,6 +18,8 @@
   --container-content: 1920px;
   --container-heading: 1200px;
   --spacing-header: 92px;
+  /* 모바일 Navbar 높이 97px에 md 이상과 같은 15px 여유를 더한 값 */
+  --spacing-header-mobile: 112px;
   --spacing-project-info: 200px;
   --spacing-card: 60vh;
   --spacing-card-tall: 75vh;

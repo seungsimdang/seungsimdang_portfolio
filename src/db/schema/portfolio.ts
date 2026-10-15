@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean,
   check,
   date,
   index,
@@ -163,17 +162,12 @@ export const posts = pgTable(
     categories: text("categories").array().notNull().default(sql`'{}'::text[]`),
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
     publishedAt: date("published_at", { mode: "string" }).notNull(),
-    published: boolean("published").notNull().default(true),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (table) => [
     check("posts_slug_format", sql`${table.slug} ~ ${POST_SLUG_PATTERN_SQL}`),
     check("posts_slug_length", sql`char_length(${table.slug}) <= 200`),
-    index("posts_list_idx").on(
-      table.published,
-      table.publishedAt.desc(),
-      table.slug.desc(),
-    ),
+    index("posts_list_idx").on(table.publishedAt.desc(), table.slug.desc()),
   ],
 );

@@ -292,7 +292,6 @@ async function main() {
     title: string;
     date: string;
     body: string;
-    published: boolean;
     categories: string[];
     tags: string[];
   }[] = [];
@@ -317,7 +316,6 @@ async function main() {
         title: parsed.frontmatter.title || name.title,
         date,
         body: parsed.body,
-        published: parsed.frontmatter.published ?? true,
         categories: parsed.frontmatter.categories ?? [],
         tags: parsed.frontmatter.tags ?? [],
       });
@@ -481,7 +479,6 @@ async function main() {
         categories: entry.categories,
         tags: entry.tags,
         publishedAt: entry.date,
-        published: entry.published,
       });
       if (!input.success) {
         throw new Error(
