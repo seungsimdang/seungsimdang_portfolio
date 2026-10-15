@@ -37,6 +37,21 @@
   row-gap: 8px;
 }
 
+@media (max-width: 767px) {
+  .admin-header-content > div {
+    display: contents;
+  }
+
+  .admin-header-content > div > nav {
+    order: 1;
+    flex-basis: 100%;
+  }
+
+  .admin-header-content > div > a {
+    margin-left: auto;
+  }
+}
+
 @media (min-width: 768px) {
   .admin-header-content {
     flex-wrap: nowrap;
