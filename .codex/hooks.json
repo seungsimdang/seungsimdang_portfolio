@@ -45,25 +45,8 @@
         ]
       },
       {
-        "matcher": "EnterWorktree",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/orchestrator-no-worktree.sh\""
-          }
-        ]
-      },
-      {
         "matcher": "Agent",
         "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/require-isolation-when-dirty.sh\""
-          },
-          {
-            "type": "command",
-            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/block-fork-spawn.sh\""
-          },
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/codex-tool-adapter.mjs\" confirm-repeated-review"

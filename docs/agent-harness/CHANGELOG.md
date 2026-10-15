@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-15 - Codex에서 판정 대상이 없는 훅 제거
+
+Codex `spawn_agent`에는 `isolation` 인자와 `fork` 유형이 없고 `EnterWorktree` 도구도 없어 `require-isolation-when-dirty.sh`·`block-fork-spawn.sh`·`orchestrator-no-worktree.sh`는 Codex에서 등록만 되고 검사할 입력이 생기지 않았다. 세 훅을 `.codex/hooks.json`과 `.codex/hooks/`에서 제거하고 테스트를 Claude 전용으로 옮겼다. Claude 쪽 훅은 그대로 유지한다.
+
 ## 2026-10-15 - Codex 런타임 훅을 Claude 훅과 같은 판정으로 정렬
 
 Codex는 파일 편집을 `apply_patch`로 실행하고 훅에 `tool_input.command`(패치 텍스트)만 넘긴다. Codex의 Edit|Write 훅은 Claude 형식의 `file_path`·`content`·`new_string`을 읽어 em-dash·주석 줄바꿈·보고 전용 편집 확인 검사가 Codex에서 한 번도 동작하지 않았다. Codex PreToolUse는 `permissionDecision: "ask"`도 지원하지 않아 확인 요청이 실패 처리된 뒤 편집이 그대로 진행됐다(공식 문서 developers.openai.com/codex/hooks 확인).

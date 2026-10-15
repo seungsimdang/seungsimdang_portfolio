@@ -178,7 +178,7 @@ for (const tool of [".claude", ".codex"]) {
       }).status,
     ).toBe(0);
   });
-  test(`${tool} 런타임 안전 훅이 파괴적 명령과 잘못된 에이전트 실행을 차단한다`, () => {
+  test(`${tool} 런타임 안전 훅이 파괴적 명령을 차단한다`, () => {
     expect(
       run(tool, "git-safety-guard", {
         tool_input: { command: "git reset --hard" },
@@ -194,48 +194,6 @@ for (const tool of [".claude", ".codex"]) {
         tool_input: { command: "kill $(lsof -ti tcp:3100)" },
       }).status,
     ).toBe(0);
-    expect(
-      run(tool, "block-fork-spawn", { tool_input: { subagent_type: "fork" } })
-        .status,
-    ).toBe(2);
-    expect(
-      run(tool, "block-fork-spawn", {
-        tool_input: { subagent_type: "qa-engineer" },
-      }).status,
-    ).toBe(0);
-    expect(run(tool, "orchestrator-no-worktree", {}).status).toBe(2);
-    expect(
-      run(tool, "orchestrator-no-worktree", { agent_id: "implementation" })
-        .status,
-    ).toBe(0);
-    const fixture = mkdtempSync(join(tmpdir(), "portfolio-hooks-"));
-    try {
-      spawnSync("git", ["init", "-q"], { cwd: fixture, env });
-      writeFileSync(join(fixture, "dirty.txt"), "changed");
-      expect(
-        run(
-          tool,
-          "require-isolation-when-dirty",
-          { tool_input: { subagent_type: "frontend-developer" } },
-          fixture,
-        ).status,
-      ).toBe(2);
-      expect(
-        run(
-          tool,
-          "require-isolation-when-dirty",
-          {
-            tool_input: {
-              subagent_type: "frontend-developer",
-              isolation: "worktree",
-            },
-          },
-          fixture,
-        ).status,
-      ).toBe(0);
-    } finally {
-      rmSync(fixture, { recursive: true, force: true });
-    }
   });
   test(`${tool} 새 브랜치 생성은 브랜치 수와 무관하고 살아 있는 worktree에만 차단된다`, () => {
     const repo = mkdtempSync(join(tmpdir(), "portfolio-branch-"));
@@ -307,7 +265,50 @@ for (const tool of [".claude", ".codex"]) {
   });
 }
 
-test("클로드 전용 훅이 리뷰 누락과 영어 응답을 검출한다", () => {
+test("클로드 에이전트 실행 훅이 fork 스폰과 worktree 진입, 격리 없는 구현자 스폰을 차단한다", () => {
+  const claude = (hook: string, input: object, cwd?: string) =>
+    run(".claude", hook, input, cwd);
+  expect(
+    claude("block-fork-spawn", { tool_input: { subagent_type: "fork" } })
+      .status,
+  ).toBe(2);
+  expect(
+    claude("block-fork-spawn", { tool_input: { subagent_type: "qa-engineer" } })
+      .status,
+  ).toBe(0);
+  expect(claude("orchestrator-no-worktree", {}).status).toBe(2);
+  expect(
+    claude("orchestrator-no-worktree", { agent_id: "implementation" }).status,
+  ).toBe(0);
+  const fixture = mkdtempSync(join(tmpdir(), "portfolio-hooks-"));
+  try {
+    spawnSync("git", ["init", "-q"], { cwd: fixture, env });
+    writeFileSync(join(fixture, "dirty.txt"), "changed");
+    expect(
+      claude(
+        "require-isolation-when-dirty",
+        { tool_input: { subagent_type: "frontend-developer" } },
+        fixture,
+      ).status,
+    ).toBe(2);
+    expect(
+      claude(
+        "require-isolation-when-dirty",
+        {
+          tool_input: {
+            subagent_type: "frontend-developer",
+            isolation: "worktree",
+          },
+        },
+        fixture,
+      ).status,
+    ).toBe(0);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test("클로드 리뷰 누락·영어 응답 훅이 위반을 검출한다", () => {
   expect(
     run(".claude", "require-coderabbit-run", {
       tool_name: "Write",
