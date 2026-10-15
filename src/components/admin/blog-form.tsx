@@ -19,6 +19,10 @@ import {
   useAdminForm,
 } from "@/lib/admin-client/use-admin-form";
 import { parsePostMarkdown } from "@/lib/blog/frontmatter";
+import {
+  buildPostTemplate,
+  POST_TEMPLATE_FILE_NAME,
+} from "@/lib/blog/post-template";
 import { parsePostFileName, slugifyPostName } from "@/lib/blog/slug";
 import {
   postCreateFormSchema,
@@ -161,6 +165,19 @@ export function BlogForm({ post, defaultDate }: BlogFormProps) {
     }
   }
 
+  function downloadTemplate() {
+    const blob = new Blob([buildPostTemplate(todayInSeoul())], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = POST_TEMPLATE_FILE_NAME;
+    anchor.click();
+    // 동기 해제 시 일부 브라우저에서 다운로드 시작 전에 URL이 무효화되므로 다음 작업으로 미룸
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
   async function importFile(file: File) {
     const fail = (message: string) => form.notify({ tone: "error", message });
     if (!/\.(md|markdown)$/i.test(file.name)) {
@@ -205,13 +222,17 @@ export function BlogForm({ post, defaultDate }: BlogFormProps) {
           <div className="space-y-8">
             <p className="text-small">.md 가져오기</p>
             <p className="text-small opacity-70">
-              frontmatter(title, categories, tags)와 본문을 폼에 채웁니다.
+              템플릿을 내려받아 작성한 뒤 파일 선택으로 불러오세요.
+              frontmatter(title, date, categories, tags)와 본문을 폼에 채웁니다.
               저장은 직접 눌러야 합니다. 본문 이미지는 자동으로 올라가지 않으니
               필요하면 본문의 이미지 삽입을 사용하세요.
             </p>
             <div className="flex flex-wrap items-center gap-12">
               <AdminButton onClick={() => importInputRef.current?.click()}>
                 파일 선택
+              </AdminButton>
+              <AdminButton onClick={downloadTemplate}>
+                템플릿 다운로드
               </AdminButton>
               {importedName && (
                 <p className="text-small text-white/70">
