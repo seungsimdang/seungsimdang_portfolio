@@ -1,3 +1,4 @@
+// 썸네일·이미지 업로드에 필요한 Blob 환경변수 누락 검사
 const required = ["BLOB_READ_WRITE_TOKEN", "NEXT_PUBLIC_BLOB_HOSTNAME"];
 const missing = required.filter((name) => !process.env[name]?.trim());
 

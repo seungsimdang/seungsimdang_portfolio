@@ -1,3 +1,4 @@
+// docs/agent-harness/templates/의 원본을 manifest.json 매핑대로 .claude·.codex·.agents에 생성(--write)하거나 일치 여부 검사(--check)
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
