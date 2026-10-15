@@ -1,5 +1,31 @@
 # 하네스 변경 이력
 
+## 2026-10-15 - git-safety-guard 프로세스 종료 차단 오탐 수정
+
+프로세스 이름 기준 종료 차단이 명령 전체 문자열을 검사해, heredoc 본문이나 커밋 메시지 안에 `(pkill, killall)` 같은 글자만 있어도 Bash 호출을 막았다(하네스 주석 정리 중 python heredoc이 실제로 차단됨). `enforce-commit-msg-style.sh`와 같은 방식으로 heredoc 본문을 빼고 따옴표 문자열을 지운 실행 구문만 검사하도록 Claude·Codex 훅을 함께 고쳤다. `sh -c "..."` 안의 명령도 함께 빠지는 한계가 있지만 실수 방지용 훅이라 허용한다. 오탐 사례와 heredoc 뒤 실제 명령 차단을 `__tests__/lint/runtime-hooks.test.ts`에 추가했다.
+
+## 2026-10-15 - Claude·Codex 시작 문서 정렬
+
+`AGENTS.md`에만 있던 "사용자 지정 제약"(승인 전 제안, 담당 파일만 수정 등)은 Claude에 전달되지 않았고, `CLAUDE.md`에만 있던 Task Team·Bug Team 자연어 라우팅은 Codex에 없었다. 제약은 두 도구가 모두 읽는 `docs/agent-rules/README.md`의 "공통 작업 제약"으로 옮겼고(`CLAUDE.md`는 이 파일을 import), 라우팅은 Codex 경로(`.agents/skills/`, `.codex/agents/*.toml`)로 `AGENTS.md`에 추가했다.
+
+## 2026-10-15 - Codex에서 판정 대상이 없는 훅 제거
+
+Codex `spawn_agent`에는 `isolation` 인자와 `fork` 유형이 없고 `EnterWorktree` 도구도 없어 `require-isolation-when-dirty.sh`·`block-fork-spawn.sh`·`orchestrator-no-worktree.sh`는 Codex에서 등록만 되고 검사할 입력이 생기지 않았다. 세 훅을 `.codex/hooks.json`과 `.codex/hooks/`에서 제거하고 테스트를 Claude 전용으로 옮겼다. Claude 쪽 훅은 그대로 유지한다.
+
+## 2026-10-15 - Codex 런타임 훅을 Claude 훅과 같은 판정으로 정렬
+
+Codex는 파일 편집을 `apply_patch`로 실행하고 훅에 `tool_input.command`(패치 텍스트)만 넘긴다. Codex의 Edit|Write 훅은 Claude 형식의 `file_path`·`content`·`new_string`을 읽어 em-dash·주석 줄바꿈·보고 전용 편집 확인 검사가 Codex에서 한 번도 동작하지 않았다. Codex PreToolUse는 `permissionDecision: "ask"`도 지원하지 않아 확인 요청이 실패 처리된 뒤 편집이 그대로 진행됐다(공식 문서 developers.openai.com/codex/hooks 확인).
+
+- `.codex/hooks/codex-tool-adapter.mjs` 추가. 패치를 파일별 Write(추가)·Edit(hunk 단위)·Delete 입력으로 나눠 같은 훅을 실행하고, `spawn_agent`의 `agent_type`을 `subagent_type`으로 복사하며, `ask`를 `deny`로 바꾼다.
+- Claude 전용이던 `require-status-verification.sh`, `require-korean-response.sh`(Stop), `require-coderabbit-run.sh`, `confirm-repeated-review.sh`를 Codex에 이식했다. Codex Stop의 `decision: "block"`은 턴을 막지 않고 사유를 이어서 처리할 프롬프트로 쓴다.
+- `.codex/hooks.json`의 절대 경로를 문서 권장대로 `$(git rev-parse --show-toplevel)` 기준으로 바꿨다.
+- `__tests__/lint/runtime-hooks.test.ts`에 어댑터 경유 판정 테스트를 추가했다. 실제 Codex 런타임에서 훅 신뢰 절차를 거친 실행 검증은 하지 않았다.
+- `block-reask-after-free-text-answer.sh`(AskUserQuestion)는 Codex에 대응 도구가 없어 Claude 전용으로 둔다. Codex `spawn_agent`에는 `isolation` 인자와 `fork` 유형이 없어 `require-isolation-when-dirty.sh`·`block-fork-spawn.sh`·`orchestrator-no-worktree.sh`는 Codex에서 판정 대상이 생기지 않는다.
+
+## 2026-10-15 - 주석 내용 기준 추가
+
+`docs/agent-rules/project-structure.md`에 주석 내용 기준(왜를 쓰고 무엇은 쓰지 않음, JSDoc은 export API에만, 빈 catch·의도적 통과의 이유, TODO 근거)을 추가했다. Google Engineering Practices 리뷰 기준과 Google C++·JavaScript Style Guide의 주석 항목을 근거로 했다. 내용 판단이라 검사기 대신 리뷰에서 확인한다.
+
 ## 2026-10-13 - AskUserQuestion 재질문 차단 훅의 peer 메시지 턴 오탐 수정
 
 `block-reask-after-free-text-answer.sh`는 사용자 메시지가 들어오면 직접 입력 상태를 초기화하는데, `isMeta`인 항목은 건너뛰었다. 다른 세션 메시지와 subagent hand-back은 `isMeta: true`, `origin.kind: "peer"`로 기록되면서도 새 턴을 시작하므로, 그 턴에서도 이전 직접 입력 답변이 남아 몇 턴 뒤의 AskUserQuestion까지 차단했다. `origin.kind == "peer"` 항목도 초기화 대상에 넣고, 해당 경우를 `__tests__/lint/runtime-hooks.test.ts`에 추가했다.

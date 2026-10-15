@@ -1,5 +1,6 @@
 #!/bin/sh
-# 판단·검토·보고 요청을 받은 턴에 파일 편집을 하려 하면 사용자 확인(ask)을 받게 하는 훅
+# UserPromptSubmit·PreToolUse(Edit|Write|NotebookEdit) 훅: 판단·검토·보고 요청 턴의 파일 편집에 사용자 확인(ask) 요청
+# Codex는 ask를 지원하지 않아 .codex/hooks/codex-tool-adapter.mjs가 deny로 바꿈
 # UserPromptSubmit에서 보고 전용 상태를 session_id별 파일로 남기고, PreToolUse(Edit|Write|NotebookEdit)에서 그 상태를 확인
 # Bash(sed, python, git 등)로 하는 수정은 명령 패턴이 너무 다양해 대상에서 제외하며, 이 부분은 메모리 규칙으로만 보완
 # 실행 지시 판정은 키워드 기반이라 오탐·미탐이 있을 수 있어 차단 대신 확인(ask)만 요청

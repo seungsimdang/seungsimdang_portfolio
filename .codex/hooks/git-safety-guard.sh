@@ -2,23 +2,35 @@
 # PreToolUse(Bash) 훅: 프로젝트 공용 Git 안전 규칙을 대화 중 다짐이 아니라 기계적으로 강제
 #
 # 차단 대상:
+#   0) 프로세스 이름 기준 일괄 종료(pkill, killall) - 사용자가 띄운 dev 서버 등 다른 세션의 프로세스까지 종료함
 #   1) 파괴적 명령: git reset --hard, git clean(-f/-d/-x), git branch -D, git checkout -- .(경로 미지정)
 #   2) bare git stash / git stash pop - worktree 간 공유 스택이라 다른 세션 것을 건드릴 수 있음
-#   0) 프로세스 이름 기준 일괄 종료(pkill, killall) - 사용자가 띄운 dev 서버 등 다른 세션의 프로세스까지 종료함
-#   3) 메인 체크아웃(worktree 아님)에서 브랜치 생성(git checkout -b / git switch -c) - 이미 다른 worktree/브랜치가 있으면(다른 세션이 쓰고 있을 가능성) `Agent(isolation:"worktree")`로 격리 스폰하게 함(subagent가 스스로 `EnterWorktree`를 호출하는 경로는 막혀 있음)
+#   3) 메인 체크아웃에서 브랜치 생성(git checkout -b / git switch -c) - 다른 linked worktree가 살아 있으면 다른 세션이 쓰는 중일 수 있어 `Agent(isolation:"worktree")` 격리 스폰으로 유도
 #
 # 이 훅을 우회해야 하는 정당한 사유(예: 사용자가 직접 승인한 destructive 작업)가 있으면, 사용자가 터미널에서 `!<command>`로 직접 실행하거나(에이전트의 Bash 도구를 거치지 않음), 이 훅을 일시적으로 settings.json에서 제거
 
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
+# 커밋 메시지·heredoc 본문 속 글자를 명령으로 오인하지 않도록 heredoc 본문과 따옴표 문자열을 지운 실행 구문
+# ponytail: sh -c "..." 안의 명령도 함께 지워져 통과하지만 이 훅은 실수 방지용이라 허용
+exec_cmd=$(printf '%s\n' "$cmd" | awk '
+  in_doc { if ($0 ~ "^[ \t]*" delim "[ \t]*$") in_doc = 0; next }
+  {
+    print
+    if (match($0, /<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
+      d = substr($0, RSTART, RLENGTH)
+      sub(/^<<-?[ \t]*["\047]?/, "", d); sub(/["\047]$/, "", d)
+      delim = d; in_doc = 1
+    }
+  }' | tr '\n' '\036' | sed -e 's/"[^"]*"//g' -e "s/'[^']*'//g" | tr '\036' '\n')
+
 # 0) 이름 패턴 종료는 git 명령 여부와 무관하게 차단
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(]\s*)(pkill|killall)\b'; then
+if printf '%s' "$exec_cmd" | grep -qE '(^|[;&|(]\s*)(pkill|killall)\b'; then
   echo "차단: pkill/killall 금지. 다른 세션이나 사용자가 띄운 프로세스까지 종료됩니다. 직접 띄운 서버는 포트로 지정해 종료하세요: kill \$(lsof -ti tcp:<port>)" >&2
   exit 2
 fi
 
-# git 명령이 아니면 통과
 printf '%s' "$cmd" | grep -qE '(^|[;&|]\s*)git\b' || exit 0
 
 deny() {

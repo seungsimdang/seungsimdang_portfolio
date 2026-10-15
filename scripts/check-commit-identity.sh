@@ -1,4 +1,5 @@
 #!/bin/sh
+# pre-commit 훅: 저장소 설정과 실제 author ident가 허용된 작성자일 때만 커밋 허용
 set -eu
 allowed_name='SeungHyun Lee'
 allowed_email='oak20005@naver.com'
