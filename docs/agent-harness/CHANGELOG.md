@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-15 - 재리뷰 확인 훅 사이클 폴더 기준 수정과 Low 수정 재리뷰 생략
+
+`confirm-repeated-review.sh`(Claude·Codex)가 `artifacts/task-team/` 최상위만 세어, 산출물이 사이클별 하위 폴더로 바뀐 뒤 리뷰 파일이 늘 0개로 잡혀 확인 요청을 한 번도 띄우지 못했다(admin-tabs-by-page 사이클 3~5차 리뷰에서 실제로 미작동). 가장 최근에 바뀐 하위 폴더를 현재 사이클로 세도록 고치고, 하위 폴더가 없으면 최상위를 센다. `task-team-orchestrator` 템플릿 2벌의 11번에 Low 이하만 고친 재작업은 T07/T08 재리뷰를 생략하고 재검증과 triage 기록만 남기는 규칙을 추가했고, 9-1 예외 절과 실패 처리도 맞췄다. `__tests__/lint/runtime-hooks.test.ts`에 이전 사이클 폴더만 3개일 때 통과, 현재 사이클 3개일 때 확인 요청 사례를 추가했다.
+
 ## 2026-10-15 - git-safety-guard 프로세스 종료 차단 오탐 수정
 
 프로세스 이름 기준 종료 차단이 명령 전체 문자열을 검사해, heredoc 본문이나 커밋 메시지 안에 `(pkill, killall)` 같은 글자만 있어도 Bash 호출을 막았다(하네스 주석 정리 중 python heredoc이 실제로 차단됨). `enforce-commit-msg-style.sh`와 같은 방식으로 heredoc 본문을 빼고 따옴표 문자열을 지운 실행 구문만 검사하도록 Claude·Codex 훅을 함께 고쳤다. `sh -c "..."` 안의 명령도 함께 빠지는 한계가 있지만 실수 방지용 훅이라 허용한다. 오탐 사례와 heredoc 뒤 실제 명령 차단을 `__tests__/lint/runtime-hooks.test.ts`에 추가했다.

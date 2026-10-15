@@ -14,14 +14,14 @@ Framer 디자인 기반 포트폴리오. Next.js App Router + React + TypeScript
 | 경로 | 용도 |
 |------|------|
 | `src/app/(public)/` | 공개 페이지. 홈, `about/`, `blog/`, `contact/`, `projects/`, `work/[id]/` |
-| `src/app/admin/` | 관리자 화면. `login/`, `(console)/`(profile·projects·talks 편집) |
+| `src/app/admin/` | 관리자 화면. `login/`, `(console)/`(공개 Navbar와 같은 home·projects·about·blog·talks·contact 탭 편집, `/admin`이 home 탭) |
 | `src/app/api/` | Route Handler. `admin/*`(CRUD·정렬·썸네일 업로드), `auth/[...nextauth]/` |
 | `src/proxy.ts` | `/admin`, `/api/admin` 1차 인증 (Next 16: `middleware.ts` → `proxy.ts`, 위치는 `src/` 내부) |
 | `src/components/` | `ui/`(버튼), `common/`(공용 섹션·카드), `layout/`(Navbar·Footer), `admin/`(관리자 폼·편집기) |
 | `src/services/` | 서버 비즈니스 로직·DB 접근. `{도메인}/{도메인}-service.ts` |
 | `src/lib/auth/` | `auth-options.ts`, `require-admin.ts`, `admin-route.ts`, `admin-allowlist.ts` |
 | `src/lib/api/` | Route Handler 공용 서버 코드. `response.ts`(`ok`/`fail`), `api-error.ts`, `parse-body.ts` |
-| `src/lib/admin-client/` | admin 클라이언트 공용 코드. `admin-request.ts`, `use-admin-form.ts`, `draft.ts`, `validate.ts` |
+| `src/lib/admin-client/` | admin 클라이언트 공용 코드. `admin-request.ts`, `use-admin-form.ts`, `form-errors.ts`, `draft.ts` |
 | `src/db/` | Drizzle. `schema/portfolio.ts`, 마이그레이션은 `drizzle/` |
 | `src/schemas/` | Zod 스키마만. `kebab-case.schema.ts` (예: `portfolio.schema.ts`) |
 | `src/types/` | 타입 정의. `api-types.ts`의 `CustomData<T>`가 API 응답 표준 |

@@ -2,10 +2,16 @@
 
 import { HttpStatusCode } from "axios";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import {
+  type FieldValues,
+  type Resolver,
+  type UseFormSetError,
+  useForm,
+} from "react-hook-form";
 import { type Notice, useToast } from "@/components/admin/toast-provider";
 import type { AdminResult } from "./admin-request";
+import { applyServerErrors, countErrors } from "./form-errors";
 import { useLeaveConfirm } from "./use-leave-confirm";
-import type { Validation } from "./validate";
 
 const SAVE_FAILED = "저장하지 못했습니다. 잠시 후 다시 시도하세요.";
 const SAVED_MESSAGE = "저장했습니다. 공개 페이지에 반영되었습니다.";
@@ -114,112 +120,114 @@ function describeFailure(
   return { notice: { tone: "error", message: SAVE_FAILED }, fieldErrors };
 }
 
-// 렌더 직후 지정한 id의 요소로 포커스 이동
-export function useFocusAfterRender() {
-  const pending = useRef<string | null>(null);
-  useEffect(() => {
-    if (!pending.current) return;
-    document.getElementById(pending.current)?.focus();
-    pending.current = null;
-  });
-  return (id: string) => {
-    pending.current = id;
-  };
+// 다음 렌더가 DOM에 반영된 뒤 지정한 id의 요소로 포커스 이동
+export function focusAfterRender(id: string) {
+  requestAnimationFrame(() => document.getElementById(id)?.focus());
 }
 
-interface UseAdminFormOptions<D, I, R> {
-  draft: D;
-  setDraft: (draft: D) => void;
-  validate: (draft: D) => Validation<I>;
-  save: (input: I) => Promise<AdminResult<R>>;
-  // 저장 성공 후 폼 기준값으로 삼을 draft, 화면을 떠나는 경우 undefined
-  onSaved: (result: R) => D | undefined;
+interface UseAdminFormOptions<V extends FieldValues, O, R> {
+  resolver: Resolver<V, unknown, O>;
+  defaultValues: V;
+  save: (input: O) => Promise<AdminResult<R>>;
+  // 저장 성공 후 폼 기준값으로 삼을 값, 화면을 떠나는 경우 undefined
+  onSaved: (result: R) => V | undefined;
   listHref: string;
 }
 
-// 검증, 저장, 오류 매핑, 미저장 이탈 경고를 묶은 admin 폼 공통 상태
-export function useAdminForm<D, I, R>({
-  draft,
-  setDraft,
-  validate,
+// 저장 요청, 서버 실패 매핑, 알림, 미저장 이탈 경고를 react-hook-form에 얹은 admin 폼 공통 훅
+export function useAdminForm<V extends FieldValues, O, R>({
+  resolver,
+  defaultValues,
   save,
   onSaved,
   listHref,
-}: UseAdminFormOptions<D, I, R>) {
+}: UseAdminFormOptions<V, O, R>) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [baseline, setBaseline] = useState(() => JSON.stringify(draft));
-  const [submitted, setSubmitted] = useState(false);
-  const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+  const methods = useForm<V, unknown, O>({
+    resolver,
+    defaultValues: defaultValues as never,
+    // 첫 오류 포커스는 마크다운 편집기의 탭 전환과 서버 오류까지 한 경로로 처리하려고 직접 함
+    shouldFocusError: false,
+  });
+  const { formState } = methods;
   const { notify, clearGroup } = useToast();
   // 같은 폼의 이전 오류 알림만 치우기 위한 식별자
   const toastGroup = useId();
-  const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [focusTick, setFocusTick] = useState(0);
 
-  const dirty = JSON.stringify(draft) !== baseline;
-  const validation = validate(draft);
-  const clientErrors =
-    submitted && !validation.success ? validation.errors : {};
-  const errors = { ...serverErrors, ...clientErrors };
-  const errorCount = Object.keys(errors).length;
+  const leaveGuard = useLeaveConfirm(formState.isDirty);
 
-  const leaveGuard = useLeaveConfirm(dirty);
-
+  // 오류 상태가 DOM에 반영된 뒤 첫 오류 칸을 찾도록 다음 프레임에 포커스
+  // 목록 전체 오류는 입력 칸이 없어 오류 문구 자체가 포커스 대상임
   useEffect(() => {
     if (focusTick === 0) return;
-    formRef.current
-      ?.querySelector<HTMLElement>('[aria-invalid="true"]')
-      ?.focus();
+    const frame = requestAnimationFrame(() =>
+      formRef.current
+        ?.querySelector<HTMLElement>(
+          '[aria-invalid="true"], [data-error-focus]',
+        )
+        ?.focus(),
+    );
+    return () => cancelAnimationFrame(frame);
   }, [focusTick]);
 
-  async function submit(event?: FormEvent) {
-    event?.preventDefault();
-    if (savingRef.current) return;
-    setSubmitted(true);
-    setServerErrors({});
-    clearGroup(toastGroup);
-    if (!validation.success) {
+  const run = methods.handleSubmit(
+    async (input) => {
+      if (savingRef.current) return;
+      savingRef.current = true;
+      let result: Awaited<ReturnType<typeof save>>;
+      try {
+        result = await save(input);
+      } finally {
+        savingRef.current = false;
+      }
+      if (!result.ok) {
+        const failure = describeFailure(result, listHref);
+        applyServerErrors(
+          methods.setError as unknown as UseFormSetError<FieldValues>,
+          methods.getValues(),
+          failure.fieldErrors,
+        );
+        notify(failure.notice, toastGroup);
+        setFocusTick((tick) => tick + 1);
+        return;
+      }
+      // 저장 직후 화면이 바뀌는 경로에서도 알림이 남도록 이동 전에 먼저 띄움
+      notify({ tone: "success", message: SAVED_MESSAGE }, toastGroup);
+      const next = onSaved(result.data);
+      methods.reset(next ?? methods.getValues());
+    },
+    (errors) => {
       notify(
         {
           tone: "error",
-          message: `${Object.keys(validation.errors).length}개 항목을 확인하세요.`,
+          message: `${countErrors(errors)}개 항목을 확인하세요.`,
         },
         toastGroup,
       );
       setFocusTick((tick) => tick + 1);
-      return;
-    }
-    savingRef.current = true;
-    setSaving(true);
-    let result: Awaited<ReturnType<typeof save>>;
-    try {
-      result = await save(validation.data);
-    } finally {
-      savingRef.current = false;
-      setSaving(false);
-    }
-    if (!result.ok) {
-      const failure = describeFailure(result, listHref);
-      setServerErrors(failure.fieldErrors);
-      notify(failure.notice, toastGroup);
-      setFocusTick((tick) => tick + 1);
-      return;
-    }
-    // 저장 직후 화면이 바뀌는 경로에서도 알림이 남도록 이동 전에 먼저 띄움
-    notify({ tone: "success", message: SAVED_MESSAGE }, toastGroup);
-    const next = onSaved(result.data);
-    if (next !== undefined) setDraft(next);
-    setBaseline(JSON.stringify(next ?? draft));
-    setSubmitted(false);
+    },
+  );
+
+  async function submit(event?: FormEvent) {
+    clearGroup(toastGroup);
+    await run(event);
+  }
+
+  function discard() {
+    methods.reset();
+    clearGroup(toastGroup);
   }
 
   return {
+    methods,
     formRef,
-    errors,
-    errorCount,
+    errors: formState.errors,
+    dirty: formState.isDirty,
+    discard,
     focusTick,
-    saving,
+    saving: formState.isSubmitting,
     submit,
     leaveGuard,
     // 저장 훅 밖(업로드, 가져오기)에서 생긴 결과도 같은 폼의 알림으로 묶음

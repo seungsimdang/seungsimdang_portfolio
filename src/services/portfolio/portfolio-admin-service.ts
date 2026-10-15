@@ -16,7 +16,7 @@ import {
   type ExperienceInput,
   isValidThumbnail,
   ORDER_SLUGS_MAX,
-  type ProfileInput,
+  type ProfileUpdateInput,
   type ProjectCreateInput,
   type ProjectUpdateInput,
   RESUME_KIND_MAX,
@@ -118,7 +118,9 @@ async function loadProjectById(id: string): Promise<Project> {
   return project;
 }
 
-export async function updateProfile(input: ProfileInput): Promise<Profile> {
+export async function updateProfile(
+  input: ProfileUpdateInput,
+): Promise<Profile> {
   const [row] = await db
     .update(profile)
     .set({ ...input, updatedAt: new Date() })

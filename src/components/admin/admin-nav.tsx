@@ -4,22 +4,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils/styleUtils";
 
-// 자주 편집하는 콘텐츠를 앞에 두고 /admin 기본 이동 대상인 프로젝트를 첫 탭으로 배치
+// 공개 Navbar와 같은 순서와 라벨, home은 모든 /admin 경로의 접두이므로 정확 일치만 활성
 const LINKS = [
+  { href: "/admin", label: "home" },
   { href: "/admin/projects", label: "projects" },
-  { href: "/admin/talks", label: "talks" },
+  { href: "/admin/about", label: "about" },
   { href: "/admin/blog", label: "blog" },
-  { href: "/admin/resume", label: "resume" },
-  { href: "/admin/profile", label: "profile" },
+  { href: "/admin/talks", label: "talks" },
+  { href: "/admin/contact", label: "contact" },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="관리자" className="admin-nav-links flex flex-wrap gap-y-4">
+    <nav
+      aria-label="관리자"
+      className="flex w-full flex-wrap gap-x-16 gap-y-4 md:w-auto md:gap-x-24 lg:gap-x-48"
+    >
       {LINKS.map((link) => {
         const current =
-          pathname === link.href || pathname.startsWith(`${link.href}/`);
+          link.href === "/admin"
+            ? pathname === link.href
+            : pathname === link.href || pathname.startsWith(`${link.href}/`);
         return (
           <Link
             key={link.href}

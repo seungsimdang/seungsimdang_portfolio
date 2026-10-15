@@ -68,7 +68,11 @@ function SortableItem({
     <li className="group relative flex flex-col gap-12 px-12 py-16 transition-colors hover:bg-white/5 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0">
         <Link
-          href={`/admin/${kind}/${item.id}`}
+          href={
+            kind === "resume"
+              ? `/admin/about/resume/${item.id}`
+              : `/admin/${kind}/${item.id}`
+          }
           className="text-body break-keep underline-offset-4 after:absolute after:inset-0 group-hover:underline focus-visible:outline-2 focus-visible:outline-white"
         >
           {index + 1}. {item.title}

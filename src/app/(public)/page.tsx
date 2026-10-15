@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AboutSection } from "@/components/common/about-section";
 import { HeroSection } from "@/components/common/hero-section";
 import { ProjectCard } from "@/components/common/project-card";
 import { TalkPreview } from "@/components/common/talk-preview";
@@ -42,9 +41,6 @@ export default async function Home() {
           ))}
         </div>
       </section>
-
-      {/* About Section */}
-      <AboutSection profile={profile} />
 
       {/* Talks Section */}
       <section className="w-full max-w-content mx-auto container-padding section-spacing">
