@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { AdminNav } from "./admin-nav";
 import { SignOutButton } from "./sign-out-button";
+import { ToastProvider } from "./toast-provider";
 
 export function AdminConsoleShell({
   name,
@@ -55,14 +56,16 @@ export function AdminConsoleShell({
           <div className="h-px w-full bg-white/25" />
         </div>
       </header>
-      <main
-        id="admin-main"
-        tabIndex={-1}
-        style={{ paddingTop: headerHeight + 48 }}
-        className="container-padding mx-auto w-full max-w-content pb-48"
-      >
-        {children}
-      </main>
+      <ToastProvider>
+        <main
+          id="admin-main"
+          tabIndex={-1}
+          style={{ paddingTop: headerHeight + 48 }}
+          className="container-padding mx-auto w-full max-w-content pb-48"
+        >
+          {children}
+        </main>
+      </ToastProvider>
     </div>
   );
 }

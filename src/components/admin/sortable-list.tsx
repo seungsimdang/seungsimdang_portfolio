@@ -2,13 +2,16 @@
 
 import { HttpStatusCode } from "axios";
 import Link from "next/link";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { ResumeKind } from "@/constants/resume";
 import { adminRequest } from "@/lib/admin-client/admin-request";
 import { moveItem } from "@/lib/admin-client/draft";
 import { describeAuthFailure } from "@/lib/admin-client/use-admin-form";
+import { useLeaveConfirm } from "@/lib/admin-client/use-leave-confirm";
 import { AdminButton } from "./admin-button";
 import { ConfirmDialog } from "./confirm-dialog";
+import { LeaveDialog } from "./leave-dialog";
+import { useToast } from "./toast-provider";
 
 export interface SortableRow {
   id: string;
@@ -20,7 +23,6 @@ export interface SortableRow {
 interface SortableListProps {
   kind: "projects" | "talks" | "resume";
   items: SortableRow[];
-  initialMessage?: string;
   // resume 전용: 정렬 대상 구분, 명사, 화면의 가시 제목 id
   resumeKind?: ResumeKind;
   noun?: string;
@@ -41,82 +43,6 @@ const LABELS = {
 } as const;
 
 const RESUME_BASE = "/api/admin/resume-entries";
-
-// 미저장 변경이 있는 동안 새로고침과 링크, 뒤로가기 이동을 확인
-function useLeaveGuard(active: boolean, leavingRef: RefObject<boolean>) {
-  const ignoreNextPopRef = useRef(false);
-  useEffect(() => {
-    if (!active) return;
-    ignoreNextPopRef.current = false;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!leavingRef.current) event.preventDefault();
-    };
-    // 확인을 거친 이동은 같은 클릭의 beforeunload 경고만 건너뛰고, 페이지에 남으면 다음 tick에 경고를 되살림
-    const allowLeaving = () => {
-      leavingRef.current = true;
-      setTimeout(() => {
-        leavingRef.current = false;
-      }, 0);
-    };
-    const onClick = (event: MouseEvent) => {
-      const targetElement = event.target;
-      if (
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey ||
-        !(targetElement instanceof Element)
-      ) {
-        return;
-      }
-      const anchor = targetElement.closest("a[href]");
-      if (
-        !anchor ||
-        anchor.getAttribute("target") === "_blank" ||
-        anchor.hasAttribute("download") ||
-        anchor.getAttribute("href")?.startsWith("#")
-      ) {
-        return;
-      }
-      if (
-        !window.confirm(
-          "저장하지 않은 순서 변경이 있습니다. 변경을 버리고 이동할까요?",
-        )
-      ) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      } else {
-        allowLeaving();
-      }
-    };
-    const onPopState = () => {
-      // 취소 후 history.forward()로 되돌아오며 생긴 popstate는 다시 묻지 않음
-      if (ignoreNextPopRef.current) {
-        ignoreNextPopRef.current = false;
-        return;
-      }
-      if (
-        !window.confirm(
-          "저장하지 않은 순서 변경이 있습니다. 변경을 버리고 이동할까요?",
-        )
-      ) {
-        ignoreNextPopRef.current = true;
-        window.history.forward();
-      } else {
-        allowLeaving();
-      }
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    window.addEventListener("popstate", onPopState, true);
-    document.addEventListener("click", onClick, true);
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      window.removeEventListener("popstate", onPopState, true);
-      document.removeEventListener("click", onClick, true);
-    };
-  }, [active, leavingRef]);
-}
 
 interface SortableItemProps {
   item: SortableRow;
@@ -185,25 +111,6 @@ function SortableItem({
   );
 }
 
-function SortableError({
-  error,
-  conflict,
-  onReload,
-}: {
-  error: string;
-  conflict: boolean;
-  onReload: () => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-12">
-      <p role="alert" className="text-small">
-        오류: {error}
-      </p>
-      {conflict && <AdminButton onClick={onReload}>새로고침</AdminButton>}
-    </div>
-  );
-}
-
 function RemoveDescription({
   kind,
   target,
@@ -226,7 +133,6 @@ function RemoveDescription({
 export function SortableList({
   kind,
   items: initial,
-  initialMessage = "",
   resumeKind,
   noun,
   headingId,
@@ -241,41 +147,37 @@ export function SortableList({
     initial.map((item) => item.id),
   );
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(initialMessage);
-  const [error, setError] = useState("");
-  const [conflict, setConflict] = useState(false);
+  // 이동 안내를 스크린리더에 전달하는 문구, 작업 결과는 토스트로 알림
+  const [message, setMessage] = useState("");
+  const { notify, clearGroup } = useToast();
+  const toastGroup = useId();
   const [target, setTarget] = useState<SortableRow | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const savingRef = useRef(false);
-  const leavingRef = useRef(false);
   const dirty = items.map((item) => item.id).join("\0") !== savedIds.join("\0");
   if (initial !== previousInitial) {
     setPreviousInitial(initial);
     if (!dirty) {
       setItems(initial);
       setSavedIds(initial.map((item) => item.id));
-      setError("");
-      setConflict(false);
     }
   }
 
-  useLeaveGuard(dirty || busy, leavingRef);
+  const leaveGuard = useLeaveConfirm(dirty || busy, { guardBack: true });
 
   function move(index: number, delta: -1 | 1) {
     setItems((current) => moveItem(current, index, delta));
     setMessage(
       `${items[index].title}을 ${index + delta + 1}번째로 이동했습니다.`,
     );
-    setError("");
-    setConflict(false);
+    clearGroup(toastGroup);
   }
 
   async function saveOrder() {
     if (!dirty || items.length < 2 || savingRef.current) return;
     savingRef.current = true;
     setBusy(true);
-    setError("");
-    setConflict(false);
+    clearGroup(toastGroup);
     try {
       const ids = items.map((item) => item.id);
       const result =
@@ -289,18 +191,37 @@ export function SortableList({
             });
       if (result.ok) {
         setSavedIds(items.map((item) => item.id));
-        setMessage("순서를 저장했습니다.");
+        notify(
+          { tone: "success", message: "순서를 저장했습니다." },
+          toastGroup,
+        );
         return;
       }
       if (result.code === "ORDER_MISMATCH") {
-        setConflict(true);
-        setError(
-          "다른 곳에서 목록이 변경되었습니다. 새로고침한 뒤 다시 시도하세요.",
+        notify(
+          {
+            tone: "error",
+            message:
+              "다른 곳에서 목록이 변경되었습니다. 새로고침한 뒤 다시 시도하세요.",
+            action: {
+              label: "새로고침",
+              onClick: () => {
+                leaveGuard.leavingRef.current = true;
+                window.location.reload();
+              },
+            },
+          },
+          toastGroup,
         );
       } else {
-        setError(
-          describeAuthFailure(result) ??
-            "순서를 저장하지 못했습니다. 잠시 후 다시 시도하세요.",
+        notify(
+          {
+            tone: "error",
+            message:
+              describeAuthFailure(result) ??
+              "순서를 저장하지 못했습니다. 잠시 후 다시 시도하세요.",
+          },
+          toastGroup,
         );
       }
     } finally {
@@ -326,9 +247,11 @@ export function SortableList({
     if (result.ok || result.status === HttpStatusCode.NotFound) {
       setItems((current) => current.filter((item) => item.id !== row.id));
       setSavedIds((current) => current.filter((id) => id !== row.id));
-      setMessage(`${row.title}을 삭제했습니다.`);
-      setError("");
-      setConflict(false);
+      setMessage("");
+      notify(
+        { tone: "success", message: `${row.title}을 삭제했습니다.` },
+        toastGroup,
+      );
       (headingId
         ? document.getElementById(headingId)
         : headingRef.current
@@ -364,16 +287,6 @@ export function SortableList({
           </AdminButton>
         </div>
       )}
-      {error && (
-        <SortableError
-          error={error}
-          conflict={conflict}
-          onReload={() => {
-            leavingRef.current = true;
-            window.location.reload();
-          }}
-        />
-      )}
       {items.length === 0 ? (
         <>
           <p className="text-body opacity-70">{label.empty}</p>
@@ -399,6 +312,10 @@ export function SortableList({
           ))}
         </ol>
       )}
+      <LeaveDialog
+        guard={leaveGuard}
+        description="저장하지 않은 순서 변경이 있습니다. 변경을 버리고 이동할까요?"
+      />
       <ConfirmDialog
         open={target !== null}
         title={`${target?.title ?? ""}을 삭제할까요?`}

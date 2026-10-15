@@ -7,7 +7,8 @@ import { useAdminForm } from "@/lib/admin-client/use-admin-form";
 import { validateWith } from "@/lib/admin-client/validate";
 import { profileInputSchema } from "@/schemas/portfolio.schema";
 import type { Profile } from "@/types/portfolio";
-import { FormActionBar, FormStatus } from "./form-parts";
+import { FormActionBar } from "./form-parts";
+import { LeaveDialog } from "./leave-dialog";
 import { StringListEditor } from "./string-list-editor";
 import { TextAreaField, TextField } from "./text-fields";
 
@@ -62,7 +63,6 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       onSubmit={form.submit}
       className="space-y-24"
     >
-      <FormStatus notice={form.notice} />
       <TextField
         id="profile-name"
         label="이름"
@@ -133,11 +133,8 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         errors={errors}
         path="tools"
       />
-      <FormActionBar
-        saving={form.saving}
-        notice={form.notice}
-        cancelHref="/admin"
-      />
+      <FormActionBar saving={form.saving} cancelHref="/admin" />
+      <LeaveDialog guard={form.leaveGuard} />
     </form>
   );
 }

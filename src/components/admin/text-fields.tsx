@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { describedBy } from "@/lib/admin-client/described-by";
+import { cn } from "@/utils/styleUtils";
 
 export const inputClassName =
   "min-h-44 w-full rounded-md border border-white/25 bg-transparent px-12 py-8 text-body text-white focus-visible:outline-2 focus-visible:outline-white aria-invalid:border-2 aria-invalid:border-white read-only:opacity-70";
@@ -21,8 +22,14 @@ export function FieldShell({
   hint,
   error,
   counter,
+  counterOver,
   children,
-}: FieldProps & { counter?: string; children: ReactNode }) {
+}: FieldProps & {
+  counter?: string;
+  // 글자 수가 상한을 넘은 상태, 필드 오류 문구와 함께 표시
+  counterOver?: boolean;
+  children: ReactNode;
+}) {
   return (
     <div className="space-y-8">
       <label htmlFor={id} className="block text-small">
@@ -35,7 +42,16 @@ export function FieldShell({
           {hint}
         </p>
       )}
-      {counter && <p className="text-small opacity-50">{counter}</p>}
+      {counter && (
+        <p
+          className={cn(
+            "text-small",
+            counterOver ? "text-danger" : "opacity-50",
+          )}
+        >
+          {counter}
+        </p>
+      )}
       {error && (
         <p id={`${id}-error`} className="text-small">
           오류: {error}

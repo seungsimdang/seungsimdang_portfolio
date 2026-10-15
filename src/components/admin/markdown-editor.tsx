@@ -1,15 +1,15 @@
 "use client";
 
 import { HttpStatusCode } from "axios";
-import { useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { MarkdownBody } from "@/components/common/markdown-body";
 import { describedBy } from "@/lib/admin-client/described-by";
 import { insertImageMarkdown } from "@/lib/admin-client/post-editing";
-import type { Notice } from "@/lib/admin-client/use-admin-form";
 import { renderMarkdown } from "@/lib/markdown/render-markdown";
 import { cn } from "@/utils/styleUtils";
 import { AdminButton } from "./admin-button";
 import { FieldShell, inputClassName } from "./text-fields";
+import type { Notice } from "./toast-provider";
 
 const IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 const IMAGE_MIME: Record<string, string> = {
@@ -22,6 +22,13 @@ const IMAGE_MIME: Record<string, string> = {
 const FORMAT_ERROR = "PNG, JPG, WebP, GIF 파일만 올릴 수 있습니다.";
 const UPLOAD_FAILED = "이미지를 올리지 못했습니다. 다시 시도하세요.";
 
+type EditorTab = "write" | "preview";
+
+const TABS: { key: EditorTab; label: string }[] = [
+  { key: "write", label: "작성" },
+  { key: "preview", label: "미리보기" },
+];
+
 interface UploadResult {
   data?: { url?: string; fieldErrors?: Record<string, string> };
 }
@@ -31,7 +38,8 @@ interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
-  hint: string;
+  // 서버 검증과 같은 문자열 길이 기준의 상한
+  maxLength: number;
   saving: boolean;
   onNotice: (notice: Notice) => void;
   onUploadStateChange: (uploading: boolean) => void;
@@ -43,7 +51,7 @@ export function MarkdownEditor({
   value,
   onChange,
   error,
-  hint,
+  maxLength,
   saving,
   onNotice,
   onUploadStateChange,
@@ -52,7 +60,9 @@ export function MarkdownEditor({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadingRef = useRef(false);
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState(false);
+  const [tab, setTab] = useState<EditorTab>("write");
+  // 비동기 업로드 완료 시점의 탭을 읽기 위한 참조
+  const tabRef = useRef<EditorTab>("write");
   // 업로드 시작 시점의 커서, 포커스가 버튼으로 옮겨져도 유지
   const savedPosition = useRef<number | null>(null);
   // 비동기 업로드가 끝난 시점의 최신 본문을 읽기 위한 참조
@@ -78,7 +88,8 @@ export function MarkdownEditor({
     onChange(next.text);
     // 값 반영 뒤 커서 이동과 포커스 복귀
     requestAnimationFrame(() => {
-      textarea?.focus();
+      // 미리보기 탭에서는 숨겨진 textarea로 포커스를 옮기지 않음
+      if (tabRef.current === "write") textarea?.focus();
       textarea?.setSelectionRange(next.cursor, next.cursor);
     });
   }
@@ -144,16 +155,65 @@ export function MarkdownEditor({
     }
   }
 
+  const tabId = (key: EditorTab) => `${id}-tab-${key}`;
+  const panelId = (key: EditorTab) => `${id}-panel-${key}`;
+
+  function selectTab(key: EditorTab, moveFocus: boolean) {
+    tabRef.current = key;
+    setTab(key);
+    if (moveFocus) document.getElementById(tabId(key))?.focus();
+  }
+
+  // 방향키 이동이 곧 선택, 탭이 둘뿐이라 좌우는 서로 순환
+  function onTabKeyDown(event: KeyboardEvent) {
+    const other = tab === "write" ? "preview" : "write";
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      selectTab(other, true);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      selectTab("write", true);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      selectTab("preview", true);
+    }
+  }
+
   return (
     <FieldShell
       id={id}
       label="본문"
       required
-      hint={hint}
       error={error}
-      counter={`${value.length}자`}
+      counter={`${value.length.toLocaleString("ko-KR")} / ${maxLength.toLocaleString("ko-KR")}자`}
+      counterOver={value.length > maxLength}
     >
-      <div className="flex flex-wrap items-center gap-8">
+      <div className="flex flex-wrap items-center justify-between gap-x-16 gap-y-8">
+        <div
+          role="tablist"
+          aria-label="본문 편집 방식"
+          className="flex gap-16"
+          onKeyDown={onTabKeyDown}
+        >
+          {TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              id={tabId(key)}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              aria-controls={panelId(key)}
+              tabIndex={tab === key ? 0 : -1}
+              onClick={() => selectTab(key, false)}
+              className={cn(
+                "flex min-h-44 items-center text-sm underline-offset-8 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-white",
+                tab === key ? "underline opacity-100" : "opacity-50",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <AdminButton disabled={uploading || saving} onClick={openFilePicker}>
           {uploading ? "업로드 중..." : "이미지 삽입"}
         </AdminButton>
@@ -169,45 +229,43 @@ export function MarkdownEditor({
             if (file) void upload(file);
           }}
         />
-        <div className="ml-auto flex gap-8">
-          <AdminButton
-            variant={preview ? "secondary" : "primary"}
-            aria-pressed={!preview}
-            onClick={() => setPreview(false)}
-          >
-            작성
-          </AdminButton>
-          <AdminButton
-            variant={preview ? "primary" : "secondary"}
-            aria-pressed={preview}
-            onClick={() => setPreview(true)}
-          >
-            미리보기
-          </AdminButton>
-        </div>
       </div>
-      <textarea
-        ref={textareaRef}
-        id={id}
-        value={value}
-        rows={24}
-        hidden={preview}
-        required
-        aria-required
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy(id, hint, error)}
-        onChange={(event) => onChange(event.target.value)}
-        className={cn(inputClassName, "min-h-320 resize-y font-mono")}
-      />
-      {preview && (
-        <div className="min-h-320 rounded-md border border-white/25 p-16">
-          {value.trim() ? (
+      {/* 값과 커서, 스크롤이 보존되도록 작성 패널은 숨기기만 하고 언마운트하지 않음 */}
+      <div
+        role="tabpanel"
+        id={panelId("write")}
+        aria-labelledby={tabId("write")}
+        hidden={tab !== "write"}
+      >
+        <textarea
+          ref={textareaRef}
+          id={id}
+          value={value}
+          rows={24}
+          required
+          aria-required
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(id, undefined, error)}
+          onChange={(event) => onChange(event.target.value)}
+          className={cn(inputClassName, "min-h-320 resize-y font-mono")}
+        />
+      </div>
+      <div
+        role="tabpanel"
+        id={panelId("preview")}
+        aria-labelledby={tabId("preview")}
+        hidden={tab !== "preview"}
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: 패널 안에 포커스 가능한 요소가 없을 때 키보드로 닿도록 함
+        tabIndex={0}
+        className="min-h-320 rounded-md border border-white/25 p-16 focus-visible:outline-2 focus-visible:outline-white"
+      >
+        {tab === "preview" &&
+          (value.trim() ? (
             <MarkdownBody>{renderMarkdown(value)}</MarkdownBody>
           ) : (
             <p className="text-small opacity-70">미리볼 내용이 없습니다.</p>
-          )}
-        </div>
-      )}
+          ))}
+      </div>
     </FieldShell>
   );
 }

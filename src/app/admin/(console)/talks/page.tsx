@@ -6,29 +6,21 @@ import { requireAdminPage } from "@/lib/auth/require-admin";
 import { listTechTalks } from "@/services/portfolio/portfolio-service";
 
 export const metadata: Metadata = {
-  title: { absolute: "발표 - admin" },
+  title: { absolute: "talks - admin" },
 };
 
-interface TalksPageProps {
-  searchParams: Promise<{ deleted?: string }>;
-}
-
-export default async function AdminTalksPage({ searchParams }: TalksPageProps) {
+export default async function AdminTalksPage() {
   await requireAdminPage();
-  const [{ deleted }, talks] = await Promise.all([
-    searchParams,
-    listTechTalks(),
-  ]);
+  const talks = await listTechTalks();
   return (
     <>
-      <AdminPageHeader title="발표">
+      <AdminPageHeader title="talks">
         <AdminButton href="/admin/talks/new" variant="primary">
           새 발표
         </AdminButton>
       </AdminPageHeader>
       <SortableList
         kind="talks"
-        initialMessage={deleted ? "삭제했습니다." : ""}
         items={talks.map((talk) => ({
           id: talk.slug,
           title: talk.title,
