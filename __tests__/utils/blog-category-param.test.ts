@@ -1,10 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("server-only", () => ({}));
-vi.mock("@/db", () => ({ db: {} }));
+import { describe, expect, it } from "vitest";
 
 import { POST_LABEL_MAX } from "@/constants/blog";
-import { normalizeCategoryParam } from "@/services/blog/blog-service";
+import { normalizeCategoryParam } from "@/utils/blog-query-params";
 
 describe("normalizeCategoryParam", () => {
   it("앞뒤 공백을 걷어 낸다", () => {

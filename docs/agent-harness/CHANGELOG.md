@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-15 - 재리뷰 확인 훅 삭제
+
+사용자 지시로 `confirm-repeated-review.sh`(Claude·Codex)와 `.claude/settings.json`, `.codex/hooks.json`의 등록, `__tests__/lint/runtime-hooks.test.ts`의 관련 사례를 삭제했다. blog-search 사이클에서 산출물을 `artifacts/task-team/` 최상위에 두자 프롬프트 경로로 사이클을 찾지 못하고 가장 최근 하위 폴더(admin-tabs-by-page)의 리뷰 5개를 세어 2차 리뷰 스폰에 확인 요청을 띄웠다. 재리뷰 범위와 재작업 기준은 `task-team-orchestrator` 9-1·11번 규칙으로만 관리한다.
+
 ## 2026-10-15 - 재리뷰 확인 훅 사이클 판단을 스폰 프롬프트 기준으로 변경
 
 `confirm-repeated-review.sh`(Claude·Codex)가 `$CLAUDE_PROJECT_DIR/artifacts/task-team/`에서 가장 최근에 바뀐 하위 폴더를 현재 사이클로 세어, 메인 체크아웃을 다른 세션이 쓰는 동안 `/private/tmp` worktree에서 진행한 사이클(admin-blog-md-template)의 3번째 리뷰 스폰에 이전 사이클(admin-tabs-by-page)의 리뷰 5개를 근거로 확인 요청을 띄웠다. 스폰 프롬프트의 `tool_input.prompt`(Codex는 `message`도 확인)에 적힌 리뷰 저장 경로(`.../artifacts/task-team/<work-id>/{code,security}-review-N.md`)로 사이클 폴더를 먼저 정하고, 저장 경로가 없으면 처음 나온 사이클 경로, 둘 다 없거나 폴더가 없으면 기존 수정 시각 기준으로 센다. 절대 경로는 그대로, 상대 경로는 프로젝트 폴더 기준으로 해석한다. 확인 요청 사유에 센 폴더 경로를 넣었다. `__tests__/lint/runtime-hooks.test.ts`에 프로젝트 밖 사이클 우선, 상대 경로, 경로 없음 폴백 사례를 추가했다. Codex `spawn_agent`의 프롬프트 필드 이름은 이 저장소에서 확인하지 못해 `message`는 미검증이다.

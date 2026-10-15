@@ -112,10 +112,6 @@
           {
             "type": "command",
             "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-fork-spawn.sh\""
-          },
-          {
-            "type": "command",
-            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/confirm-repeated-review.sh\""
           }
         ]
       },

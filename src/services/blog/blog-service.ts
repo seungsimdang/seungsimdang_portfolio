@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, count, desc, eq, gt, lt, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, lt, or, sql } from "drizzle-orm";
 import { cache } from "react";
-import { POST_LABEL_MAX } from "@/constants/blog";
+import { POST_SEARCH_TIMEOUT_MS } from "@/constants/blog";
 import { db } from "@/db";
 import { posts } from "@/db/schema/portfolio";
 import type {
@@ -11,6 +11,7 @@ import type {
   PostPage,
   PostSummary,
 } from "@/types/blog";
+import { escapeLikePattern } from "@/utils/blog-query-params";
 
 type PostRow = typeof posts.$inferSelect;
 
@@ -30,54 +31,63 @@ export function toPost(row: PostRow): Post {
   return { ...toPostSummary(row), content: row.content };
 }
 
-// 배열이면 첫 값을 쓰고 1-999999 범위의 정수가 아니면 1페이지로 취급함
-export function parsePageParam(raw: string | string[] | undefined): number {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  return value && /^[1-9]\d{0,5}$/.test(value) ? Number(value) : 1;
+// neon-http는 쿼리마다 별도 HTTP 요청이라 세션 SET이 유지되지 않음
+// batch가 한 트랜잭션으로 실행되므로 set_config의 is_local=true(SET LOCAL과 같음)가 뒤따르는 쿼리에만 적용됨
+// 시간 초과는 PG 57014 오류로 던져짐
+// Route Handler 경로는 500으로 응답하고 클라이언트는 5xx를 재시도하지 않음
+// 서버 페이지 경로는 QueriesHydration이 fetchQuery 실패를 잡아 skipSsrOnError 기본값에 따라 ClientOnly로 폴백하고 클라이언트 조회로 넘어감
+function searchTimeout() {
+  return db.execute(
+    sql`select set_config('statement_timeout', ${String(POST_SEARCH_TIMEOUT_MS)}, true)`,
+  );
 }
 
-// 공개와 admin 페이지가 공유하는 category 쿼리 해석 지점
-// 배열이면 첫 값을 쓰고 trim 후 NFC로 정규화함
-// 빈 값이나 라벨 길이 상한 초과는 필터 없음으로 취급함
-export function normalizeCategoryParam(
-  raw: string | string[] | undefined,
-): string | undefined {
-  const value = (Array.isArray(raw) ? raw[0] : raw)?.trim().normalize("NFC");
-  return value && value.length <= POST_LABEL_MAX ? value : undefined;
-}
-
-// category는 normalizeCategoryParam을 거친 값만 받음
+// category는 normalizeCategoryParam, query는 normalizeSearchQuery를 거친 값만 받음
+// query는 이스케이프 전 값이며 LIKE 메타문자 처리는 여기서만 하고 값은 바인딩 파라미터로 전달됨
+// 제목과 본문 구절 일치이며 content는 select하지 않음
 export const listPosts = cache(
   async (
     page: number,
     pageSize: number,
     category?: string,
+    query?: string,
   ): Promise<PostPage> => {
-    const where = category
+    const categoryCondition = category
       ? sql`${posts.categories} @> array[${category}]::text[]`
       : undefined;
-    const [{ total = 0 } = {}] = await db
-      .select({ total: count() })
-      .from(posts)
-      .where(where);
+    const trimmedQuery = query?.trim();
+    const pattern = trimmedQuery
+      ? `%${escapeLikePattern(trimmedQuery)}%`
+      : undefined;
+    const searchCondition = pattern
+      ? or(ilike(posts.title, pattern), ilike(posts.content, pattern))
+      : undefined;
+    const where = and(categoryCondition, searchCondition);
+    const countQuery = db.select({ total: count() }).from(posts).where(where);
+    const [{ total = 0 } = {}] = pattern
+      ? (await db.batch([searchTimeout(), countQuery]))[1]
+      : await countQuery;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const current = Math.min(Math.max(1, page), totalPages);
-    const rows =
-      total === 0
-        ? []
-        : await db
-            .select({
-              slug: posts.slug,
-              title: posts.title,
-              publishedAt: posts.publishedAt,
-              categories: posts.categories,
-              tags: posts.tags,
-            })
-            .from(posts)
-            .where(where)
-            .orderBy(desc(posts.publishedAt), desc(posts.slug))
-            .limit(pageSize)
-            .offset((current - 1) * pageSize);
+    const rowsQuery = db
+      .select({
+        slug: posts.slug,
+        title: posts.title,
+        publishedAt: posts.publishedAt,
+        categories: posts.categories,
+        tags: posts.tags,
+      })
+      .from(posts)
+      .where(where)
+      .orderBy(desc(posts.publishedAt), desc(posts.slug))
+      .limit(pageSize)
+      .offset((current - 1) * pageSize);
+    let rows: Awaited<typeof rowsQuery> = [];
+    if (total > 0) {
+      rows = pattern
+        ? (await db.batch([searchTimeout(), rowsQuery]))[1]
+        : await rowsQuery;
+    }
     return {
       items: rows.map(toPostSummary),
       total,
