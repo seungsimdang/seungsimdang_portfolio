@@ -32,7 +32,7 @@ export function CategoryTabs({
   return (
     <nav
       aria-label="카테고리"
-      className="flex flex-wrap gap-x-16 gap-y-4 text-small md:gap-y-8"
+      className="flex flex-wrap gap-x-16 gap-y-4 text-small md:gap-y-16"
     >
       {items.map((item) => (
         <Link
