@@ -40,9 +40,10 @@ test("글 상세에는 상단 목록 링크만 있고 하단 목록 링크가 �
   const response = await page.goto(`/blog/${first.slug}`);
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(first.title);
-  await expect(page.getByRole("link", { name: "blog 목록으로" })).toHaveCount(
-    1,
-  );
+  // 상단 Navbar에도 같은 이름의 blog 링크가 있어 글 본문 영역만 셈
+  await expect(
+    page.getByRole("article").getByRole("link", { name: "blog", exact: true }),
+  ).toHaveCount(1);
 });
 
 test("중간 글은 이전(더 오래된)과 다음(더 최신) 글 링크를 둘 다 가진다", async ({
