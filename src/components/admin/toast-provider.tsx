@@ -217,7 +217,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <section
         aria-label="알림"
-        className="pointer-events-none fixed inset-x-16 bottom-96 z-40 flex flex-col gap-8 md:right-24 md:left-auto md:w-full md:max-w-480"
+        className="pointer-events-none fixed inset-x-16 bottom-[calc(var(--admin-action-bar-h,80px)+16px)] z-40 flex flex-col gap-8 md:right-24 md:left-auto md:w-full md:max-w-480"
       >
         {entries.map((entry) => (
           <ToastItem key={entry.renderKey} entry={entry} onDismiss={dismiss} />

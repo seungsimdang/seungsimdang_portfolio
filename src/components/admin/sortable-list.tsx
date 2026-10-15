@@ -206,7 +206,8 @@ export function SortableList({
             action: {
               label: "새로고침",
               onClick: () => {
-                leaveGuard.leavingRef.current = true;
+                // 새로고침이 일어나지 않아도 상한 시간 뒤 우회 해제
+                leaveGuard.allowLeaving();
                 window.location.reload();
               },
             },

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { AdminButton } from "./admin-button";
 
 interface FormActionBarProps {
@@ -23,8 +24,27 @@ export function FormActionBar({
   busyMessage,
   saveDisabled,
 }: FormActionBarProps) {
+  // 업로드 문구 등으로 바가 여러 줄이 돼도 토스트가 실제 높이 위에 뜨도록 높이를 CSS 변수로 노출
+  const barRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = barRef.current;
+    if (!node) return;
+    const root = document.documentElement;
+    const sync = () =>
+      root.style.setProperty("--admin-action-bar-h", `${node.offsetHeight}px`);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--admin-action-bar-h");
+    };
+  }, []);
   return (
-    <div className="sticky bottom-0 flex flex-wrap items-center gap-8 border-t border-white/25 bg-black py-16">
+    <div
+      ref={barRef}
+      className="sticky bottom-0 flex flex-wrap items-center gap-8 border-t border-white/25 bg-black py-16"
+    >
       <AdminButton
         type="submit"
         variant="primary"

@@ -30,6 +30,7 @@ export function useLeaveConfirm(
   const leavingRef = useRef(false);
   const bypassClickRef = useRef(false);
   const bypassPopRef = useRef(false);
+  const bypassKeyRef = useRef<string | null>(null);
 
   const request = useCallback((next: PendingLeave | null) => {
     pendingRef.current = next;
@@ -97,7 +98,11 @@ export function useLeaveConfirm(
       ) {
         return;
       }
-      if (bypassPopRef.current) {
+      // 확인한 목적 항목의 이동만 우회를 소비하고, 연타한 다른 기록 이동은 다시 확인을 거침
+      if (
+        bypassPopRef.current &&
+        event.destination.key === bypassKeyRef.current
+      ) {
         bypassPopRef.current = false;
         return;
       }
@@ -129,13 +134,14 @@ export function useLeaveConfirm(
         current.anchor.click();
       } finally {
         bypassClickRef.current = false;
+        // 문서 이동의 beforeunload는 클릭 처리 중에 끝나므로 라우터 이동이 남아도 우회는 여기서 종료
+        endLeaving();
       }
-      // 문서 이동의 beforeunload는 클릭 처리 중에 끝나므로 라우터 이동이 남아도 우회는 여기서 종료
-      endLeaving();
       return null;
     }
     allowLeaving();
     bypassPopRef.current = true;
+    bypassKeyRef.current = current.targetKey;
     const result = getNavigation()?.traverseTo(current.targetKey);
     if (!result) {
       endLeaving();
@@ -152,6 +158,6 @@ export function useLeaveConfirm(
     open: pending !== null,
     proceed,
     stay: () => request(null),
-    leavingRef,
+    allowLeaving,
   };
 }
