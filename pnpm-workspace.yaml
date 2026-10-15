@@ -8,3 +8,8 @@ trustPolicyExclude:
   - semver@6.3.1
   # next-auth v4가 요구하는 jose 4.x 계열의 provenance 부재와 major 교차 비교 충돌: pnpm/pnpm#10202
   - jose@4.15.9
+overrides:
+  # next 16.3.8이 고정한 sharp 0.35.4의 librsvg 취약점(CVE-2026-96889) 회피
+  sharp: ">=0.35.5"
+  # postcss 의존 source-map-js 1.2.1의 취약점(GHSA-68fv-2mgg-jv7q) 회피
+  source-map-js: ">=1.2.2"
