@@ -10,6 +10,10 @@ Codex는 파일 편집을 `apply_patch`로 실행하고 훅에 `tool_input.comma
 - `__tests__/lint/runtime-hooks.test.ts`에 어댑터 경유 판정 테스트를 추가했다. 실제 Codex 런타임에서 훅 신뢰 절차를 거친 실행 검증은 하지 않았다.
 - `block-reask-after-free-text-answer.sh`(AskUserQuestion)는 Codex에 대응 도구가 없어 Claude 전용으로 둔다. Codex `spawn_agent`에는 `isolation` 인자와 `fork` 유형이 없어 `require-isolation-when-dirty.sh`·`block-fork-spawn.sh`·`orchestrator-no-worktree.sh`는 Codex에서 판정 대상이 생기지 않는다.
 
+## 2026-10-15 - 주석 내용 기준 추가
+
+`docs/agent-rules/project-structure.md`에 주석 내용 기준(왜를 쓰고 무엇은 쓰지 않음, JSDoc은 export API에만, 빈 catch·의도적 통과의 이유, TODO 근거)을 추가했다. Google Engineering Practices 리뷰 기준과 Google C++·JavaScript Style Guide의 주석 항목을 근거로 했다. 내용 판단이라 검사기 대신 리뷰에서 확인한다.
+
 ## 2026-10-13 - AskUserQuestion 재질문 차단 훅의 peer 메시지 턴 오탐 수정
 
 `block-reask-after-free-text-answer.sh`는 사용자 메시지가 들어오면 직접 입력 상태를 초기화하는데, `isMeta`인 항목은 건너뛰었다. 다른 세션 메시지와 subagent hand-back은 `isMeta: true`, `origin.kind: "peer"`로 기록되면서도 새 턴을 시작하므로, 그 턴에서도 이전 직접 입력 답변이 남아 몇 턴 뒤의 AskUserQuestion까지 차단했다. `origin.kind == "peer"` 항목도 초기화 대상에 넣고, 해당 경우를 `__tests__/lint/runtime-hooks.test.ts`에 추가했다.
