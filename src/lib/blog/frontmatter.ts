@@ -4,8 +4,10 @@ interface PostFrontmatter {
   title?: string;
   categories?: string[]; // 문자열 단일 값은 배열로 승격
   tags?: string[];
-  published?: boolean;
   date?: string; // "YYYY-MM-DD"로 정규화 가능한 경우만
+  // 원본이 published: false(boolean)였던 경우에만 true이고 그 외에는 키 없음
+  // boolean이 아닌 값은 알 수 없는 키처럼 무시함
+  unpublished?: true;
 }
 
 export interface ParsedPost {
@@ -77,12 +79,7 @@ export function parsePostMarkdown(raw: string): ParsedPost {
     if (list === null) return fail(`${key} 형식이 올바르지 않습니다`);
     if (list) frontmatter[key] = list;
   }
-  if (source.published !== undefined && source.published !== null) {
-    if (typeof source.published !== "boolean") {
-      return fail("published 형식이 올바르지 않습니다");
-    }
-    frontmatter.published = source.published;
-  }
+  if (source.published === false) frontmatter.unpublished = true;
   const date = toDate(source.date);
   if (date) frontmatter.date = date;
 

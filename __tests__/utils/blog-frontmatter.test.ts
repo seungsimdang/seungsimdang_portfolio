@@ -11,7 +11,7 @@ describe("parsePostMarkdown", () => {
       title: "제목",
       categories: ["a", "b"],
       tags: ["x"],
-      published: false,
+      unpublished: true,
     });
     expect(result.body).toBe("본문");
   });
@@ -69,11 +69,16 @@ describe("parsePostMarkdown", () => {
 
   it.each([
     ["title이 객체", "title: {a: 1}"],
-    ["published가 문자열", "published: yes-please"],
     ["tags에 객체", "tags: [{a: 1}]"],
     ["최상위가 배열", "- a\n- b"],
   ])("%s이면 오류다", (_name, yaml) => {
     expect(parsePostMarkdown(`---\n${yaml}\n---\nb`).error).toBeTruthy();
+  });
+
+  it("boolean이 아닌 published는 오류 없이 무시한다", () => {
+    const result = parsePostMarkdown("---\npublished: yes-please\n---\nb");
+    expect(result.error).toBeUndefined();
+    expect(result.frontmatter).toEqual({});
   });
 
   it("BOM과 CRLF를 흡수한다", () => {
