@@ -4,6 +4,8 @@
   --background: #000000;
   --foreground: #ffffff;
   --danger: #ff6b6b;
+  /* admin 저장바가 있으면 실제 높이 위 16px, 없으면 화면 하단에서 96px */
+  --admin-toast-bottom: calc(var(--admin-action-bar-h, 80px) + 16px);
 }
 
 @theme inline {
