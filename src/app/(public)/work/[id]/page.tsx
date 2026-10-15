@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { BackLink } from "@/components/common/back-link";
 import { ExternalLink } from "@/components/common/external-link";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,7 +88,7 @@ function TradeoffRow({ tradeoff }: { tradeoff: Experience["tradeoff"] }) {
 function ExperienceSection({ experience }: { experience: Experience }) {
   return (
     <section className="w-full max-w-content mx-auto container-padding py-48 md:py-64 lg:py-80">
-      <div className="space-y-48 md:space-y-64">
+      <div className="mx-auto max-w-800 space-y-48 md:space-y-64">
         <h2 className="text-h3 break-keep">{experience.title}</h2>
         <div className="space-y-24 md:space-y-32">
           <TextRow label=".problem" text={experience.problem} />
@@ -121,14 +121,9 @@ export default async function WorkPage({ params }: WorkPageProps) {
   return (
     <div className="w-full min-h-screen bg-black text-white">
       <section className="w-full max-w-content mx-auto container-padding pt-80 md:pt-120 lg:pt-160 pb-48 md:pb-64 lg:pb-80">
-        <div className="space-y-32 md:space-y-48">
-          <Link
-            href="/projects"
-            className="text-small opacity-50 hover:opacity-100 transition-opacity focus-visible:outline-2 focus-visible:outline-white"
-          >
-            <span aria-hidden="true">← </span>projects
-          </Link>
-          <h1 className="text-h1 max-w-heading break-keep">{project.title}</h1>
+        <div className="mx-auto max-w-800 space-y-32 md:space-y-48">
+          <BackLink href="/projects" label="projects" />
+          <h1 className="text-h1 break-keep">{project.title}</h1>
           <p className="flex flex-wrap gap-x-16 text-small opacity-70">
             <span>{project.period}</span>
             <span aria-hidden="true">·</span>
