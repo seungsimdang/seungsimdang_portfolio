@@ -81,6 +81,23 @@ describe("parsePostMarkdown", () => {
     expect(result.frontmatter).toEqual({});
   });
 
+  it('문자열 "false"와 숫자 0은 비공개로 보지 않는다', () => {
+    for (const value of ['"false"', "0", "no"]) {
+      const result = parsePostMarkdown(`---\npublished: ${value}\n---\nb`);
+      expect(result.error).toBeUndefined();
+      expect(result.frontmatter.unpublished).toBeUndefined();
+    }
+  });
+
+  it("published가 true이거나 없으면 unpublished 키가 없다", () => {
+    expect(
+      parsePostMarkdown("---\npublished: true\n---\nb").frontmatter,
+    ).toEqual({});
+    expect(parsePostMarkdown("---\ntitle: t\n---\nb").frontmatter).toEqual({
+      title: "t",
+    });
+  });
+
   it("BOM과 CRLF를 흡수한다", () => {
     const result = parsePostMarkdown("﻿---\r\ntitle: 제목\r\n---\r\n본문\r\n줄");
     expect(result.frontmatter.title).toBe("제목");
