@@ -356,6 +356,90 @@ test("클로드 전용 훅이 리뷰 누락과 영어 응답을 검출한다", (
   }
 });
 
+test("코덱스 어댑터가 apply_patch와 spawn_agent 입력을 같은 훅 판정으로 변환한다", () => {
+  const adapt = (hook: string, input: object, cwd = process.cwd()) =>
+    spawnSync("node", [resolve(".codex/hooks/codex-tool-adapter.mjs"), hook], {
+      cwd,
+      input: JSON.stringify(input),
+      encoding: "utf8",
+      env: { ...env, CLAUDE_PROJECT_DIR: cwd },
+    });
+  const patch = (body: string) => ({
+    tool_name: "apply_patch",
+    tool_input: { command: `*** Begin Patch\n${body}\n*** End Patch` },
+  });
+  expect(
+    adapt(
+      "block-em-dash-in-source",
+      patch('*** Add File: src/app/sample.ts\n+export const v = "bad — text";'),
+    ).status,
+  ).toBe(2);
+  expect(
+    adapt(
+      "block-em-dash-in-source",
+      patch(
+        '*** Update File: src/app/sample.ts\n@@\n-export const v = "a";\n+export const v = "bad — text";',
+      ),
+    ).status,
+  ).toBe(2);
+  expect(
+    adapt(
+      "block-em-dash-in-source",
+      patch('*** Add File: src/app/sample.ts\n+export const v = "정상";'),
+    ).status,
+  ).toBe(0);
+  expect(
+    adapt(
+      "block-comment-line-wrap",
+      patch(
+        "*** Add File: src/app/sample.ts\n+// 캐시 키는\n+// 세션과 경로로 구성함",
+      ),
+    ).status,
+  ).toBe(2);
+  expect(
+    adapt(
+      "require-coderabbit-run",
+      patch("*** Add File: artifacts/task-team/code-review-1.md\n+# 검토 결과"),
+    ).status,
+  ).toBe(2);
+  const session = `report-gate-adapter-${process.pid}`;
+  run(".codex", "confirm-edit-on-report-request", {
+    hook_event_name: "UserPromptSubmit",
+    session_id: session,
+    prompt: "훅 강제 필요한지 판단하여 보고해",
+  });
+  const gated = adapt("confirm-edit-on-report-request", {
+    hook_event_name: "PreToolUse",
+    session_id: session,
+    ...patch("*** Delete File: /repo/src/app/page.tsx"),
+  });
+  expect(JSON.parse(gated.stdout).hookSpecificOutput.permissionDecision).toBe(
+    "deny",
+  );
+  const stop = run(".codex", "require-korean-response", {
+    last_assistant_message:
+      "This response describes the complete implementation and verification results in English.",
+  });
+  expect(JSON.parse(stop.stdout).decision).toBe("block");
+  const fixture = mkdtempSync(join(tmpdir(), "portfolio-codex-review-"));
+  try {
+    const directory = join(fixture, "artifacts/task-team");
+    mkdirSync(directory, { recursive: true });
+    for (const number of [1, 2, 3])
+      writeFileSync(join(directory, `code-review-${number}.md`), "review");
+    const review = adapt(
+      "confirm-repeated-review",
+      { tool_name: "spawn_agent", tool_input: { agent_type: "code-reviewer" } },
+      fixture,
+    );
+    expect(
+      JSON.parse(review.stdout).hookSpecificOutput.permissionDecision,
+    ).toBe("deny");
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
 test("AskUserQuestion 직접 입력 답변 뒤 같은 응답의 재질문을 차단하고 새 메시지 뒤에는 허용한다", () => {
   const fixture = mkdtempSync(join(tmpdir(), "portfolio-ask-hook-"));
   try {
