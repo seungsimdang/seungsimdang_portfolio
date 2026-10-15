@@ -19,7 +19,7 @@
 | T08 | done | `security-review-1~3.md`, 최종 배포 승인 |
 | 재판단 | done | `triage-1~3.md` |
 | T09 | done | `qa-report-1.md`, 통과(일부 AC 미검증) |
-| develop 병합 | pending | 사용자 지시 대기 |
+| develop·main 병합 | done | 사용자 지시로 `--no-ff` 병합 |
 
 ## 확인한 검증 (orchestrator 직접 실행)
 
@@ -30,7 +30,7 @@
 - 운영 DB 읽기 전용 확인: 트랜잭션 안 `set_config('statement_timeout','2000',true)`는 그 트랜잭션에서만 2s, 같은 트랜잭션의 `pg_sleep(3)`은 57014로 취소.
 - `pnpm audit --prod` 취약점 0.
 
-## 커밋 (`288f7a5..a374090`)
+## 커밋 (`288f7a5..014abde`, 이 요약 갱신 커밋 제외)
 
 - `cf9bb36`, `d78fdfc`: 요구사항, 디자인·API 명세.
 - `8af467f`: 블로그 검색 구현.
@@ -42,6 +42,8 @@
 - `0458d5a`, `5d7409a`: 최종 리뷰 기록과 Low 3건 수정.
 - `9dde941`: 단위·e2e 테스트와 QA 결과.
 - `a374090`: 기존 글 상세 e2e 기대값 갱신.
+- `cb2f5b3`: 사이클 요약과 개선 기록.
+- `014abde`: 사이클 폴더 이동 롤백, 산출물을 `artifacts/task-team/` 최상위로 되돌림(사용자 지시).
 
 ## 검증 경계와 백로그
 
