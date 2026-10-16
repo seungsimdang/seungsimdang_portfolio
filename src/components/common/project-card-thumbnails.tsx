@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   THUMBNAIL_FADE_MS,
   THUMBNAIL_INTERVAL_MS,
@@ -44,6 +44,9 @@ export function ProjectCardThumbnails({
   const [hovering, setHovering] = useState(false);
   const [focused, setFocused] = useState(false);
   const wasHiddenRef = useRef(false);
+  // 렌더에 쓰지 않고 타이머·로드 이벤트에서만 읽는 값이라 ref로 둠
+  const loadedRef = useRef<Set<number>>(new Set());
+  const intervalElapsedRef = useRef(false);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -111,20 +114,34 @@ export function ProjectCardThumbnails({
     });
   }, [index, images.length, reduced, failed]);
 
-  const advance = useCallback(() => {
-    const upcoming = nextIndex(index, images.length, failed);
-    if (upcoming === index) return;
-    setPrev(index);
-    setIndex(upcoming);
-  }, [index, images.length, failed]);
-
   const active = !reduced && inView && pageVisible && !hovering && !focused;
 
+  const upcoming = nextIndex(index, images.length, failed);
+  const canAdvance = upcoming !== index;
+
+  // 간격이 지나도 다음 프레임이 로드되기 전에는 현재 프레임을 유지하고 로드 시점에 전환함
   useEffect(() => {
-    if (!active) return;
-    const timer = setTimeout(advance, THUMBNAIL_INTERVAL_MS);
-    return () => clearTimeout(timer);
-  }, [active, advance]);
+    if (!active || !canAdvance) return;
+    const timer = setTimeout(() => {
+      intervalElapsedRef.current = true;
+      if (!loadedRef.current.has(upcoming)) return;
+      intervalElapsedRef.current = false;
+      setPrev(index);
+      setIndex(upcoming);
+    }, THUMBNAIL_INTERVAL_MS);
+    return () => {
+      clearTimeout(timer);
+      intervalElapsedRef.current = false;
+    };
+  }, [active, canAdvance, index, upcoming]);
+
+  const handleLoad = (frame: number) => {
+    loadedRef.current.add(frame);
+    if (!active || !intervalElapsedRef.current || frame !== upcoming) return;
+    intervalElapsedRef.current = false;
+    setPrev(index);
+    setIndex(upcoming);
+  };
 
   useEffect(() => {
     if (prev === null) return;
@@ -151,6 +168,7 @@ export function ProjectCardThumbnails({
             fill
             sizes={sizes}
             loading={eagerFirst && frame === 0 ? "eager" : "lazy"}
+            onLoad={() => handleLoad(frame)}
             onError={() => setFailed((current) => new Set([...current, frame]))}
             className={cn("object-cover", objectTop && "object-top")}
             style={{
