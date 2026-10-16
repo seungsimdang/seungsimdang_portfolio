@@ -86,7 +86,7 @@ Hybrid. 티켓·원인 분석·포스트모텀은 Agent Team으로 진행하고,
 ## 데이터 전달
 
 - Task 진행 상태: `TaskCreate`, `TaskUpdate`, `TaskGet`
-- 팀원 스폰 지시: 지시문에 `필요 도구: Read, Edit, Bash`처럼 지시 수행에 필요한 도구를 한 줄로 선언하고, 스폰 전에 에이전트 목록의 Tools와 대조한다. 없는 도구가 필요하면 스폰하지 않고 사용자에게 보고한다. `require-agent-tool-declaration.sh`가 선언 누락과 정의에 없는 도구 선언을 차단한다.
+- 팀원 스폰 지시: 지시문에 `필요 도구: Read, Edit, Bash`처럼 지시 수행에 필요한 도구를 한 줄로 선언하고, 스폰 전에 에이전트 목록의 Tools와 대조한다. 없는 도구가 필요하면 스폰하지 않고 사용자에게 보고한다. `require-agent-tool-declaration.sh`가 선언 누락과 정의에 없는 도구 선언을 차단하고, 통과하면 선언 줄을 지운 지시문으로 스폰해 subagent에는 전달하지 않는다.
 - 발견 공유: `SendMessage`
 - 산출물: `artifacts/bug-team/` 파일
 

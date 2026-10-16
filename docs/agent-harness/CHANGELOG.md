@@ -1,5 +1,9 @@
 # 하네스 변경 이력
 
+## 2026-10-16 - 스폰 도구 선언을 subagent 지시문에서 제거
+
+- `require-agent-tool-declaration.sh`: 대조를 통과하면 `permissionDecision: "allow"`와 `updatedInput`으로 `필요 도구:` 줄을 지운 지시문을 넘긴다. 선언은 orchestrator가 스폰 전에 도구를 확인했다는 기록이라 subagent 지시에 섞이면 불필요한 줄이 된다는 사용자 지적이 계기다. `updatedInput`은 `allow`나 `ask`와 함께 써야 하고, `ask`는 스폰마다 확인 창을 띄워 `allow`를 골랐다. 훅의 `allow`로도 사용자 설정의 deny·ask 권한 규칙은 그대로 평가된다(hooks 문서 PreToolUse decision control).
+
 ## 2026-10-16 - 미확인 추측 보고·판정 순서 강제
 
 사용자 지시로 검토에서 훅으로 강제할 수 있다고 판단한 항목을 모두 구현했다.

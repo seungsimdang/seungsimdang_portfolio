@@ -375,7 +375,16 @@ test("클로드 스폰 도구 선언 훅이 선언 누락과 정의에 없는 �
       definition,
       "---\nname: designer\ntools: Read, Write, WebSearch\n---\n",
     );
-    expect(spawn("designer", webTask).status).toBe(0);
+    const allowed = spawn("designer", webTask);
+    expect(allowed.status).toBe(0);
+    expect(JSON.parse(allowed.stdout).hookSpecificOutput).toEqual({
+      hookEventName: "PreToolUse",
+      permissionDecision: "allow",
+      updatedInput: {
+        subagent_type: "designer",
+        prompt: "카드 디자인 근거를 조사하라",
+      },
+    });
     expect(spawn("general-purpose", webTask).status).toBe(0);
     expect(spawn("general-purpose", "선언 없이 조사하라").status).toBe(2);
     expect(spawn("fork", "선언 없이 조사하라").status).toBe(0);
