@@ -45,8 +45,7 @@ export const profileData = {
   tools: ["Git/Github", "Jira"],
 };
 
-export const fixtureThumbnailUrl = "/images/projects/globber/thumbnail.png";
-export const legacyFixtureThumbnailUrl =
+export const fixtureThumbnailUrl =
   "https://ci-test.public.blob.vercel-storage.com/thumbnails/globber.png";
 
 // kind는 constants/resume.ts의 RESUME_KINDS 값, 수상은 period가 빈 항목
