@@ -47,6 +47,16 @@ export const profileData = {
 
 export const fixtureThumbnailUrl =
   "https://ci-test.public.blob.vercel-storage.com/thumbnails/globber.png";
+export const fixtureThumbnailUrls = {
+  desktopSecond:
+    "https://ci-test.public.blob.vercel-storage.com/thumbnails/desktop-second.png",
+  desktopThird:
+    "https://ci-test.public.blob.vercel-storage.com/thumbnails/desktop-third.png",
+  mobileFirst:
+    "https://ci-test.public.blob.vercel-storage.com/thumbnails/mobile-first.png",
+  mobileSecond:
+    "https://ci-test.public.blob.vercel-storage.com/thumbnails/mobile-second.png",
+};
 
 // kind는 constants/resume.ts의 RESUME_KINDS 값, 수상은 period가 빈 항목
 export const resumeEntries = [
@@ -110,7 +120,15 @@ export const projects: FixtureProject[] = [
     techStack: ["Next.js", "TypeScript"],
     summary: "썸네일과 외부 링크가 있는 테스트 프로젝트.",
     link: "https://example.com/alpha",
-    thumbnails: [fixtureThumbnailUrl],
+    thumbnails: [
+      fixtureThumbnailUrl,
+      fixtureThumbnailUrls.desktopSecond,
+      fixtureThumbnailUrls.desktopThird,
+    ],
+    mobileThumbnails: [
+      fixtureThumbnailUrls.mobileFirst,
+      fixtureThumbnailUrls.mobileSecond,
+    ],
     experiences: [
       {
         title: "Alpha 경험 1",
