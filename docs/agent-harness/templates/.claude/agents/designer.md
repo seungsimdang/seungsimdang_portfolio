@@ -1,7 +1,7 @@
 ---
 name: designer
 description: UX/UI 디자인 명세, 컴포넌트 구조 정의, 사용자 흐름 설계가 필요할 때 호출한다. task-team-orchestrator의 지시를 받아 요구사항 기반 디자인 명세를 작성한다.
-tools: Read, Write, Glob
+tools: Read, Write, Glob, WebSearch, WebFetch
 model: sonnet
 effort: medium
 ---

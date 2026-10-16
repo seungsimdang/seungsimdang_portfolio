@@ -75,7 +75,7 @@
       },
       "claude": {
         "model": "sonnet",
-        "tools": "Read, Write, Glob",
+        "tools": "Read, Write, Glob, WebSearch, WebFetch",
         "effort": "medium"
       }
     },

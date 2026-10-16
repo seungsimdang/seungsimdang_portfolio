@@ -8,6 +8,10 @@
 - `require-feasibility-verdict.sh`(UserPromptSubmit 안내 + Stop 차단, Claude·Codex 동일 본문): 기존 리마인더에 더해, UserPromptSubmit의 `prompt`가 가능 여부 질문(키워드와 의문형 어미가 함께 있음)이면 세션별 표시 파일(`$TMPDIR/feasibility-verdict/<session_id>`)을 남긴다. Stop에서는 표시가 있을 때 마지막 응답 첫 문장에 `가능합니다`/`불가능합니다`가 없거나, `일부`/`부분`만 있고 가능·불가능 부분이 함께 드러나지 않으면 종료를 막는다. Codex 문서상 transcript 형식이 안정 인터페이스가 아니라서 transcript를 읽지 않는다. 질문 판정은 패턴 기반이라 패턴 밖 표현은 놓친다. `.codex/hooks.json` Stop에도 등록했다.
 - `task-team-orchestrator`·`bug-team-orchestrator` Claude 템플릿 "데이터 전달"에 `필요 도구:` 선언 규칙을 추가했다. 스폰 도구 선언 훅은 Claude `Agent` 전용이라 Codex에는 두지 않았다.
 
+## 2026-10-16 - designer에 웹 검색 도구 추가
+
+사용자 지시로 Claude `designer`의 `tools`에 `WebSearch`, `WebFetch`를 추가했다(`manifest.json`과 템플릿). project-thumbnails 사이클에서 `/projects` 카드 16:9 변경을 웹 검색으로 확인한 UI best practice 근거로 설계하라고 지시했으나, designer에 검색 도구와 ToolSearch가 없어 근거를 확인할 수 없었다. Codex `designer.toml`은 도구 목록을 두지 않아 바꾸지 않았다.
+
 ## 2026-10-15 - 재리뷰 확인 훅 삭제
 
 사용자 지시로 `confirm-repeated-review.sh`(Claude·Codex)와 `.claude/settings.json`, `.codex/hooks.json`의 등록, `__tests__/lint/runtime-hooks.test.ts`의 관련 사례를 삭제했다. blog-search 사이클에서 산출물을 `artifacts/task-team/` 최상위에 두자 프롬프트 경로로 사이클을 찾지 못하고 가장 최근 하위 폴더(admin-tabs-by-page)의 리뷰 5개를 세어 2차 리뷰 스폰에 확인 요청을 띄웠다. 재리뷰 범위와 재작업 기준은 `task-team-orchestrator` 9-1·11번 규칙으로만 관리한다.
