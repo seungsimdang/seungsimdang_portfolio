@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node --env-file-if-exists=.env.local scripts/check-upload-env.mjs && next dev",
-    "build": "node --env-file-if-exists=.env.local scripts/check-upload-env.mjs && node --env-file-if-exists=.env.local scripts/migrate.mjs --build && next build",
+    "build": "node --env-file-if-exists=.env.local scripts/check-upload-env.mjs && node --env-file-if-exists=.env.local scripts/migrate.mjs --build && node -e \"require('fs').rmSync('.next/cache/fetch-cache',{recursive:true,force:true})\" && next build",
     "start": "next start",
     "lint": "biome lint .",
     "check": "biome check .",
@@ -22,7 +22,6 @@
     "react-doctor:staged": "sh scripts/check-react-doctor-staged.sh",
     "test": "vitest run",
     "check:upload-env": "node --env-file-if-exists=.env.local scripts/check-upload-env.mjs",
-    "portfolio:thumbnails:migrate": "node --env-file-if-exists=.env.local scripts/migrate-thumbnails.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
     "db:resume:seed": "tsx --env-file-if-exists=.env.local scripts/resume-data.ts seed",

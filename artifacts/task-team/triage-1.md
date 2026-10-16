@@ -1,30 +1,24 @@
-# triage-1: 1차 리뷰 재판단 (orchestrator)
+# 1차 리뷰 재검토
 
-대상: `code-review-1.md`, `security-review-1.md`, 커밋 8af467f. 모든 finding을 실제 코드로 대조함.
+- 검토자: Codex orchestrator, 2026-10-16.
+- 입력: `code-review-1.md`, `security-review-1.md`.
+- 기준: HEAD `8737d25`, 사이클 시작 `72f8aa0`.
 
-## 재작업 대상 (1차 리뷰 기준, 심각도 무관)
+| Finding | 직접 확인한 근거 | 판정 | 조치 |
+| --- | --- | --- | --- |
+| T07 High: 느린 다음 이미지 로드 중 빈 카드 | `project-card-thumbnails.tsx`의 `advance`는 로드 여부를 확인하지 않고 index 변경. `prev`는 600ms 후 제거되며 Image에 onLoad 없음 | 타당, 이번 구현의 E-h 위반 | frontend-developer에 격리 worktree 수정 지시. 로드 전 현재 프레임 유지, 실패 프레임 건너뛰기 확인 및 재리뷰 예정 |
+| SEC-T08-01 Low: Origin scheme 미비교 | `src/lib/auth/admin-route.ts:45` 이하에서 URL의 host만 비교. 해당 파일은 사이클 diff 밖 | 기존 공통 가드의 한계. 이번 구현에서 도입하지 않음 | 사용자가 이번 사이클 포함 승인. backend 격리 수정 후 메인에 전체 origin 비교 반영 |
+| SEC-T08-02 Low: Blob 참조 조회와 삭제 간 경합 | 현재 `deleteBlobIfUnused`와 `git show 72f8aa0:src/services/portfolio/portfolio-admin-service.ts` 비교. 이전에도 참조 SELECT 후 별도 del 호출 | 기존 정리 정책의 경합 한계. 배열 참조 확장은 새 참조 집합을 검사하지만 원자성 한계의 발생 원인은 이전과 동일 | 사용자가 이번 사이클 포함 및 자동 삭제 유지 지시. 삭제 대상 URL 기록과 advisory lock·trigger를 추가한 backend 격리 수정 후 메인에 반영 |
 
-| ID | 심각도 | 판단 근거 |
-| --- | --- | --- |
-| F-02 | Medium | `blog-search-results.tsx` 본문 분기에서 `data.items.length === 0`이 `busy`보다 먼저 판정되어 placeholder 0건이 EmptyState로 렌더됨을 확인 |
-| F-03 | Medium | `ResultList`의 `paginationQuery`는 새 `params`, `page`/`totalPages`는 이전 `data`에서 가져옴을 확인 |
-| F-04 | Low | `SearchAnnouncer` effect가 `busy`/`data` 변화마다 실행되어 같은 q의 재조회·페이지 이동에서도 문구를 다시 씀을 확인 |
-| F-05 | Low | IME 조합 중 외부 URL 변경 시 입력값 역동기화가 건너뛰어짐 (리뷰 서술과 코드 일치) |
-| F-06 | Low | 두 테스트가 이제 `@/utils/blog-query-params`, `@/constants/blog`, `@/lib/blog/excerpt`만 import하므로 `server-only`, `@/db` mock이 불필요함을 확인 |
-| S-02 | Low | `node_modules/drizzle-orm/errors.js`의 `DrizzleQueryError` 메시지가 `params: ${params}`를 포함함을 확인. 공개 라우트는 `error.message`를 그대로 로그에 남기므로 검색어가 기록되고 주석이 사실과 다름 |
-| S-03 | Low | `src/app/api/admin/posts/route.ts` GET에 `Cache-Control` 미설정, proxy에만 의존 |
+## 직접 검증
 
-## 사용자 결정 필요
+- 타입 검사, Biome, knip 통과. Vitest 38파일 478개 통과.
+- 수정 전 baseline `pnpm test:e2e:local`: 제한 환경에서 마이그레이션 UnknownError로 중단, 제한 밖 동일 명령 재실행에서 빌드·테스트 DB 마이그레이션 완료 및 desktop/mobile 120개 통과(52.6초).
+- E2E는 전용 DB 및 테스트 Blob 이미지 응답을 사용한 결과이며 실제 운영 이미지 업로드·운영 DB 변경의 검증이 아님.
+- CodeRabbit은 reviewer가 인증 정보를 사용할 수 없어 실행하지 못함. 자체 리뷰 결과와 구분함.
 
-| ID | 심각도 | 내용 |
-| --- | --- | --- |
-| S-01 | Medium | 인증 없는 본문 전문 ILIKE에 rate limit 없음. 해결 방식(인프라 rate limit, 최소 길이 변경, statement_timeout 등)이 승인된 요구사항 또는 인프라 결정을 바꾸므로 사용자 결정 필요 |
-| S-05 연계 | High (사이클 diff 밖) | `pnpm audit --prod` 결과 신규 의존성(@tanstack/react-query, @suspensive/react-query-5) 경로의 취약점은 없음. 기존 `next` 16.3.6(<16.3.8, high 1·moderate 4·low 1), `sharp` <0.35.5(high), `source-map-js` <1.2.2(high)가 검출됨. 이번 사이클이 만든 문제가 아니므로 포함/백로그 결정 필요 |
+## 재리뷰 계획
 
-## 기각
-
-| ID | 기각 사유 |
-| --- | --- |
-| F-01 | Task 계약상 T05/T06은 새 테스트를 작성하지 않고 신규 테스트는 T09 QA가 작성함. 지적한 정규화·LIKE 이스케이프·서비스 조건 테스트는 T09 지시문에 포함 |
-| S-04 | 서버는 `QueriesHydration` 기본값 `queryClient = new QueryClient()`로 렌더마다 새 클라이언트를 만듦을 설치 패키지(`QueriesHydration.mjs`)에서 확인. 브라우저 캐시가 로그아웃 후 남는 점은 사실이나 관리자 목록 응답이 공개 목록과 같은 필드·데이터라 노출되는 정보가 없음 |
-| S-05 (신규 의존성) | 신규 의존성은 정확한 버전 고정, audit 경로에 없음 |
+- T07 High 수정은 `code-review-2.md`에서 해결 확인 및 새 finding 없음.
+- 보안 Low 두 건만 고친 재작업의 독립 재리뷰는 스킬 11번에 따라 생략하되, 앞선 High 재작업이 있으므로 사이클 전체 최종 T07·T08 리뷰는 1회 수행함.
+- Blob 잠금·snapshot 설계는 PostgreSQL의 VOLATILE 함수 내부 쿼리마다 새 snapshot을 얻는 동작에 근거함: https://www.postgresql.org/docs/current/xfunc-volatility.html. 실제 DB 동시성은 전용 E2E DB로 별도 검증 예정.

@@ -96,11 +96,41 @@ describe("adminRoute Origin 검사", () => {
 
   it("ADMIN_ALLOWED_HOSTS의 host도 허용", async () => {
     vi.stubEnv("ADMIN_ALLOWED_HOSTS", "a.example.com, b.example.com");
+    vi.stubEnv("NEXTAUTH_URL", "https://admin.example.com");
     const res = await adminRoute(okHandler)(
       req("DELETE", "https://b.example.com"),
       ctx,
     );
     expect(res.status).toBe(200);
+  });
+
+  it("설정된 scheme과 다른 Origin은 거부", async () => {
+    vi.stubEnv("NEXTAUTH_URL", "https://admin.example.com");
+    const res = await adminRoute(okHandler)(
+      req("POST", "http://admin.example.com"),
+      ctx,
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).data.code).toBe("FORBIDDEN_ORIGIN");
+  });
+
+  it("설정된 port와 다른 Origin은 거부", async () => {
+    vi.stubEnv("NEXTAUTH_URL", "https://admin.example.com:8443");
+    const res = await adminRoute(okHandler)(
+      req("PUT", "https://admin.example.com"),
+      ctx,
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).data.code).toBe("FORBIDDEN_ORIGIN");
+  });
+
+  it("Origin의 경로가 포함되면 거부", async () => {
+    vi.stubEnv("NEXTAUTH_URL", "https://admin.example.com");
+    const res = await adminRoute(okHandler)(
+      req("PATCH", "https://admin.example.com/admin"),
+      ctx,
+    );
+    expect(res.status).toBe(403);
   });
 
   it("NEXTAUTH_URL이 잘못된 값이면 모든 Origin 거부", async () => {

@@ -43,7 +43,7 @@ Hybrid. 티켓·원인 분석·포스트모텀은 Agent Team으로 진행하고,
 1. `artifacts/bug-team/` 폴더를 확인한다.
 2. 기존 티켓과 중복 여부 판단을 bug-reporter에게 위임한다.
 3. 중복으로 판명되면 기존 티켓 ID를 사용자에게 안내하고 종료한다.
-4. 포스트모텀만 재실행 요청이면 T03(postmortem)부터 시작한다.
+4. 포스트모텀만 재실행 요청이면 T04(postmortem)부터 시작한다.
 
 ## Agent Team 구성
 
@@ -67,7 +67,7 @@ Hybrid. 티켓·원인 분석·포스트모텀은 Agent Team으로 진행하고,
 
 1. 사용자 버그 설명을 수신하고 `artifacts/bug-team/` 폴더를 확인한다.
 2. `TeamCreate`로 4명의 팀원을 구성한다.
-3. `TaskCreate`로 T01~T05를 등록한다.
+3. `TaskCreate`로 T01~T04를 등록한다.
 4. T01(bug-reporter): 중복 확인 후 새 버그이면 티켓을 생성하고 `TaskUpdate(completed)`.
    - 중복이면 사용자에게 기존 티켓 ID를 안내하고 팀을 정리한다.
 5. T02(bug-localizer): 티켓을 받아 코드베이스를 탐색하고 결함 위치를 저장한다.

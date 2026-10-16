@@ -1,5 +1,42 @@
 # 하네스 변경 이력
 
+## 2026-10-16 - 스폰 도구 선언을 subagent 지시문에서 제거
+
+- `require-agent-tool-declaration.sh`: 대조를 통과하면 `permissionDecision: "allow"`와 `updatedInput`으로 `필요 도구:` 줄을 지운 지시문을 넘긴다. 선언은 orchestrator가 스폰 전에 도구를 확인했다는 기록이라 subagent 지시에 섞이면 불필요한 줄이 된다는 사용자 지적이 계기다. `updatedInput`은 `allow`나 `ask`와 함께 써야 하고, `ask`는 스폰마다 확인 창을 띄워 `allow`를 골랐다. 훅의 `allow`로도 사용자 설정의 deny·ask 권한 규칙은 그대로 평가된다(hooks 문서 PreToolUse decision control).
+
+## 2026-10-16 - 미확인 추측 보고·판정 순서 강제
+
+사용자 지시로 검토에서 훅으로 강제할 수 있다고 판단한 항목을 모두 구현했다.
+
+- `block-unverified-claims.sh`(Stop 차단, Claude·Codex): 마지막 응답의 한 문장에 추측 표현(`것으로 보입니다·보지만`, `것 같습니다`, `가능성이 높` 등)과 미확인 꼬리표(`확인하지 않았`, `미확인`, `아직 확인` 등)가 함께 있으면 한 번 막는다. 도구로 확인할 수 있던 패치 적용 여부를 확인하지 않고 "적용될 것으로 보지만 미확인"이라고 보고한 사고가 계기다. 실제로 확인할 수 있었는지는 알 수 없어 재응답은 통과시키고, 코드 표기와 큰따옴표 인용은 판정에서 뺀다.
+- `require-feasibility-verdict.sh`: 표시 파일이 있는 턴의 PostToolUse마다 "다음 메시지가 최종 답변이면 진행 안내 없이 가능합니다/불가능합니다로 시작" 안내를 붙인다. 턴 끝 직전 진행 안내 요청에 답하느라 판정이 셋째 문장으로 밀린 사고가 계기다. 질문 판정에 "가능성·가능 여부 + 검토·확인·판단·보고" 조합도 추가했다.
+- `.claude/settings.json`과 `.codex/hooks.json`에 등록했다.
+
+## 2026-10-16 - 역할 카드 낡은 사실 정리와 가능 여부 훅 오탐 수정
+
+사용자 지시로 `/claude-api prompt-audit` 결과를 적용했다. 역할 카드와 skill에 다른 프로젝트에서 넘어온 명령·토큰·도메인 규칙과 서로 맞지 않는 문장이 남아 있었다.
+
+- 구현자 카드(Claude·Codex)의 없는 스크립트 `pnpm fix-all`을 `pnpm exec biome check --write . && pnpm type-check`로 바꿨다. 구현자는 커밋·스테이징을 하지 않아 Biome의 `--staged`·`--changed`가 맞지 않고, 저장소가 이미 `biome check`를 통과한 상태라 `--write .`도 자기 변경 파일만 고친다.
+- frontend-developer·code-reviewer의 `globals.css`에 없는 토큰(`shadow-card`, `bg-brand`, `rounded-pill`, `animate-rise` 등)을 지우고 `docs/agent-rules/tailwind.md` 참조로 바꿨다. code-reviewer의 없는 `isCrossOriginRequest`·`UiRadioItem` 항목과 다른 프로젝트 버그 사례를 정리했다.
+- `radix-ui`를 "이미 설치됨"으로 적은 문장을 미설치·추가 시 승인 필요로 바꿨다. bug-fixer의 자금·잔고 게이트 규칙을 이 저장소의 인증·데이터 변경 경로로 바꿨다.
+- 구현자 카드 끝의 "커밋을 생성할 때는 git-commit을 따른다"를 지웠다. 같은 카드의 "커밋 없이 orchestrator를 기다린다"와 git-commit의 "팀원 subagent는 커밋하지 않는다"와 충돌했다.
+- bug-team-orchestrator의 T03(postmortem)·T01~T05를 Task 표에 맞춰 T04·T01~T04로, task-team-orchestrator의 8명·DevOps를 구성 표에 맞춰 7명으로 고쳤다. DevOps는 Task 계약에 없어 목적 문장에서 뺐다. git-commit의 없는 CLAUDE.md·AGENTS.md 절 참조를 고쳤다.
+- `require-feasibility-verdict.sh`(Claude·Codex): 백그라운드 subagent 보고가 UserPromptSubmit `prompt`(`<agent-message …>`)로 들어와 보고 본문의 "가능할까" 같은 문장이 사용자 질문으로 판정되던 오탐을 고쳤다. `<agent-message>`와 `<pasted_content>` 블록을 판정 전에 지우고, 사용자 문장이 남지 않는 보고 전달이면 진행 중인 질문 표시를 건드리지 않는다. 또 질문이 아닌 메시지가 표시를 지우던 처리를 없앴다. 가능 여부 질문 뒤 작업 도중 들어온 다른 메시지가 표시를 지워 턴 끝 Stop 검사가 돌지 않았다. 이제 표시는 Stop 판정이 끝난 뒤(통과 또는 한 번 막은 뒤의 재응답)에만 지운다.
+- `require-feasibility-verdict.sh`의 분할 판정 허용을 없앴다. 사용자가 "가능하다/불가능하다로 대답하라"고 교정했는데 훅은 첫 문장에 `일부`와 가능·불가능이 함께 있으면 통과시켜 "일부만 가능합니다: …" 답변을 막지 못했다. 이제 Stop은 답변이 `가능합니다` 또는 `불가능합니다`로 시작할 때만 통과시키고, 리마인더와 차단 문구도 분할 판정과 진행 안내로 시작하지 말라고 안내한다.
+- 나머지 UserPromptSubmit 안내 훅(`require-why-explanation`, `require-status-verification`, `require-single-best-practice`, `confirm-edit-on-report-request`, Claude·Codex)도 같은 오탐이 있어, 공용 도우미 `user-prompt-text.sh`로 두 블록을 지운 사용자 문장만 판정한다. `confirm-edit-on-report-request`는 사용자 문장이 없는 보고 전달에서 보고 전용 상태를 지우지 않는다.
+
+## 2026-10-16 - 스폰 도구 선언 검사와 가능 여부 판정 Stop 강제
+
+사용자 지시로 두 훅을 추가·재작성했다. project-thumbnails 사이클에서 웹 검색 도구가 없는 designer에 웹 검색을 두 번 지시했고, 가능 여부 질문에 첫 문장을 "일부만 가능합니다."로만 쓰고 판정 내용을 둘째 문장으로 미뤘다.
+
+- `require-agent-tool-declaration.sh`(PreToolUse `Agent`, 차단): 스폰 지시문에 `필요 도구: A, B` 선언이 없거나, 선언한 도구가 `.claude/agents/<타입>.md`의 `tools:`에 없으면 차단한다. 정의 파일은 스폰 시점에 읽는다(Claude Code가 실행 중 수정도 다음 스폰에 반영). 정의 파일이 없는 내장 타입은 선언 유무만 본다. 선언에서 필요한 도구를 빠뜨린 경우는 잡지 못한다.
+- `require-feasibility-verdict.sh`(UserPromptSubmit 안내 + Stop 차단, Claude·Codex 동일 본문): 기존 리마인더에 더해, UserPromptSubmit의 `prompt`가 가능 여부 질문(키워드와 의문형 어미가 함께 있음)이면 세션별 표시 파일(`$TMPDIR/feasibility-verdict/<session_id>`)을 남긴다. Stop에서는 표시가 있을 때 마지막 응답 첫 문장에 `가능합니다`/`불가능합니다`가 없거나, `일부`/`부분`만 있고 가능·불가능 부분이 함께 드러나지 않으면 종료를 막는다. Codex 문서상 transcript 형식이 안정 인터페이스가 아니라서 transcript를 읽지 않는다. 질문 판정은 패턴 기반이라 패턴 밖 표현은 놓친다. `.codex/hooks.json` Stop에도 등록했다.
+- `task-team-orchestrator`·`bug-team-orchestrator` Claude 템플릿 "데이터 전달"에 `필요 도구:` 선언 규칙을 추가했다. 스폰 도구 선언 훅은 Claude `Agent` 전용이라 Codex에는 두지 않았다.
+
+## 2026-10-16 - designer에 웹 검색 도구 추가
+
+사용자 지시로 Claude `designer`의 `tools`에 `WebSearch`, `WebFetch`를 추가했다(`manifest.json`과 템플릿). project-thumbnails 사이클에서 `/projects` 카드 16:9 변경을 웹 검색으로 확인한 UI best practice 근거로 설계하라고 지시했으나, designer에 검색 도구와 ToolSearch가 없어 근거를 확인할 수 없었다. Codex `designer.toml`은 도구 목록을 두지 않아 바꾸지 않았다.
+
 ## 2026-10-15 - 재리뷰 확인 훅 삭제
 
 사용자 지시로 `confirm-repeated-review.sh`(Claude·Codex)와 `.claude/settings.json`, `.codex/hooks.json`의 등록, `__tests__/lint/runtime-hooks.test.ts`의 관련 사례를 삭제했다. blog-search 사이클에서 산출물을 `artifacts/task-team/` 최상위에 두자 프롬프트 경로로 사이클을 찾지 못하고 가장 최근 하위 폴더(admin-tabs-by-page)의 리뷰 5개를 세어 2차 리뷰 스폰에 확인 요청을 띄웠다. 재리뷰 범위와 재작업 기준은 `task-team-orchestrator` 9-1·11번 규칙으로만 관리한다.

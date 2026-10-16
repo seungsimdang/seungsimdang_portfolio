@@ -12,8 +12,10 @@ session=$(printf '%s' "$input" | jq -r '.session_id // empty' 2>/dev/null)
 state="${TMPDIR:-/tmp}/claude-report-only-$(printf '%s' "$session" | tr -c 'A-Za-z0-9_-' '_')"
 
 if [ "$event" = "UserPromptSubmit" ]; then
+  prompt=$(printf '%s' "$input" | sh "$(dirname "$0")/user-prompt-text.sh")
+  # 사용자 문장이 없는 subagent 보고 전달이면 진행 중인 보고 전용 상태를 유지함
+  [ -n "$(printf '%s' "$prompt" | tr -d '[:space:]')" ] || exit 0
   rm -f "$state"
-  prompt=$(printf '%s' "$input" | jq -r '.prompt // empty' 2>/dev/null)
   # 끝이 판단·검토·보고·제시인 요청만 대상으로 하고 실행 지시가 함께 있으면 제외
   printf '%s' "$prompt" | grep -qE '(판단|검토|분석|조사|확인)[^.?!]*(보고|알려)|청사진|보고해|보고만' || exit 0
   printf '%s' "$prompt" | grep -qE 'ㄱㄱ|진행해|고쳐|수정해|적용해|반영해|작업해|구현해|추가해|바꿔|변경해|삭제해|커밋해|강제해' && exit 0

@@ -22,7 +22,6 @@
   --spacing-header-mobile: 112px;
   --spacing-project-info: 200px;
   --spacing-card: 60vh;
-  --spacing-card-tall: 75vh;
   /* 프로젝트 카드 sticky top-160과 하단 여백 48px을 뺀 높이 */
   --spacing-card-stuck: calc(100dvh - 208px);
   --color-danger: var(--danger);

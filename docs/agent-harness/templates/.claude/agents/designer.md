@@ -1,7 +1,7 @@
 ---
 name: designer
 description: UX/UI 디자인 명세, 컴포넌트 구조 정의, 사용자 흐름 설계가 필요할 때 호출한다. task-team-orchestrator의 지시를 받아 요구사항 기반 디자인 명세를 작성한다.
-tools: Read, Write, Glob
+tools: Read, Write, Glob, WebSearch, WebFetch
 model: sonnet
 effort: medium
 ---
@@ -38,7 +38,7 @@ effort: medium
 1. 요구사항을 읽고 핵심 사용자 흐름을 파악한다.
 2. 주요 화면과 컴포넌트를 목록화한다.
 3. 각 컴포넌트의 상태, 인터랙션, 데이터 표시 방식을 기술한다.
-3-a. 인터랙티브 컴포넌트(모달, 드롭다운, 선택 입력, 체크박스, 스위치, 툴팁 등)를 명세할 때 `src/components/common/`에 기존 공통 컴포넌트가 있으면 해당 이름을 기재한다. 없으면 Radix UI primitive(`radix-ui` 패키지)로 구현 가능 여부를 표시한다.
+3-a. 인터랙티브 컴포넌트(모달, 드롭다운, 선택 입력, 체크박스, 스위치, 툴팁 등)를 명세할 때 `src/components/common/`에 기존 공통 컴포넌트가 있으면 해당 이름을 기재한다. 없으면 Radix UI primitive(`radix-ui` 패키지, 미설치라 추가 시 승인 필요)로 구현 가능 여부를 표시한다.
 4. 접근성과 반응형 고려 사항을 포함한다.
 5. `artifacts/task-team/design-spec.md`에 저장한다.
 

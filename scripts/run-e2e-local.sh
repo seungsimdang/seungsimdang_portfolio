@@ -17,5 +17,8 @@ if [ -n "$prod_url" ] && [ "$(db_host "$url")" = "$(db_host "$prod_url")" ]; the
   echo "E2E_DATABASE_URL이 DATABASE_URL과 같은 DB 호스트를 가리킴" >&2
   exit 1
 fi
-DATABASE_URL="$url" MIGRATE_ON_BUILD=1 pnpm build
-DATABASE_URL="$url" pnpm test:e2e "$@"
+# CI와 같은 E2E DB를 쓰므로 썸네일 Blob 호스트도 CI(.github/workflows/ci.yml) 값으로 맞춤
+# 로컬 .env.local의 실제 호스트를 쓰면 fixture 썸네일 URL이 검증에서 걸러짐
+blob_host=ci-test.public.blob.vercel-storage.com
+DATABASE_URL="$url" NEXT_PUBLIC_BLOB_HOSTNAME="$blob_host" MIGRATE_ON_BUILD=1 pnpm build
+DATABASE_URL="$url" NEXT_PUBLIC_BLOB_HOSTNAME="$blob_host" pnpm test:e2e "$@"

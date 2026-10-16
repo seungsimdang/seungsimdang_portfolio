@@ -46,8 +46,20 @@ function isSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
   try {
-    // 프록시가 덧붙일 수 있는 x-forwarded-host는 신뢰하지 않고 고정 설정값 또는 host 헤더와만 비교함
-    return allowedHosts(request).includes(new URL(origin).host);
+    const originUrl = new URL(origin);
+    const authUrl = process.env.NEXTAUTH_URL
+      ? new URL(process.env.NEXTAUTH_URL)
+      : new URL(request.url);
+    if (originUrl.protocol !== "http:" && originUrl.protocol !== "https:") {
+      return false;
+    }
+    const allowedOrigins = allowedHosts(request).map(
+      (host) => `${authUrl.protocol}//${host}`,
+    );
+    // 프록시가 덧붙일 수 있는 x-forwarded-host는 신뢰하지 않음
+    return (
+      originUrl.origin === origin && allowedOrigins.includes(originUrl.origin)
+    );
   } catch {
     return false;
   }

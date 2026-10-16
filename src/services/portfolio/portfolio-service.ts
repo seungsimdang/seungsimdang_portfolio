@@ -21,8 +21,6 @@ import type {
 } from "@/types/portfolio";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-// 썸네일을 Blob으로 이전하기 전까지 남는 로컬 경로, 이전 완료 후 함께 삭제
-const LEGACY_THUMBNAIL_PATTERN = /^\/images\/[A-Za-z0-9._/-]+$/;
 
 export class PortfolioNotSeededError extends Error {
   constructor() {
@@ -51,17 +49,9 @@ function safeHttpUrl(
   }
 }
 
-// 기존 로컬 이미지와 현재 Blob 이미지를 공개 화면에서 계속 읽음
-function safeThumbnail(
-  thumbnail: string | null | undefined,
-  raw: boolean,
-): string | undefined {
-  if (!thumbnail) return undefined;
-  return raw ||
-    (LEGACY_THUMBNAIL_PATTERN.test(thumbnail) && !thumbnail.includes("..")) ||
-    isValidThumbnail(thumbnail)
-    ? thumbnail
-    : undefined;
+// 공개 화면은 우리 Blob 이미지만 통과시키고 순서는 유지함
+function safeThumbnails(thumbnails: string[], raw: boolean): string[] {
+  return raw ? thumbnails : thumbnails.filter(isValidThumbnail);
 }
 
 function toExperience(row: ExperienceRow, raw: boolean): Experience {
@@ -96,7 +86,8 @@ function toProject(
     techStack: row.techStack,
     summary: row.summary,
     link: safeHttpUrl(row.link, raw),
-    thumbnail: safeThumbnail(row.thumbnail, raw),
+    thumbnails: safeThumbnails(row.thumbnails, raw),
+    mobileThumbnails: safeThumbnails(row.mobileThumbnails, raw),
     experiences: rows.map((e) => toExperience(e, raw)),
   };
 }

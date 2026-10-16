@@ -75,6 +75,14 @@
             "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/check-agent-harness-sync.sh\""
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/require-feasibility-verdict.sh\""
+          }
+        ]
       }
     ],
     "Stop": [
@@ -83,6 +91,14 @@
           {
             "type": "command",
             "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/require-korean-response.sh\""
+          },
+          {
+            "type": "command",
+            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/require-feasibility-verdict.sh\""
+          },
+          {
+            "type": "command",
+            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/block-unverified-claims.sh\""
           }
         ]
       }

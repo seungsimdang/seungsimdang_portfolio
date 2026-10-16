@@ -26,7 +26,7 @@ description: >
 
 ## 목적
 
-Project Manager, Designer, Frontend/Backend Developer, DevOps, Code Reviewer, Security Reviewer, QA Engineer로 구성된 Task Team을 조율하여 요구사항 정의부터 QA까지 전체 개발 사이클을 완료한다.
+Project Manager, Designer, Frontend/Backend Developer, Code Reviewer, Security Reviewer, QA Engineer로 구성된 Task Team을 조율하여 요구사항 정의부터 QA까지 전체 개발 사이클을 완료한다.
 
 ## 실행 모드
 
@@ -78,7 +78,7 @@ Hybrid. 요구사항·설계·API 명세·리뷰·QA는 Agent Team으로 진행 
 ## Agent Team 실행 흐름
 
 1. 사용자 요청을 원문 그대로 구조화하고 모호한 항목과 승인 지점을 플래그하여 `artifacts/task-team/00-input.md`에 저장한다. (분석·해석 없이 intake만)
-2. `TeamCreate`로 8명의 팀원을 구성한다.
+2. `TeamCreate`로 아래 표의 7명을 구성한다.
 3. `TaskCreate`로 T01~T09를 의존 관계와 함께 등록한다.
 4. 팀원들은 자기 Task 시작 시 `TaskUpdate(status: in_progress)`로 갱신한다.
 5. **T02 완료 후 사용자 확인 게이트.** `requirements.md` 저장 직후, orchestrator는 기능 분해·수용 기준·edge case 요약을 사용자에게 보고하고 명시적 승인을 받은 뒤에만 T03/T04로 진행한다. 요구사항은 design-spec·api-spec·구현이 그 위에 쌓이는 기준 산출물이므로 이 지점에서 방향을 확정한다. 사용자가 수정을 요청하면 project-manager에게 반영 지시 후 T02를 재실행하고, 다시 이 게이트를 거친다. **이 게이트는 Task Team 전용이다** - bug-team-orchestrator에는 이런 사전 승인 게이트가 없으므로(수정 방향이 불명확할 때만 확인), 두 orchestrator의 승인 지점을 혼동해 명세에 없는 게이트를 임의로 추가하지 않는다.
@@ -127,6 +127,7 @@ Hybrid. 요구사항·설계·API 명세·리뷰·QA는 Agent Team으로 진행 
 ## 데이터 전달
 
 - Task 진행 상태: `TaskCreate`, `TaskUpdate`, `TaskGet`
+- 팀원 스폰 지시: 지시문에 `필요 도구: Read, Edit, Bash`처럼 지시 수행에 필요한 도구를 한 줄로 선언하고, 스폰 전에 에이전트 목록의 Tools와 대조한다. 없는 도구가 필요하면 스폰하지 않고 사용자에게 보고한다. `require-agent-tool-declaration.sh`가 선언 누락과 정의에 없는 도구 선언을 차단하고, 통과하면 선언 줄을 지운 지시문으로 스폰해 subagent에는 전달하지 않는다.
 - 실시간 발견 공유: `SendMessage`
 - 다음 단계가 읽어야 할 산출물: `artifacts/task-team/` 파일
 

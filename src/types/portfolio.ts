@@ -62,8 +62,10 @@ export interface Project {
   summary: string;
   // DB null은 undefined로 매핑
   link?: string;
-  // DB null은 undefined로 매핑
-  thumbnail?: string;
+  // 기본(PC) 이미지 목록, 순서가 전환 순서이며 없으면 빈 배열
+  thumbnails: string[];
+  // 모바일 전용 목록, 비면 표시 계층이 thumbnails를 대신 사용하고 없으면 빈 배열
+  mobileThumbnails: string[];
   // sort_order 오름차순
   experiences: Experience[];
 }

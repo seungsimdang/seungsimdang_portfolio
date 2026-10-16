@@ -36,20 +36,18 @@ effort: medium
 
 ## 작업 방식
 
-0. `src/components/common/`를 먼저 확인한다. 이미 존재하는 컴포넌트는 재구현하지 않고 import해서 사용한다. 존재하지 않고 Radix UI primitive(`radix-ui` 패키지, 이미 설치됨)로 구현 가능한 인터랙티브 컴포넌트(Dialog, Dropdown, Select, Checkbox, Switch, Tooltip 등)라면 Radix primitive를 기반으로 공통 컴포넌트를 먼저 `src/components/common/`에 생성한 뒤 사용한다.
+0. `src/components/common/`를 먼저 확인한다. 이미 존재하는 컴포넌트는 재구현하지 않고 import해서 사용한다. 존재하지 않고 Radix UI primitive로 구현 가능한 인터랙티브 컴포넌트(Dialog, Dropdown, Select, Checkbox, Switch, Tooltip 등)라면 `radix-ui`는 아직 설치되어 있지 않으므로 의존성 추가를 orchestrator에게 먼저 제안하고, 승인 후 Radix primitive 기반 공통 컴포넌트를 `src/components/common/`에 만든다.
 1. 디자인 명세와 API 명세를 읽어 구현 범위를 파악한다.
 2. `node_modules/next/dist/docs/`에서 관련 Next.js 16 가이드를 확인한다.
 3. 컴포넌트 계층 구조를 설계하고 파일을 작성한다. Tailwind 클래스는 canonical 형태로만 사용한다 (`suggestCanonicalClasses` 기준 - arbitrary 값이 named 클래스로 표현 가능하면 반드시 canonical 형태 사용):
    - **spacing**: `--spacing: 1px` → `w-16`=16px, `p-8`=8px, `gap-12`=12px, `max-w-400`=400px (w/h/p/m/gap/max-w/min-w 등 모든 spacing 기반 유틸리티가 1px 단위 - `w-[400px]` 같은 arbitrary value 사용 금지)
    - **radius**: Tailwind 기본 클래스 사용 - `rounded-xs`(2px) / `rounded-sm`(4px) / `rounded-md`(6px) / `rounded-lg`(8px) / `rounded-xl`(12px) / `rounded-2xl`(16px) / `rounded-3xl`(24px) / `rounded-full` - `rounded-[Xpx]` arbitrary 사용 금지
-   - **shadow**: `shadow-card` / `shadow-pop` / `shadow-float` - `style={{ boxShadow: "var(--shadow-*)" }}` 사용 금지
-   - **color**: `bg-brand`, `text-text`, `text-text-2`, `border-border` 등 `--color-*` 토큰 기반 클래스 사용
-   - **animation**: `animate-rise` / `animate-fade` / `animate-pop` / `animate-node-pulse`
+   - **color·토큰**: `docs/agent-rules/tailwind.md`의 "디자인 토큰만 사용"을 따른다. 사용할 수 있는 토큰은 `src/app/globals.css`의 `@theme`에 정의된 것뿐이다.
    - canonical 클래스가 존재하는 경우 CSS 변수 임의값(`rounded-[var(...)]`, `text-[var(...)]` 등) 사용 금지
 4. API 연동 코드는 `artifacts/task-team/api-spec.md`의 엔드포인트를 정확히 따른다.
 4-1. 서버 상태를 바꾸는 호출을 작성할 때는 성공 경로에서 무효화할 쿼리를 함께 정한다. `useMutation`의 `onSuccess`뿐 아니라 결과를 기다리지 않는 fire-and-forget 호출(`.catch()`만 다는 패턴)에도 `.then()`에서 무효화를 넣는다. 같은 리소스의 생성·수정·삭제 경로가 같은 쿼리를 무효화하는지 확인한다.
 4-2. 서버 응답의 목록이 `MAX_*` 상한으로 잘린 부분 목록일 수 있으면 그 목록으로 전체 집합의 포함 여부를 근사하지 않는다. 판정에 전체 집합이 필요하면 backend-developer에게 정확한 필드를 응답에 추가해 달라고 요청한다.
-5. 구현 완료 후 `pnpm fix-all && pnpm type-check`와 전체 테스트(`pnpm exec vitest run`, 폴더 지정 없이)를 실행하고 오류가 없는지 확인한다.
+5. 구현 완료 후 `pnpm exec biome check --write . && pnpm type-check`와 전체 테스트(`pnpm exec vitest run`, 폴더 지정 없이)를 실행하고 오류가 없는지 확인한다.
 5-1. 동작 변경으로 기존 테스트가 깨지면 원래 검증 의도를 유지한 채 그 테스트만 갱신한다. 새 테스트 파일·새 테스트 케이스는 작성하지 않는다(qa-engineer 담당).
 6. 구현 완료 후 변경된 파일 목록을 정리한다.
 
@@ -71,4 +69,3 @@ effort: medium
 - 새 테스트를 작성하지 않는다. 지시문이 테스트 작성을 요구하면 orchestrator에게 qa-engineer 담당임을 알린다.
 - 소스 주석에 요구사항 항목 ID·리뷰 finding ID·게이트 ID(예: M2, L3, GATE-2)를 라벨로 인용하지 않는다. 이유는 그 자체로 완결되게 서술한다.
 작업 시작 시 `docs/agent-rules/git-safety.md`를 Read로 읽고 그 안의 수칙(worktree 격리 + 파괴적 명령 금지)을 반드시 따른다. worktree 격리는 orchestrator가 `Agent` 스폰 시 `isolation: "worktree"`로 지정하므로 스스로 `EnterWorktree`를 호출하지 않는다(관리형/child 세션에서 실패한다). 격리된 채 스폰됐다면 그 worktree 안에서 작업하고, 완료 후 커밋 없이 orchestrator의 병합·재검증을 기다린다.
-커밋을 생성할 때는 `.claude/skills/git-commit/SKILL.md`를 Read로 읽고 그 안의 커밋 컨벤션(형식, `Co-Authored-By` 트레일러 금지 등)을 반드시 따른다.
