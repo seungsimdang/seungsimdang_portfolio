@@ -50,6 +50,20 @@
       "when": 1792125939836,
       "tag": "0006_project_thumbnails_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792136219341,
+      "tag": "0007_jazzy_thunderbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792137857929,
+      "tag": "0008_thumbnail_blob_retry",
+      "breakpoints": true
     }
   ]
 }

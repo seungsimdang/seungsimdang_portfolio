@@ -75,6 +75,12 @@ export const projects = pgTable(
   ],
 );
 
+export const retiredThumbnailBlobs = pgTable("retired_thumbnail_blobs", {
+  url: text("url").primaryKey(),
+  // null이면 외부 Blob 삭제가 아직 성공하지 않아 다음 정리 때 재시도 대상임
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
 export const experiences = pgTable(
   "experiences",
   {

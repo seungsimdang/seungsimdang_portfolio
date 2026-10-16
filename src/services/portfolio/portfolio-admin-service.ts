@@ -1,7 +1,7 @@
 import "server-only";
 import { del } from "@vercel/blob";
 import { HttpStatusCode } from "axios";
-import { and, eq, or, type SQL, sql } from "drizzle-orm";
+import { and, eq, isNull, type SQL, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { z } from "zod";
 import type { ResumeKind } from "@/constants/resume";
@@ -11,6 +11,7 @@ import {
   profile,
   projects,
   resumeEntries,
+  retiredThumbnailBlobs,
   techTalks,
 } from "@/db/schema/portfolio";
 import { ApiError } from "@/lib/api/api-error";
@@ -72,6 +73,10 @@ export class LimitExceededError extends Error {
 export const PG_UNIQUE_VIOLATION = "23505";
 const PG_FOREIGN_KEY_VIOLATION = "23503";
 const PG_CHECK_VIOLATION = "23514";
+const PG_RETIRED_THUMBNAIL_VIOLATION = "P1001";
+const PG_RETIRED_MOBILE_THUMBNAIL_VIOLATION = "P1002";
+// drizzle/0008 trigger와 같은 값이어야 함
+const THUMBNAIL_RETIRE_LOCK_KEY = 7_301_005;
 
 // Neon 직접 에러는 err.code, drizzle 래핑 에러는 err.cause.code에 PG 코드가 있음
 export function getPgErrorCode(error: unknown): string | undefined {
@@ -165,8 +170,23 @@ function mobileWithoutBaseError() {
   );
 }
 
+function retiredThumbnailError(field: "thumbnails" | "mobileThumbnails") {
+  return new ApiError(
+    "VALIDATION_FAILED",
+    HttpStatusCode.BadRequest,
+    "정리된 이미지는 다시 사용할 수 없습니다. 새 이미지를 업로드해 주세요",
+    { [field]: "새 이미지를 업로드해 주세요" },
+  );
+}
+
 function mapCreateError(error: unknown): never {
   const code = getPgErrorCode(error);
+  if (code === PG_RETIRED_THUMBNAIL_VIOLATION) {
+    throw retiredThumbnailError("thumbnails");
+  }
+  if (code === PG_RETIRED_MOBILE_THUMBNAIL_VIOLATION) {
+    throw retiredThumbnailError("mobileThumbnails");
+  }
   if (code === PG_UNIQUE_VIOLATION) throw new SlugConflictError();
   if (code === PG_DIVISION_BY_ZERO) throw new LimitExceededError();
   // 사전 판정 이후 동시 수정으로 어긋난 경우의 안전망
@@ -261,6 +281,12 @@ export async function updateProject(
   try {
     await runBatch(statements);
   } catch (error) {
+    if (getPgErrorCode(error) === PG_RETIRED_THUMBNAIL_VIOLATION) {
+      throw retiredThumbnailError("thumbnails");
+    }
+    if (getPgErrorCode(error) === PG_RETIRED_MOBILE_THUMBNAIL_VIOLATION) {
+      throw retiredThumbnailError("mobileThumbnails");
+    }
     if (getPgErrorCode(error) === PG_UNIQUE_VIOLATION) {
       throw new SlugConflictError();
     }
@@ -302,24 +328,56 @@ function isOwnBlobUrl(value: string): boolean {
 // 저장이 끝난 뒤의 정리라 개별 실패는 응답에 영향을 주지 않음
 async function deleteUnusedBlobs(urls: string[]): Promise<void> {
   const targets = [...new Set(urls)].filter(isOwnBlobUrl);
-  await Promise.allSettled(targets.map(deleteBlobIfUnused));
+  await Promise.allSettled(targets.map(retireBlobIfUnused));
+  await deleteRetiredBlobs();
 }
 
 // 같은 프로젝트의 다른 목록과 다른 프로젝트의 참조를 모두 보호함
-async function deleteBlobIfUnused(url: string): Promise<void> {
+async function retireBlobIfUnused(url: string): Promise<void> {
   try {
-    const [reference] = await db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(
-        or(
-          sql`${url} = any(${projects.thumbnails})`,
-          sql`${url} = any(${projects.mobileThumbnails})`,
-        ),
-      )
-      .limit(1);
-    if (reference) return;
-    await del(url);
+    // Blob 삭제 결과가 모호해도 참조가 되살아나지 않도록 퇴역 상태를 먼저 기록함
+    await db.batch([
+      db.execute(sql`set transaction isolation level read committed`),
+      db.execute(
+        sql`select pg_advisory_xact_lock(${THUMBNAIL_RETIRE_LOCK_KEY})`,
+      ),
+      db.execute(sql`
+        insert into retired_thumbnail_blobs (url)
+        select ${url}
+        where not exists (
+          select 1
+          from projects
+          where ${url} = any(thumbnails)
+             or ${url} = any(mobile_thumbnails)
+        )
+        on conflict (url) do nothing
+      `),
+    ]);
+  } catch {
+    console.error("Blob thumbnail cleanup failed");
+  }
+}
+
+// 퇴역 기록이 있는 URL은 trigger가 새 참조를 거부하므로 잠금 없이 지워도 경합이 없음
+// 이번 요청 대상뿐 아니라 이전 요청에서 삭제가 실패한 URL도 함께 재시도함
+async function deleteRetiredBlobs(): Promise<void> {
+  try {
+    const pending = await db
+      .select({ url: retiredThumbnailBlobs.url })
+      .from(retiredThumbnailBlobs)
+      .where(isNull(retiredThumbnailBlobs.deletedAt));
+    const results = await Promise.allSettled(
+      pending.map(async ({ url }) => {
+        await del(url);
+        await db
+          .update(retiredThumbnailBlobs)
+          .set({ deletedAt: new Date() })
+          .where(eq(retiredThumbnailBlobs.url, url));
+      }),
+    );
+    if (results.some((result) => result.status === "rejected")) {
+      console.error("Blob thumbnail cleanup failed");
+    }
   } catch {
     console.error("Blob thumbnail cleanup failed");
   }

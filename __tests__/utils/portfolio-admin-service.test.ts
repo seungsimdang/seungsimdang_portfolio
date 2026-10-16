@@ -75,12 +75,13 @@ const base = {
 };
 
 // 편집 전 썸네일이 oldValue, 저장 후 DB 값이 savedValue인 상황
-// 순서는 existing 조회, loadProjectById 조회, experiences 조회, 참조 확인 조회
+// 순서는 existing 조회, loadProjectById 조회, experiences 조회, 삭제 대기 퇴역 URL 조회
 function arrange(
   oldValue: string[],
   savedValue: string[],
   oldMobile: string[] = [],
   savedMobile: string[] = [],
+  pending: string[] = [],
 ) {
   results.push([
     { id: "p1", thumbnails: oldValue, mobileThumbnails: oldMobile },
@@ -88,7 +89,7 @@ function arrange(
   batch.mockResolvedValue([]);
   results.push([row(savedValue, savedMobile)]);
   results.push([]);
-  results.push([]);
+  results.push(pending.map((url) => ({ url })));
 }
 
 beforeEach(() => {
@@ -113,14 +114,14 @@ describe("프로젝트 편집의 썸네일 처리", () => {
   });
 
   it("빈 배열이면 비우고 이전 Blob을 지운다", async () => {
-    arrange([OLD], []);
+    arrange([OLD], [], [], [], [OLD]);
     await updateProject("s", { ...base, thumbnails: [] });
     expect(setCalls[0].thumbnails).toEqual([]);
     expect(del).toHaveBeenCalledWith(OLD);
   });
 
   it("새 URL로 교체하면 이전 Blob을 지운다", async () => {
-    arrange([OLD], [NEW]);
+    arrange([OLD], [NEW], [], [], [OLD]);
     await updateProject("s", { ...base, thumbnails: [NEW] });
     expect(setCalls[0].thumbnails).toEqual([NEW]);
     expect(del).toHaveBeenCalledWith(OLD);
@@ -131,7 +132,7 @@ describe("프로젝트 편집의 썸네일 처리", () => {
     batch.mockResolvedValue([]);
     results.push([row([NEW])]);
     results.push([]);
-    results.push([{ id: "other" }]);
+    results.push([]);
     await updateProject("s", { ...base, thumbnails: [NEW] });
     expect(del).not.toHaveBeenCalled();
   });
@@ -143,7 +144,7 @@ describe("프로젝트 편집의 썸네일 처리", () => {
   });
 
   it("두 목록에서 모두 빠진 URL만 지운다", async () => {
-    arrange([OLD], [NEW], [NEW]);
+    arrange([OLD], [NEW], [NEW], [], [OLD]);
     await updateProject("s", { ...base, thumbnails: [NEW] });
     expect(del).toHaveBeenCalledOnce();
     expect(del).toHaveBeenCalledWith(OLD);
@@ -156,7 +157,7 @@ describe("프로젝트 편집의 썸네일 처리", () => {
   });
 
   it("Blob 삭제가 실패해도 저장은 성공한다", async () => {
-    arrange([OLD], [NEW]);
+    arrange([OLD], [NEW], [], [], [OLD]);
     del.mockRejectedValue(new Error("fail"));
     const project = await updateProject("s", { ...base, thumbnails: [NEW] });
     expect(project.thumbnails).toEqual([NEW]);
@@ -178,6 +179,27 @@ describe("프로젝트 편집의 썸네일 처리", () => {
     });
   });
 
+  it("이전 요청에서 삭제가 실패해 남은 퇴역 URL도 다음 정리 때 다시 삭제하고 삭제 시각을 기록한다", async () => {
+    const STALE = `https://${HOST}/thumbnails/stale.png`;
+    arrange([NEW], [NEW], [], [], [STALE]);
+    await updateProject("s", { ...base, thumbnails: [NEW] });
+    expect(del).toHaveBeenCalledOnce();
+    expect(del).toHaveBeenCalledWith(STALE);
+    const stamped = setCalls.filter((v) => "deletedAt" in v);
+    expect(stamped).toHaveLength(1);
+    expect(stamped[0].deletedAt).toBeInstanceOf(Date);
+  });
+
+  it("삭제에 실패한 URL은 삭제 시각을 기록하지 않고 성공한 URL만 기록한다", async () => {
+    arrange([OLD], [NEW], [], [], [OLD, NEW]);
+    del.mockImplementation(async (url: string) => {
+      if (url === OLD) throw new Error("fail");
+    });
+    await updateProject("s", { ...base, thumbnails: [NEW] });
+    expect(del).toHaveBeenCalledTimes(2);
+    expect(setCalls.filter((v) => "deletedAt" in v)).toHaveLength(1);
+  });
+
   it("프로젝트 삭제는 두 목록의 Blob 썸네일을 지우고 다른 값은 지우지 않는다", async () => {
     results.push(
       [
@@ -187,8 +209,7 @@ describe("프로젝트 편집의 썸네일 처리", () => {
           mobileThumbnails: [NEW],
         },
       ],
-      [],
-      [],
+      [{ url: OLD }, { url: NEW }],
     );
     await deleteProject("s");
     expect(del).toHaveBeenCalledTimes(2);
