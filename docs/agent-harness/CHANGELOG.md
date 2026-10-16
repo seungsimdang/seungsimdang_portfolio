@@ -1,5 +1,13 @@
 # 하네스 변경 이력
 
+## 2026-10-16 - 스폰 도구 선언 검사와 가능 여부 판정 Stop 강제
+
+사용자 지시로 두 훅을 추가·재작성했다. project-thumbnails 사이클에서 웹 검색 도구가 없는 designer에 웹 검색을 두 번 지시했고, 가능 여부 질문에 첫 문장을 "일부만 가능합니다."로만 쓰고 판정 내용을 둘째 문장으로 미뤘다.
+
+- `require-agent-tool-declaration.sh`(PreToolUse `Agent`, 차단): 스폰 지시문에 `필요 도구: A, B` 선언이 없거나, 선언한 도구가 `.claude/agents/<타입>.md`의 `tools:`에 없으면 차단한다. 정의 파일은 스폰 시점에 읽는다(Claude Code가 실행 중 수정도 다음 스폰에 반영). 정의 파일이 없는 내장 타입은 선언 유무만 본다. 선언에서 필요한 도구를 빠뜨린 경우는 잡지 못한다.
+- `require-feasibility-verdict.sh`(UserPromptSubmit 안내 + Stop 차단, Claude·Codex 동일 본문): 기존 리마인더에 더해, UserPromptSubmit의 `prompt`가 가능 여부 질문(키워드와 의문형 어미가 함께 있음)이면 세션별 표시 파일(`$TMPDIR/feasibility-verdict/<session_id>`)을 남긴다. Stop에서는 표시가 있을 때 마지막 응답 첫 문장에 `가능합니다`/`불가능합니다`가 없거나, `일부`/`부분`만 있고 가능·불가능 부분이 함께 드러나지 않으면 종료를 막는다. Codex 문서상 transcript 형식이 안정 인터페이스가 아니라서 transcript를 읽지 않는다. 질문 판정은 패턴 기반이라 패턴 밖 표현은 놓친다. `.codex/hooks.json` Stop에도 등록했다.
+- `task-team-orchestrator`·`bug-team-orchestrator` Claude 템플릿 "데이터 전달"에 `필요 도구:` 선언 규칙을 추가했다. 스폰 도구 선언 훅은 Claude `Agent` 전용이라 Codex에는 두지 않았다.
+
 ## 2026-10-15 - 재리뷰 확인 훅 삭제
 
 사용자 지시로 `confirm-repeated-review.sh`(Claude·Codex)와 `.claude/settings.json`, `.codex/hooks.json`의 등록, `__tests__/lint/runtime-hooks.test.ts`의 관련 사례를 삭제했다. blog-search 사이클에서 산출물을 `artifacts/task-team/` 최상위에 두자 프롬프트 경로로 사이클을 찾지 못하고 가장 최근 하위 폴더(admin-tabs-by-page)의 리뷰 5개를 세어 2차 리뷰 스폰에 확인 요청을 띄웠다. 재리뷰 범위와 재작업 기준은 `task-team-orchestrator` 9-1·11번 규칙으로만 관리한다.

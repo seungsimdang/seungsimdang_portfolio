@@ -112,6 +112,10 @@
           {
             "type": "command",
             "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-fork-spawn.sh\""
+          },
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/require-agent-tool-declaration.sh\""
           }
         ]
       },
@@ -142,6 +146,10 @@
           {
             "type": "command",
             "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/require-korean-response.sh\""
+          },
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/require-feasibility-verdict.sh\""
           }
         ]
       }
