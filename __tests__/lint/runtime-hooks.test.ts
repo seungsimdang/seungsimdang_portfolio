@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "vitest";
@@ -321,6 +321,92 @@ test("클로드 에이전트 실행 훅이 fork 스폰과 worktree 진입, 격�
     rmSync(fixture, { recursive: true, force: true });
   }
 });
+
+test("클로드 스폰 도구 선언 훅이 선언 누락과 정의에 없는 도구를 차단한다", () => {
+  const fixture = mkdtempSync(join(tmpdir(), "portfolio-agent-tools-"));
+  try {
+    mkdirSync(join(fixture, ".claude", "agents"), { recursive: true });
+    const definition = join(fixture, ".claude", "agents", "designer.md");
+    const spawn = (subagent_type: string, prompt: string) =>
+      run(
+        ".claude",
+        "require-agent-tool-declaration",
+        { tool_input: { subagent_type, prompt } },
+        fixture,
+      );
+    const webTask = "필요 도구: Read, WebSearch\n카드 디자인 근거를 조사하라";
+
+    writeFileSync(definition, "---\nname: designer\ntools: Read, Write\n---\n");
+    expect(spawn("designer", "카드 디자인 근거를 조사하라").status).toBe(2);
+    const missing = spawn("designer", webTask);
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toContain("WebSearch");
+    expect(spawn("designer", "필요 도구: 없음\n요약만 하라").status).toBe(0);
+
+    writeFileSync(
+      definition,
+      "---\nname: designer\ntools: Read, Write, WebSearch\n---\n",
+    );
+    expect(spawn("designer", webTask).status).toBe(0);
+    expect(spawn("general-purpose", webTask).status).toBe(0);
+    expect(spawn("general-purpose", "선언 없이 조사하라").status).toBe(2);
+    expect(spawn("fork", "선언 없이 조사하라").status).toBe(0);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+for (const tool of [".claude", ".codex"]) {
+  test(`${tool} 가능 여부 훅이 Stop에서 첫 문장 판정이 없는 응답을 막는다`, () => {
+    const marks = mkdtempSync(join(tmpdir(), "portfolio-feasibility-"));
+    try {
+      const hook = (input: object) =>
+        spawnSync(
+          "sh",
+          [resolve(tool, "hooks", "require-feasibility-verdict.sh")],
+          {
+            input: JSON.stringify({ session_id: "s1", ...input }),
+            encoding: "utf8",
+            env: { ...env, TMPDIR: marks },
+          },
+        );
+      const answer = (prompt: string, message: string, active = false) => {
+        hook({ hook_event_name: "UserPromptSubmit", prompt });
+        return hook({
+          hook_event_name: "Stop",
+          last_assistant_message: message,
+          stop_hook_active: active,
+        }).stdout;
+      };
+      const question = "훅으로 강제할 수 있는지 검토 후 보고해";
+
+      expect(answer(question, "가능합니다.\n\n근거는 아래와 같습니다.")).toBe(
+        "",
+      );
+      expect(
+        answer(question, "**불가능합니다.** 이유는 아래와 같습니다."),
+      ).toBe("");
+      expect(
+        answer(
+          question,
+          "선언 대조는 가능하지만 필요 도구 추정은 불가능합니다. 상세는 아래와 같습니다.",
+        ),
+      ).toBe("");
+      for (const message of [
+        "일부만 가능합니다. 선언 대조는 됩니다.",
+        "검토 결과는 아래와 같습니다.",
+      ]) {
+        expect(JSON.parse(answer(question, message)).decision).toBe("block");
+      }
+      expect(
+        answer("가능하다/불가능하다로 대답하라고", "검토 결과입니다."),
+      ).toBe("");
+      expect(answer(question, "검토 결과입니다.", true)).toBe("");
+    } finally {
+      rmSync(marks, { recursive: true, force: true });
+    }
+  });
+}
 
 test("클로드 리뷰 누락·영어 응답 훅이 위반을 검출한다", () => {
   expect(

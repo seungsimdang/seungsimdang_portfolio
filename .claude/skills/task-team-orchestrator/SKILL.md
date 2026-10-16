@@ -127,6 +127,7 @@ Hybrid. 요구사항·설계·API 명세·리뷰·QA는 Agent Team으로 진행 
 ## 데이터 전달
 
 - Task 진행 상태: `TaskCreate`, `TaskUpdate`, `TaskGet`
+- 팀원 스폰 지시: 지시문에 `필요 도구: Read, Edit, Bash`처럼 지시 수행에 필요한 도구를 한 줄로 선언하고, 스폰 전에 에이전트 목록의 Tools와 대조한다. 없는 도구가 필요하면 스폰하지 않고 사용자에게 보고한다. `require-agent-tool-declaration.sh`가 선언 누락과 정의에 없는 도구 선언을 차단한다.
 - 실시간 발견 공유: `SendMessage`
 - 다음 단계가 읽어야 할 산출물: `artifacts/task-team/` 파일
 

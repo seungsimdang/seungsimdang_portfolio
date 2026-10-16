@@ -83,6 +83,10 @@
           {
             "type": "command",
             "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/require-korean-response.sh\""
+          },
+          {
+            "type": "command",
+            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/require-feasibility-verdict.sh\""
           }
         ]
       }
