@@ -109,7 +109,7 @@ export function ThumbnailField({
       {/* 제거는 저장 전까지 되돌릴 수 있어 위험 스타일 대신 교체와 같은 일반 버튼으로 둠 */}
       {value && (
         <div className="flex flex-col items-start gap-12 md:flex-row">
-          <div className="relative h-192 w-full max-w-320 overflow-hidden rounded-md">
+          <div className="relative h-192 w-full max-w-xs overflow-hidden rounded-md">
             <Image
               src={value}
               alt={`${title || "프로젝트"} 썸네일 미리보기`}

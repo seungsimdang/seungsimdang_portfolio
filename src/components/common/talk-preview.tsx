@@ -35,13 +35,13 @@ export function TalkPreview({
         <span aria-hidden="true"> · </span>
         <span>{venue}</span>
       </p>
-      <p className="text-body whitespace-pre-line break-keep break-words">
+      <p className="text-body whitespace-pre-line break-keep wrap-break-word">
         {description}
       </p>
       {detailed && impact?.trim() && (
         <div className="space-y-8">
           <h4 className="text-small opacity-50">.impact</h4>
-          <p className="text-body whitespace-pre-line break-keep break-words">
+          <p className="text-body whitespace-pre-line break-keep wrap-break-word">
             {impact}
           </p>
         </div>

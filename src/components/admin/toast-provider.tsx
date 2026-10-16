@@ -136,7 +136,7 @@ function ToastItem({
         TONE_CLASS[notice.tone],
       )}
     >
-      <div className="min-w-0 flex-1 py-12 break-words">
+      <div className="min-w-0 flex-1 py-12 wrap-break-word">
         <p>
           {PREFIX[notice.tone]}
           {notice.message}

@@ -16,7 +16,7 @@ interface WorkPageProps {
 }
 
 const bodyClassName =
-  "text-body whitespace-pre-line break-keep break-words min-w-0";
+  "text-body whitespace-pre-line break-keep wrap-break-word min-w-0";
 
 export async function generateStaticParams() {
   return (await listProjectSlugs()).map((id) => ({ id }));
