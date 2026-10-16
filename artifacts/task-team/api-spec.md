@@ -294,3 +294,13 @@ E2E (`tests/e2e/`):
 - requirements.md 13절 D1에 따라 `thumbnail` 컬럼 제거(이 문서의 0006)를 이번 브랜치에 포함한다. 데이터 이전과 컬럼 제거를 이번 브랜치의 마이그레이션으로 함께 적용하고, `src/db/schema/portfolio.ts`에서 `thumbnail` 정의를 제거한다. 배포 사이 운영 화면 중단 위험은 사용자가 알고 선택했으며 main 배포 직전 재확인한다.
 - D2에 따라 `scripts/migrate-thumbnails.mjs`와 `LEGACY_THUMBNAIL_PATTERN`을 삭제한다.
 - D4(Candanta PC/모바일 분리)는 데이터 변경이며 스키마·API 설계에는 영향이 없다.
+
+## 리뷰 재개 후 보안 보완 (2026-10-16)
+
+- 사용자가 기존 Origin scheme 미비교 및 Blob 삭제 경합을 이번 사이클 수정에 포함하고, Blob 자동 삭제 유지를 선택함.
+- Origin은 `NEXTAUTH_URL`(없으면 요청 URL)의 scheme과 기존 허용 host·port를 조합한 전체 origin과 비교함. `ADMIN_ALLOWED_HOSTS`의 host 형식은 유지함.
+- 마이그레이션 0007은 `retired_thumbnail_blobs(url PRIMARY KEY)` 및 프로젝트 썸네일 쓰기 trigger를 추가함.
+- 미참조 Blob 삭제 경로는 READ COMMITTED 트랜잭션에서 advisory lock `7301005`(0008에서 이력서 잠금 `7301004`와 분리)를 얻고, 두 목록 전체에서 참조가 없는 URL만 삭제 대상으로 기록함. 기록 커밋 후 외부 Blob 삭제를 실행함.
+- 프로젝트 INSERT 및 두 썸네일 배열 UPDATE trigger도 같은 lock 아래에서 기록을 검사함. 새 참조 저장이 먼저면 삭제 대상 기록을 만들지 않으며, 기록이 먼저면 새 참조 저장을 거부함. Trigger는 READ COMMITTED 외 격리수준을 거부함.
+- 삭제 대상 URL의 재등록은 `VALIDATION_FAILED`(400)와 `thumbnails` 또는 `mobileThumbnails` 필드 오류로 반환하고 재업로드를 안내함.
+- 외부 삭제 실패에도 URL 기록은 유지함. 0008이 `retired_thumbnail_blobs.deleted_at`을 추가하고, 삭제 성공 시에만 값을 기록함. 이후 프로젝트 수정·삭제로 Blob 정리가 실행될 때마다 `deleted_at`이 null인 모든 URL의 삭제를 다시 시도함(사용자 결정: 별도 cron·worker 없이 다음 정리 때 재시도). 관리자 편집이 없으면 재시도도 일어나지 않음.

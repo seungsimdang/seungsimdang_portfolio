@@ -215,3 +215,10 @@
 - D4. Candanta 데이터 변경: PC(기본) 목록을 새 이미지 `/Users/leeseunghyun/Downloads/Candanta 썸네일 1920×1080@1x.png`(1920×1080, 0.95MB, D6) 1장으로, 모바일 목록을 기존 썸네일 1장으로 둔다. `preserveThumbnailText`(정사각 가운데 크롭, 상단 정렬)는 모바일 세트에만 적용하고 새 PC 이미지는 일반 `object-cover`로 표시한다. SEMT와 같은 시점에 반영한다.
 - D5. Globber 데이터 변경(2026-10-16 사용자 지시, 이번 사이클 포함): PC(기본) 목록은 현재 썸네일(Blob `thumbnails/globber-JKaiE94xrSJKvR9gD37vdkdVbrEp0d.png`) 1장으로 두고, 모바일 목록을 새 이미지 `/Users/leeseunghyun/Downloads/Globber 모바일 1290×2796@1x.png`(1290×2796, 2.01MB, D6) 1장으로 둔다. Blob `thumbnails/`에 원본 업로드. SEMT·Candanta와 같은 시점(QA 후, 실행 전 사용자 승인)에 반영한다.
 - D6. 썸네일 원본 해상도 축소(2026-10-16 사용자 지시): 처음 받은 @2x 원본이 불필요하게 커서 @1x 파일로 바꾼다. SEMT PC는 `/Users/leeseunghyun/Downloads/SEMT 썸네일 1920×1080@1x.png`(1920×1080, 0.66MB)로 `SEMT.png`(3840×2160, 2.07MB)를 대체하고, Candanta PC와 Globber 모바일은 D4·D5에 적은 @1x 파일을 쓴다. SEMT 모바일 3장(1290×2796, 각 약 1.1MB)은 그대로 쓴다. 모두 admin 업로드 상한 4MB 이하다.
+
+## 14. 리뷰 재개 중 추가 사용자 지시 (2026-10-16)
+
+- T08에서 발견한 기존 Low 두 항목(Origin scheme 미비교, Blob 참조 확인·삭제 사이 경합)을 이번 사이클 수정에 포함함.
+- Blob 자동 삭제를 유지하도록 사용자가 명시 지시함. DB 잠금과 삭제 대상 URL 기록으로 새 참조 저장과 삭제 확정을 직렬화하고, 삭제 대상으로 확정된 URL의 재등록을 거부함. 삭제 실패 시에도 해당 기록은 유지하고 재업로드를 안내함.
+- DPM Core(`dpm-core`) 모바일 썸네일을 `/Users/leeseunghyun/Desktop/DPM/1.webp`부터 `6.webp`까지 첨부 순서로 변경하도록 사용자 지시. 여섯 이미지 모두 1290×2796임.
+- 운영 DB 직접 조회 결과 DPM Core의 기존 `thumbnail`은 null이고, 운영에는 아직 단수 컬럼만 존재함. 사용자는 PC 이미지를 별도로 전달하기로 했으므로 PC·모바일 반영은 그 파일 수신 및 운영 배포 게이트 이후 진행함. 모바일 단독 저장 거부 규칙은 유지함.
