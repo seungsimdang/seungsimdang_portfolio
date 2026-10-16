@@ -134,7 +134,7 @@ function EmptyState({
       : basePath;
     return (
       <div className="space-y-12">
-        <p className={cn("text-body break-words", toneClassName)}>
+        <p className={cn("text-body wrap-break-word", toneClassName)}>
           {category ? `${category} 카테고리에서 ` : ""}"{q}"에 대한 검색 결과가
           없습니다.
         </p>
@@ -240,7 +240,7 @@ function ResultList({
         className={cn(
           "text-small text-white/50",
           isAdmin && "mb-8",
-          q && "break-words",
+          q && "wrap-break-word",
         )}
       >
         {countLine}
