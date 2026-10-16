@@ -79,7 +79,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   className={neighborLinkClassName}
                 >
                   <span className="text-small text-white/50">이전 글</span>
-                  <span className="text-body font-medium break-keep break-words">
+                  <span className="text-body font-medium break-keep wrap-break-word">
                     {older.title}
                   </span>
                 </Link>
@@ -94,7 +94,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   )}
                 >
                   <span className="text-small text-white/50">다음 글</span>
-                  <span className="text-body font-medium break-keep break-words">
+                  <span className="text-body font-medium break-keep wrap-break-word">
                     {newer.title}
                   </span>
                 </Link>
