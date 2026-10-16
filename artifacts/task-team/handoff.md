@@ -56,8 +56,9 @@
 
 ## 데이터 작업 (QA 후, 실행 전 사용자 승인)
 
-- SEMT: 기본(PC) `/Users/leeseunghyun/Downloads/SEMT.png`(3840×2160, 2.07MB), 모바일(순서대로) `/Users/leeseunghyun/Desktop/SEMT-6.9-inch-Screens/03-03.png`, `02-02.png`, `04-04-Know-each-hospital.png`(각 1290×2796). Blob `thumbnails/`에 원본 업로드.
-- Candanta: 기본(PC) `/Users/leeseunghyun/Downloads/Candanta 썸네일 1920×1080@2x.png`(3840×2160, 3.0MB), 모바일은 현재 썸네일 Blob URL 1장.
+- SEMT: 기본(PC) `/Users/leeseunghyun/Downloads/SEMT 썸네일 1920×1080@1x.png`(1920×1080, 0.66MB, D6), 모바일(순서대로) `/Users/leeseunghyun/Desktop/SEMT-6.9-inch-Screens/03-03.png`, `02-02.png`, `04-04-Know-each-hospital.png`(각 1290×2796). Blob `thumbnails/`에 원본 업로드.
+- Candanta: 기본(PC) `/Users/leeseunghyun/Downloads/Candanta 썸네일 1920×1080@1x.png`(1920×1080, 0.95MB, D6), 모바일은 현재 썸네일 Blob URL 1장.
+- Globber(D5): 기본(PC)은 현재 Blob 썸네일 유지, 모바일은 `/Users/leeseunghyun/Downloads/Globber 모바일 1290×2796@1x.png`(1290×2796, 2.01MB, D6) 1장.
 - 운영 DB 마이그레이션(0005·0006)은 빌드 시 자동 적용된다. 0006이 `thumbnail`을 지우므로 배포 사이 운영 화면 중단 위험이 있다(D1, 사용자가 알고 선택). main 배포 직전 재확인.
 
 ## 이번 세션에서 끝난 일

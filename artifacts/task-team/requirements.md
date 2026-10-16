@@ -88,7 +88,7 @@
 ### 4.7 SEMT 데이터 (F9)
 
 - AC-26: 구현·리뷰·QA 통과 후, 사용자 승인을 받은 뒤에만 운영 DB와 스토리지를 변경한다.
-- AC-27: SEMT PC 목록은 `SEMT.png` 1장, 모바일 목록은 03-03, 02-02, 04-04-Know-each-hospital 순서 3장이다.
+- AC-27: SEMT PC 목록은 `SEMT 썸네일 1920×1080@1x.png` 1장(D6), 모바일 목록은 03-03, 02-02, 04-04-Know-each-hospital 순서 3장이다.
 - AC-28: 반영 후 PC 뷰는 1장 고정(전환 없음), 모바일 뷰는 3장 자동 전환임을 실제 화면에서 확인한다.
 - AC-29: SEMT 외 프로젝트 데이터는 변경되지 않는다.
 
@@ -212,4 +212,6 @@
 - D1. `thumbnail` 컬럼 제거를 이번 브랜치에 포함한다. 빌드 시 마이그레이션이 새 코드보다 먼저 적용되어 배포 사이 운영 화면이 깨질 수 있다는 위험을 사용자가 알고 선택함. main 배포 직전에 다시 확인받는다.
 - D2. `scripts/migrate-thumbnails.mjs`와 `LEGACY_THUMBNAIL_PATTERN`(`/images/` 로컬 경로 허용)을 삭제한다.
 - D3. `/projects` 페이지 lg 이상 카드를 16:9 비율로 바꾼다. 변경된 카드 크기(1440 기준 약 687×386)에 맞는 UI(제목·메타 글자 크기, 패딩, 그라디언트, 요약 칸과의 정렬 등)는 웹 검색으로 확인한 UI best practice를 근거로 설계·구현한다. AC-R2(픽셀 동일)는 이 의도한 변경을 제외하고 적용한다. 홈 카드와 `/projects`의 lg 미만은 그대로 둔다.
-- D4. Candanta 데이터 변경: PC(기본) 목록을 새 이미지 `/Users/leeseunghyun/Downloads/Candanta 썸네일 1920×1080@2x.png`(3840×2160, 3.0MB) 1장으로, 모바일 목록을 기존 썸네일 1장으로 둔다. `preserveThumbnailText`(정사각 가운데 크롭, 상단 정렬)는 모바일 세트에만 적용하고 새 PC 이미지는 일반 `object-cover`로 표시한다. SEMT와 같은 시점에 반영한다.
+- D4. Candanta 데이터 변경: PC(기본) 목록을 새 이미지 `/Users/leeseunghyun/Downloads/Candanta 썸네일 1920×1080@1x.png`(1920×1080, 0.95MB, D6) 1장으로, 모바일 목록을 기존 썸네일 1장으로 둔다. `preserveThumbnailText`(정사각 가운데 크롭, 상단 정렬)는 모바일 세트에만 적용하고 새 PC 이미지는 일반 `object-cover`로 표시한다. SEMT와 같은 시점에 반영한다.
+- D5. Globber 데이터 변경(2026-10-16 사용자 지시, 이번 사이클 포함): PC(기본) 목록은 현재 썸네일(Blob `thumbnails/globber-JKaiE94xrSJKvR9gD37vdkdVbrEp0d.png`) 1장으로 두고, 모바일 목록을 새 이미지 `/Users/leeseunghyun/Downloads/Globber 모바일 1290×2796@1x.png`(1290×2796, 2.01MB, D6) 1장으로 둔다. Blob `thumbnails/`에 원본 업로드. SEMT·Candanta와 같은 시점(QA 후, 실행 전 사용자 승인)에 반영한다.
+- D6. 썸네일 원본 해상도 축소(2026-10-16 사용자 지시): 처음 받은 @2x 원본이 불필요하게 커서 @1x 파일로 바꾼다. SEMT PC는 `/Users/leeseunghyun/Downloads/SEMT 썸네일 1920×1080@1x.png`(1920×1080, 0.66MB)로 `SEMT.png`(3840×2160, 2.07MB)를 대체하고, Candanta PC와 Globber 모바일은 D4·D5에 적은 @1x 파일을 쓴다. SEMT 모바일 3장(1290×2796, 각 약 1.1MB)은 그대로 쓴다. 모두 admin 업로드 상한 4MB 이하다.
