@@ -1,5 +1,26 @@
 # 하네스 변경 이력
 
+## 2026-10-16 - 미확인 추측 보고·판정 순서 강제
+
+사용자 지시로 검토에서 훅으로 강제할 수 있다고 판단한 항목을 모두 구현했다.
+
+- `block-unverified-claims.sh`(Stop 차단, Claude·Codex): 마지막 응답의 한 문장에 추측 표현(`것으로 보입니다·보지만`, `것 같습니다`, `가능성이 높` 등)과 미확인 꼬리표(`확인하지 않았`, `미확인`, `아직 확인` 등)가 함께 있으면 한 번 막는다. 도구로 확인할 수 있던 패치 적용 여부를 확인하지 않고 "적용될 것으로 보지만 미확인"이라고 보고한 사고가 계기다. 실제로 확인할 수 있었는지는 알 수 없어 재응답은 통과시키고, 코드 표기와 큰따옴표 인용은 판정에서 뺀다.
+- `require-feasibility-verdict.sh`: 표시 파일이 있는 턴의 PostToolUse마다 "다음 메시지가 최종 답변이면 진행 안내 없이 가능합니다/불가능합니다로 시작" 안내를 붙인다. 턴 끝 직전 진행 안내 요청에 답하느라 판정이 셋째 문장으로 밀린 사고가 계기다. 질문 판정에 "가능성·가능 여부 + 검토·확인·판단·보고" 조합도 추가했다.
+- `.claude/settings.json`과 `.codex/hooks.json`에 등록했다.
+
+## 2026-10-16 - 역할 카드 낡은 사실 정리와 가능 여부 훅 오탐 수정
+
+사용자 지시로 `/claude-api prompt-audit` 결과를 적용했다. 역할 카드와 skill에 다른 프로젝트에서 넘어온 명령·토큰·도메인 규칙과 서로 맞지 않는 문장이 남아 있었다.
+
+- 구현자 카드(Claude·Codex)의 없는 스크립트 `pnpm fix-all`을 `pnpm exec biome check --write . && pnpm type-check`로 바꿨다. 구현자는 커밋·스테이징을 하지 않아 Biome의 `--staged`·`--changed`가 맞지 않고, 저장소가 이미 `biome check`를 통과한 상태라 `--write .`도 자기 변경 파일만 고친다.
+- frontend-developer·code-reviewer의 `globals.css`에 없는 토큰(`shadow-card`, `bg-brand`, `rounded-pill`, `animate-rise` 등)을 지우고 `docs/agent-rules/tailwind.md` 참조로 바꿨다. code-reviewer의 없는 `isCrossOriginRequest`·`UiRadioItem` 항목과 다른 프로젝트 버그 사례를 정리했다.
+- `radix-ui`를 "이미 설치됨"으로 적은 문장을 미설치·추가 시 승인 필요로 바꿨다. bug-fixer의 자금·잔고 게이트 규칙을 이 저장소의 인증·데이터 변경 경로로 바꿨다.
+- 구현자 카드 끝의 "커밋을 생성할 때는 git-commit을 따른다"를 지웠다. 같은 카드의 "커밋 없이 orchestrator를 기다린다"와 git-commit의 "팀원 subagent는 커밋하지 않는다"와 충돌했다.
+- bug-team-orchestrator의 T03(postmortem)·T01~T05를 Task 표에 맞춰 T04·T01~T04로, task-team-orchestrator의 8명·DevOps를 구성 표에 맞춰 7명으로 고쳤다. DevOps는 Task 계약에 없어 목적 문장에서 뺐다. git-commit의 없는 CLAUDE.md·AGENTS.md 절 참조를 고쳤다.
+- `require-feasibility-verdict.sh`(Claude·Codex): 백그라운드 subagent 보고가 UserPromptSubmit `prompt`(`<agent-message …>`)로 들어와 보고 본문의 "가능할까" 같은 문장이 사용자 질문으로 판정되던 오탐을 고쳤다. `<agent-message>`와 `<pasted_content>` 블록을 판정 전에 지우고, 사용자 문장이 남지 않는 보고 전달이면 진행 중인 질문 표시를 건드리지 않는다. 또 질문이 아닌 메시지가 표시를 지우던 처리를 없앴다. 가능 여부 질문 뒤 작업 도중 들어온 다른 메시지가 표시를 지워 턴 끝 Stop 검사가 돌지 않았다. 이제 표시는 Stop 판정이 끝난 뒤(통과 또는 한 번 막은 뒤의 재응답)에만 지운다.
+- `require-feasibility-verdict.sh`의 분할 판정 허용을 없앴다. 사용자가 "가능하다/불가능하다로 대답하라"고 교정했는데 훅은 첫 문장에 `일부`와 가능·불가능이 함께 있으면 통과시켜 "일부만 가능합니다: …" 답변을 막지 못했다. 이제 Stop은 답변이 `가능합니다` 또는 `불가능합니다`로 시작할 때만 통과시키고, 리마인더와 차단 문구도 분할 판정과 진행 안내로 시작하지 말라고 안내한다.
+- 나머지 UserPromptSubmit 안내 훅(`require-why-explanation`, `require-status-verification`, `require-single-best-practice`, `confirm-edit-on-report-request`, Claude·Codex)도 같은 오탐이 있어, 공용 도우미 `user-prompt-text.sh`로 두 블록을 지운 사용자 문장만 판정한다. `confirm-edit-on-report-request`는 사용자 문장이 없는 보고 전달에서 보고 전용 상태를 지우지 않는다.
+
 ## 2026-10-16 - 스폰 도구 선언 검사와 가능 여부 판정 Stop 강제
 
 사용자 지시로 두 훅을 추가·재작성했다. project-thumbnails 사이클에서 웹 검색 도구가 없는 designer에 웹 검색을 두 번 지시했고, 가능 여부 질문에 첫 문장을 "일부만 가능합니다."로만 쓰고 판정 내용을 둘째 문장으로 미뤘다.

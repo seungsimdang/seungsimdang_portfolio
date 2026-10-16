@@ -270,6 +270,34 @@ for (const tool of [".claude", ".codex"]) {
     expect(other.status).toBe(0);
     expect(other.stdout).toBe("");
   });
+  test(`${tool} 안내 훅이 subagent 보고와 붙여넣은 내용에는 반응하지 않는다`, () => {
+    const quoted = [
+      '<agent-message from="a1">\n  왜 best practice 표로 리스트업이 가능할까?\n</agent-message>',
+      '<pasted_content id="p1">\n왜 best practice 표로 리스트업이 가능할까?\n</pasted_content id="p1">',
+    ];
+    for (const hook of [
+      "require-why-explanation",
+      "require-status-verification",
+      "require-single-best-practice",
+      "require-feasibility-verdict",
+      "confirm-edit-on-report-request",
+    ]) {
+      for (const prompt of quoted) {
+        const result = run(tool, hook, {
+          hook_event_name: "UserPromptSubmit",
+          session_id: "quoted",
+          prompt,
+        });
+        expect(result.status).toBe(0);
+        expect(result.stdout).toBe("");
+      }
+    }
+    expect(
+      run(tool, "require-why-explanation", {
+        prompt: `${quoted[1]}\n\n-> 왜 이렇게 돼?`,
+      }).stdout,
+    ).toContain("판단 근거");
+  });
   test(`${tool} 원인 설명 안내 훅이 실행을 차단하지 않는다`, () => {
     const result = run(tool, "require-why-explanation", {
       prompt: "왜 변경했어?",
@@ -386,22 +414,61 @@ for (const tool of [".claude", ".codex"]) {
       expect(
         answer(question, "**불가능합니다.** 이유는 아래와 같습니다."),
       ).toBe("");
-      expect(
-        answer(
-          question,
-          "선언 대조는 가능하지만 필요 도구 추정은 불가능합니다. 상세는 아래와 같습니다.",
-        ),
-      ).toBe("");
       for (const message of [
-        "일부만 가능합니다. 선언 대조는 됩니다.",
+        "일부만 가능합니다: 선언 대조는 가능하고 필요 도구 추정은 불가능합니다.",
+        "선언 대조는 가능하지만 필요 도구 추정은 불가능합니다. 상세는 아래와 같습니다.",
+        "입력을 확인했습니다. 가능합니다.",
         "검토 결과는 아래와 같습니다.",
       ]) {
         expect(JSON.parse(answer(question, message)).decision).toBe("block");
+        hook({
+          hook_event_name: "Stop",
+          last_assistant_message: message,
+          stop_hook_active: true,
+        });
       }
+      hook({ hook_event_name: "UserPromptSubmit", prompt: question });
+      hook({
+        hook_event_name: "UserPromptSubmit",
+        prompt: "이 이미지로 썸네일 바꿔",
+      });
+      expect(
+        JSON.parse(
+          hook({
+            hook_event_name: "Stop",
+            last_assistant_message: "검토 결과입니다.",
+          }).stdout,
+        ).decision,
+      ).toBe("block");
+      hook({
+        hook_event_name: "Stop",
+        last_assistant_message: "검토 결과입니다.",
+        stop_hook_active: true,
+      });
       expect(
         answer("가능하다/불가능하다로 대답하라고", "검토 결과입니다."),
       ).toBe("");
       expect(answer(question, "검토 결과입니다.", true)).toBe("");
+
+      const report =
+        '<agent-message from="a1">\n  구현 가능할까? 검토 결과입니다.\n</agent-message>';
+      expect(answer(report, "검토 결과입니다.")).toBe("");
+      expect(
+        answer(
+          '<pasted_content id="p1">\n이거 가능해?\n</pasted_content id="p1">\n\n-> 정리해',
+          "정리했습니다.",
+        ),
+      ).toBe("");
+      hook({ hook_event_name: "UserPromptSubmit", prompt: question });
+      hook({ hook_event_name: "UserPromptSubmit", prompt: report });
+      expect(
+        JSON.parse(
+          hook({
+            hook_event_name: "Stop",
+            last_assistant_message: "검토 결과입니다.",
+          }).stdout,
+        ).decision,
+      ).toBe("block");
     } finally {
       rmSync(marks, { recursive: true, force: true });
     }
@@ -562,3 +629,73 @@ test("AskUserQuestion 직접 입력 답변 뒤 같은 응답의 재질문을 차
     rmSync(fixture, { recursive: true, force: true });
   }
 });
+
+const withTmp = (prefix: string, body: (tmp: string) => void) => {
+  const tmp = mkdtempSync(join(tmpdir(), prefix));
+  try {
+    body(tmp);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+};
+
+const runIn = (tool: string, hook: string, input: object, tmp: string) =>
+  spawnSync("sh", [resolve(tool, "hooks", `${hook}.sh`)], {
+    input: JSON.stringify({ session_id: "s1", ...input }),
+    encoding: "utf8",
+    env: { ...env, TMPDIR: tmp },
+  });
+
+for (const tool of [".claude", ".codex"]) {
+  test(`${tool} 가능 여부 훅이 검토형 질문을 표시하고 표시된 턴의 도구 결과에 안내를 붙인다`, () => {
+    withTmp("portfolio-feasibility-post-", (tmp) => {
+      const post = () =>
+        runIn(
+          tool,
+          "require-feasibility-verdict",
+          { hook_event_name: "PostToolUse" },
+          tmp,
+        ).stdout;
+      expect(post()).toBe("");
+      runIn(
+        tool,
+        "require-feasibility-verdict",
+        {
+          hook_event_name: "UserPromptSubmit",
+          prompt: "훅 강제 가능성 검토 후 보고해",
+        },
+        tmp,
+      );
+      expect(JSON.parse(post()).hookSpecificOutput.additionalContext).toContain(
+        "가능합니다.",
+      );
+    });
+  });
+
+  test(`${tool} 미확인 추측 보고 훅이 추측과 미확인이 한 문장에 있으면 한 번 막는다`, () => {
+    withTmp("portfolio-unverified-", (tmp) => {
+      const stop = (message: string, active = false) =>
+        runIn(
+          tool,
+          "block-unverified-claims",
+          {
+            hook_event_name: "Stop",
+            last_assistant_message: message,
+            stop_hook_active: active,
+          },
+          tmp,
+        ).stdout;
+      const claim =
+        "변경은 충돌 없이 적용될 것으로 보지만 아직 확인하지 않았습니다.";
+      expect(JSON.parse(stop(claim)).decision).toBe("block");
+      expect(stop(claim, true)).toBe("");
+      expect(stop("패치 적용 검사를 통과했습니다. 충돌은 없습니다.")).toBe("");
+      expect(
+        stop("권한이 없어 확인하지 못했습니다. 확인 방법은 아래와 같습니다."),
+      ).toBe("");
+      expect(
+        stop('"~것으로 보지만 미확인" 같은 보고를 막는 훅을 추가했습니다.'),
+      ).toBe("");
+    });
+  });
+}
