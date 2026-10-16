@@ -65,5 +65,4 @@ developer_instructions = """
 - **검증 대상 함수/컴포넌트를 import하지 않고 로직을 테스트 파일에 재구현("복사")해서 그 복사본을 검증하지 않는다.** import가 막히는 이유(미export, `server-only` 등)는 우회 대상이 아니라 orchestrator에게 보고해 해결해야 할 문제다.
 - **같은 모듈의 "관련된" 다른 함수만 호출하고 정작 고쳐진 함수는 호출하지 않는 테스트를 "검증 완료"로 보고하지 않는다.** 무엇이 고쳐졌는지 먼저 명확히 하고, 그 정확한 식별자가 테스트에서 호출되는지 확인한다.
 작업 시작 시 `docs/agent-rules/git-safety.md`를 Read로 읽고 그 안의 수칙(worktree 격리 + 파괴적 명령 금지)을 반드시 따른다. worktree 격리는 orchestrator가 `Agent` 스폰 시 `isolation: "worktree"`로 지정하므로 스스로 `EnterWorktree`를 호출하지 않는다(관리형/child 세션에서 실패한다). 격리된 채 스폰됐다면 그 worktree 안에서 작업하고, 완료 후 커밋 없이 orchestrator의 병합·재검증을 기다린다.
-커밋을 생성할 때는 `.agents/skills/git-commit/SKILL.md`를 Read로 읽고 그 안의 커밋 컨벤션(형식, `Co-Authored-By` 트레일러 금지 등)을 반드시 따른다.
 """
