@@ -50,7 +50,11 @@ export const projects = pgTable(
     role: text("role").notNull(),
     summary: text("summary").notNull(),
     link: text("link"),
-    thumbnail: text("thumbnail"),
+    thumbnails: text("thumbnails").array().notNull().default(sql`'{}'::text[]`),
+    mobileThumbnails: text("mobile_thumbnails")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     techStack: text("tech_stack").array().notNull().default(sql`'{}'::text[]`),
     sortOrder: integer("sort_order").notNull(),
     createdAt: createdAt(),
@@ -58,9 +62,24 @@ export const projects = pgTable(
   },
   (table) => [
     check("projects_slug_format", sql`${table.slug} ~ ${SLUG_PATTERN_SQL}`),
+    // 상한 10은 schemas/portfolio.schema.ts의 THUMBNAIL_LIST_MAX와 같게 유지함
+    check(
+      "projects_thumbnails_max",
+      sql`cardinality(${table.thumbnails}) <= 10 and cardinality(${table.mobileThumbnails}) <= 10`,
+    ),
+    check(
+      "projects_mobile_requires_base",
+      sql`cardinality(${table.mobileThumbnails}) = 0 or cardinality(${table.thumbnails}) > 0`,
+    ),
     index("projects_order_idx").on(table.sortOrder, table.createdAt, table.id),
   ],
 );
+
+export const retiredThumbnailBlobs = pgTable("retired_thumbnail_blobs", {
+  url: text("url").primaryKey(),
+  // null이면 외부 Blob 삭제가 아직 성공하지 않아 다음 정리 때 재시도 대상임
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
 
 export const experiences = pgTable(
   "experiences",

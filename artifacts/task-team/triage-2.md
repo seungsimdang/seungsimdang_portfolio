@@ -1,19 +1,15 @@
-# triage-2: 2차 리뷰 재판단 (orchestrator)
+# 최종 리뷰 재검토
 
-대상: `code-review-2.md`, `security-review-2.md`, 재작업 diff `8af467f..20c836f`.
+- 검토자: Claude orchestrator, 2026-10-16 (Codex 세션 이어받음).
+- 입력: `code-review-3.md`, `security-review-2.md`.
 
-## 처리
-
-| ID | 심각도 | 판단 | 처리 |
+| Finding | 직접 확인한 근거 | 판정 | 조치 |
 | --- | --- | --- | --- |
-| S2-01 | Low (사이클 diff 밖 기존 코드) | `src/lib/auth/admin-route.ts`가 `error.message`를 기록함을 확인. DrizzleQueryError 메시지에 SQL 파라미터가 포함되어 관리자 검색 실패 시 검색어가 로그에 남음 | 사용자 결정으로 이번 사이클 포함. `src/lib/api/safe-error-log.ts`의 `summarizeErrorForLog`로 공개 라우트와 admin-route가 오류 이름과 PG 코드만 기록 |
-| S2-02 | Info | `/blog?q=` SSR 시간 초과는 Next 기본 오류 처리 | 조치 없음, T09에서 동작 확인 |
-| F2-01 | Low (참고) | SSR 경로의 DB 시간 초과 처리 미확인 | 코드 변경 없음, T09 확인 항목 |
+| SEC-T08-03 Low: 썸네일 retirement lock이 이력서 lock `7301004`와 같음 | `portfolio-admin-service.ts`의 `THUMBNAIL_RETIRE_LOCK_KEY`와 `RESUME_LOCK_KEY`가 모두 `7_301_004`, 0007 trigger도 `7301004` | 타당 | 사용자 포함 결정. 서비스 상수를 `7_301_005`로 바꾸고 0008에서 trigger 함수를 같은 키로 교체. 다른 사용처 없음을 grep으로 확인. 프로젝트 생성은 `7301001 → 7301005` 순서만 존재해 역순 획득 없음 |
+| SEC-T08-04 Low: Blob 삭제 실패 후 자동 재시도 없음 | `deleteBlobIfUnused`가 `del` 실패를 로그만 남기고, 이후 일반 흐름에서 같은 URL을 다시 넘기지 않음 | 타당 | 사용자 포함 결정, 방식은 "다음 정리 때 재시도" 선택. 0008이 `deleted_at` 추가. 정리 시 이번 URL을 퇴역 기록한 뒤 `deleted_at` null인 모든 URL을 삭제하고 성공한 것만 기록 |
+| `code-review-3.md` | Medium 이상 finding 없음 | - | 없음 |
 
 ## 재리뷰 생략
 
-이번 재작업에서 고친 finding은 S2-01(Low) 1건뿐이므로 task-team-orchestrator 11번 규칙에 따라 T07/T08 재리뷰를 생략함. 재검증은 수행함: `pnpm type-check` 통과, `pnpm exec vitest run` 431개 통과, `pnpm knip` 통과, `biome check src` 통과, react-doctor 경고 0.
-
-## 다음 단계
-
-재작업이 끝나 Medium 이상 미해결 finding이 없으므로 사이클 전체 diff(`288f7a5..HEAD`)를 대상으로 T07/T08 최종 리뷰 1회 실행 후 T09로 진행.
+- 이번 재작업은 Low 2건(SEC-T08-03, SEC-T08-04)만 고쳤으므로 스킬 11번에 따라 T07·T08 재리뷰를 생략함.
+- 재검증: type-check, Biome, knip, 주석 검사, 단위 테스트 통과. 0008을 E2E 전용 DB에 적용 후 컬럼·trigger 키(`7301005`) 확인, DB 통합 테스트 3개 통과. 신규 동작 테스트와 전체 회귀는 T09 2차(`qa-report-2.md`)에서 확인.

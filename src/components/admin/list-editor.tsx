@@ -6,7 +6,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { useFieldError } from "@/lib/admin-client/form-errors";
 import { AdminButton } from "./admin-button";
 
-const LIST_MAX = 50;
+const DEFAULT_LIST_MAX = 50;
 
 interface ListEditorProps {
   // 폼 값의 배열 이름, useFieldArray가 항목 key(field.id)와 이동·삭제를 맡음
@@ -17,6 +17,10 @@ interface ListEditorProps {
   makeItem: () => object;
   renderFields: (index: number) => ReactNode;
   hint?: string;
+  // 항목 수 상한, 기본값과 다르게 지정하면 "n/상한" 개수를 함께 보여 줌
+  max?: number;
+  // 추가·이동·삭제를 모두 막음 (예: 항목 안 업로드가 끝나기 전)
+  locked?: boolean;
 }
 
 // 항목 추가, 삭제, 위/아래 이동과 포커스 이동을 맡는 목록 편집 공통 틀
@@ -27,6 +31,8 @@ export function ListEditor({
   makeItem,
   renderFields,
   hint,
+  max = DEFAULT_LIST_MAX,
+  locked = false,
 }: ListEditorProps) {
   const scope = useId();
   const { control } = useFormContext();
@@ -36,7 +42,7 @@ export function ListEditor({
   const [message, setMessage] = useState("");
   const addId = `${scope}-add`;
   const errorId = `${scope}-error`;
-  const atMax = fields.length >= LIST_MAX;
+  const atMax = fields.length >= max;
 
   function removeAt(index: number) {
     remove(index);
@@ -44,7 +50,9 @@ export function ListEditor({
     const target = Math.min(index, fields.length - 2);
     requestAnimationFrame(() => {
       const row = listRef.current?.children[target];
-      const input = row?.querySelector<HTMLElement>("input, textarea");
+      const input = row?.querySelector<HTMLElement>(
+        "input:not([hidden]), textarea, button:not(:disabled)",
+      );
       (input ?? document.getElementById(addId))?.focus();
     });
     setMessage(`${itemLabel} ${index + 1}을 삭제했습니다.`);
@@ -74,7 +82,7 @@ export function ListEditor({
             <div className="flex flex-wrap gap-8">
               <AdminButton
                 variant="icon"
-                disabled={index === 0}
+                disabled={locked || index === 0}
                 aria-label={`${itemLabel} ${index + 1} 위로 이동`}
                 onClick={() => moveBy(index, -1)}
               >
@@ -82,7 +90,7 @@ export function ListEditor({
               </AdminButton>
               <AdminButton
                 variant="icon"
-                disabled={index === fields.length - 1}
+                disabled={locked || index === fields.length - 1}
                 aria-label={`${itemLabel} ${index + 1} 아래로 이동`}
                 onClick={() => moveBy(index, 1)}
               >
@@ -90,6 +98,7 @@ export function ListEditor({
               </AdminButton>
               <AdminButton
                 variant="danger"
+                disabled={locked}
                 aria-label={`${itemLabel} ${index + 1} 삭제`}
                 onClick={() => removeAt(index)}
               >
@@ -102,14 +111,17 @@ export function ListEditor({
       <div className="flex flex-wrap items-center gap-12">
         <AdminButton
           id={addId}
-          disabled={atMax}
+          disabled={locked || atMax}
           onClick={() => append(makeItem())}
         >
           {itemLabel} 추가
         </AdminButton>
-        {atMax && (
-          <span className="text-small opacity-70">최대 {LIST_MAX}개</span>
+        {max !== DEFAULT_LIST_MAX && (
+          <span className="text-small opacity-70">
+            {fields.length}/{max}
+          </span>
         )}
+        {atMax && <span className="text-small opacity-70">최대 {max}개</span>}
       </div>
       {error && (
         <p id={errorId} tabIndex={-1} data-error-focus className="text-small">

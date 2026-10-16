@@ -1,54 +1,65 @@
-# 블로그 검색 사이클 요약
+# 프로젝트 썸네일 확장 진행 상태
 
-## 요청과 범위
+- 재개: 2026-10-16, Codex orchestrator.
+- 사용자 지시: Task Team 산출물 확인 후 T07·T08부터 이어서 진행.
+- 작업 브랜치: `feature/project-thumbnails`, 재개 기준 HEAD `8737d25`.
+- 사이클 분기 기준: `72f8aa0`. 구현 `a436da6`, 후속 `f8c36a4`, `8737d25` 중심으로 검토.
+- `handoff.md`의 T05 pending·T06 미병합 상태는 과거 기록이며, 현재 구현은 작업 브랜치에 커밋된 상태임.
+- TaskCreate·TaskUpdate·TeamCreate 도구는 제공되지 않아, 아래 표와 역할별 산출물·메시지로 진행 상태를 관리함.
 
-- 사용자 요청: "블로그 포스트들 검색 기능을 추가해줘".
-- 확정 범위: 공개 `/blog`와 관리자 블로그 목록, 제목+본문 대소문자 무시 부분 일치, 입력 중 자동 검색(300ms debounce), react-query + suspensive `QueriesHydration` + axios, 검색어가 있는 공개 목록 noindex.
-- 사이클 중 사용자 결정: 검색 쿼리 statement_timeout 2초(rate limit은 백로그), 기존 의존성 취약점(next·sharp·source-map-js) 포함, `@tanstack/react-query` 5.104.1 유지, 재리뷰 확인 훅 삭제, 최종 리뷰 Low 3건과 S2-01 포함, 기존 e2e 실패(글 상세 목록 링크 이름) 테스트 갱신.
+| 단계 | 담당 | 입력 | 상태 | 결과 |
+| --- | --- | --- | --- | --- |
+| T01 | 기존 orchestrator | 사용자 요청 | done | `00-input.md` |
+| T02 | 기존 project-manager | 입력 | done | `requirements.md`, 11·13절 확정 내용 우선 |
+| T03 | 기존 designer | 요구사항 | done | `design-spec.md`, 보완 커밋 `0ab775e` |
+| T04 | 기존 backend-developer | 요구사항 | done | `api-spec.md`, 사용자 결정 부록 우선 |
+| T05·T06 | 기존 구현자 | 디자인·API 명세 | done | 구현 커밋 `a436da6` |
+| T07 | code-reviewer | 명세·실제 diff | done | `code-review-2.md` High 해결 확인, `code-review-3.md` 사이클 전체 최종 리뷰 통과 |
+| T08 | security-reviewer | 명세·실제 소스 | done | `security-review-2.md` 최종 통과. 신규 Low 2건은 사용자 결정으로 수정, Low만이라 재리뷰 생략(`triage-2.md`) |
+| T09 | qa-engineer | 수용 기준·리뷰 | done | `qa-report-1.md` 통과, 2차 재작업 후 `qa-report-2.md` 통과 |
 
-## 단계 상태
+## 재개 시 직접 검증
 
-| 단계 | 상태 | 산출물·근거 |
-| --- | --- | --- |
-| T01 | done | `00-input.md` |
-| T02 | done | `requirements.md`, 사용자 확인 게이트 2회 |
-| T03 | done | `design-spec.md` |
-| T04 | done | `api-spec.md` |
-| T05·T06 | done | 구현 커밋 `8af467f` |
-| T07 | done | `code-review-1~3.md`, 사이클 최종 리뷰 조건부 통과(남은 Medium은 T09 테스트로 해소) |
-| T08 | done | `security-review-1~3.md`, 최종 배포 승인 |
-| 재판단 | done | `triage-1~3.md` |
-| T09 | done | `qa-report-1.md`, 통과(일부 AC 미검증) |
-| develop·main 병합 | done | 사용자 지시로 `--no-ff` 병합 |
+- `pnpm type-check`: 통과.
+- `pnpm exec vitest run`: 38파일, 478개 통과.
+- `pnpm exec biome check .`: 213파일 통과.
+- `pnpm knip`: 통과.
+- 수정 전 baseline `pnpm test:e2e:local`: 제한 환경에서 마이그레이션 `UnknownError`로 중단. 제한 밖 동일 명령은 빌드·테스트 DB 마이그레이션 및 desktop/mobile 120개 통과(52.6초).
+- 최상위 `artifacts/bug-team/postmortem-*.md` 2건 확인: Task Team 피드백 초안 섹션 없음. 기존 기록 보존.
 
-## 확인한 검증 (orchestrator 직접 실행)
+## 재작업 및 추가 범위
 
-- `pnpm verify` 통과: harness:check 차이 0, harness:test 47개, knip, biome, type-check, `test:e2e:local` e2e 120건(fixture DB, 3100 포트).
-- 전체 Vitest 37파일·466개 통과.
-- `pnpm build` 통과, `/api/blog/posts`·`/blog` 동적 라우트. 로컬 빌드는 `migrate.mjs`가 Vercel·CI 외 환경에서 건너뜀.
-- 운영 DB 읽기 스모크(3123 포트): 전체 378개, `q=react` 49개, 첫 HTML에 결과 포함, 검색어가 있을 때만 `noindex, follow`, 공개 API `no-store`, 비인증 관리자 GET 401 + `no-store`.
-- 운영 DB 읽기 전용 확인: 트랜잭션 안 `set_config('statement_timeout','2000',true)`는 그 트랜잭션에서만 2s, 같은 트랜잭션의 `pg_sleep(3)`은 57014로 취소.
-- `pnpm audit --prod` 취약점 0.
+- 느린 이미지 로드 전 현재 프레임 유지: 격리 frontend worktree 수정 후 메인에 반영, 재리뷰 통과.
+- Origin scheme·host·port 검증: 격리 backend worktree 수정 후 메인에 반영.
+- Blob 자동 삭제 유지 및 경합 방지: 사용자 결정 반영. 퇴역 URL 테이블·동일 advisory lock·DB trigger 추가, 삭제 대상으로 확정된 URL 재등록 거부. 운영이 아닌 E2E DB에서 migration 검증 진행 중.
+- DPM Core 모바일 이미지: 첨부 순서 `1.webp`~`6.webp`(1290×2796), 사용자가 PC 이미지를 별도 전달하기로 했으므로 데이터 반영 대기.
 
-## 커밋 (`288f7a5..014abde`, 이 요약 갱신 커밋 제외)
+## 후속 승인 지점
 
-- `cf9bb36`, `d78fdfc`: 요구사항, 디자인·API 명세.
-- `8af467f`: 블로그 검색 구현.
-- `154d5e0`: next 16.3.8, sharp·source-map-js override.
-- `20c836f`: 1차 리뷰 지적 수정.
-- `13cf1ff`: 산출물 사이클 폴더 이동, 2차 리뷰.
-- `df8569f`: 재리뷰 확인 훅 삭제(사용자 지시, 하네스).
-- `42ab6ba`: 관리자 라우트 오류 로그에서 SQL 파라미터 제외.
-- `0458d5a`, `5d7409a`: 최종 리뷰 기록과 Low 3건 수정.
-- `9dde941`: 단위·e2e 테스트와 QA 결과.
-- `a374090`: 기존 글 상세 e2e 기대값 갱신.
-- `cb2f5b3`: 사이클 요약과 개선 기록.
-- `014abde`: 사이클 폴더 이동 롤백, 산출물을 `artifacts/task-team/` 최상위로 되돌림(사용자 지시).
+- SEMT·Candanta·Globber 운영 데이터 변경: QA 후 실행 전 사용자 승인 필요(`requirements.md` D4·D5 및 `handoff.md`).
+- DPM Core 변경은 사용자가 지시했으며 PC 이미지 수신 대기. 운영에는 아직 단수 `thumbnail` 컬럼만 있어 배포 전에는 새 모바일 배열을 저장할 수 없음(직접 조회 확인).
+- 운영 배포 전 0006의 기존 `thumbnail` 컬럼 제거 영향 재확인 필요.
+- 커밋·푸시·병합·배포는 이번 재개 지시만으로 실행하지 않음.
 
-## 검증 경계와 백로그
+## 2차 재작업 및 마무리 (2026-10-16, Claude orchestrator가 Codex 세션 이어받음)
 
-- 미검증 AC: AC9(XSS 렌더 e2e), AC22(오래된 응답 무시), AC24(오류·재시도 UI), AC25(낭독 문구 내용), AC26(페이지네이션의 q 유지, fixture 3건 한계), AC30(q 없는 빈 상태), AC33(관리자 행 마크업 불변), AC34(픽셀 레이아웃). 근거는 `qa-report-1.md`.
-- SSR 경로 DB 시간 초과 폴백은 라이브러리 코드(`QueriesHydration.mjs`의 `skipSsrOnError` 기본값)로만 확인, 실행 재현 없음.
-- 백로그: 공개 검색 API rate limit(S-01 잔여 위험), 검색용 DB 인덱스(pg_trgm 등), `@tanstack/react-query` 5.104.3 이상 갱신.
-- CodeRabbit은 최종 리뷰에서 미실행.
-- `artifacts/bug-team/postmortem-*.md` 2건은 Task Team 피드백 섹션이 없어 반영 항목 없음, git 추적 파일이라 삭제하지 않음.
+- SEC-T08-03: 썸네일 retirement lock을 `7301005`로 분리(서비스 상수와 0008 trigger 함수 교체).
+- SEC-T08-04: 0008이 `retired_thumbnail_blobs.deleted_at` 추가. 사용자 선택에 따라 별도 cron 없이 이후 Blob 정리 때마다 `deleted_at` null인 URL을 재시도함. 관리자 편집이 없으면 재시도도 없음.
+- 직접 재검증: type-check, Biome, knip, 주석 검사 통과. `pnpm exec vitest run --maxWorkers=2` 484 통과·6 skip(opt-in DB). E2E 전용 DB에 0008 적용·컬럼과 lock 키 확인, DB 통합 6개 통과.
+- QA 2차 보고 기준 전체 E2E 138개 통과(orchestrator는 E2E를 재실행하지 않음).
+- Codex가 남긴 `/private/tmp/seungsimdang-*-rework-20261016` worktree 2개는 내용이 메인에 모두 반영된 것을 파일 비교로 확인 후 제거함.
+- DPM Core PC 이미지: `~/Downloads/DPM Core 썸네일 1920×1080@1x.png`(1920×1080)로 `data-change-plan.md`에 기록.
+
+## 남은 사용자 승인 지점
+
+- 커밋, develop 병합, 배포.
+- main 배포 직전 D1(0006 `thumbnail` 컬럼 제거) 재확인.
+- 배포 후 SEMT·Candanta·Globber·DPM Core 운영 데이터 반영(`data-change-plan.md`).
+
+## 커밋 (2026-10-16, 사용자 승인)
+
+- 커밋 중 React Doctor(pre-commit)가 `project-card-thumbnails.tsx`의 경고 3건(렌더에 쓰지 않는 상태, effect 안 상태 재조정)을 보고함. 로드·경과 여부를 ref로 바꾸고 전환 판정을 타이머 콜백과 `onLoad`로 옮겨 경고 0건으로 수정. 동작 변경 의도 없음, 컴포넌트 테스트와 전체 E2E 138개 재통과로 확인. 리뷰 이후 수정이라 T07 재리뷰는 실행하지 않음.
+- `d67cb7a` fix(portfolio): 썸네일 자동 전환 시 다음 이미지 로드 전까지 현재 프레임 유지
+- `586b81b` fix: admin 쓰기 요청의 Origin 검사를 scheme·host·port 전체 비교로 강화
+- `aa8bd60` fix(portfolio): 썸네일 Blob 정리의 참조 경합 방지와 삭제 실패 재시도 추가
+- `ac9414f` test: 프로젝트 썸네일 PC·모바일 분기와 자동 전환 E2E·컴포넌트 테스트 추가

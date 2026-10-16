@@ -29,12 +29,14 @@ export default async function ProjectsPage() {
                   title={project.title}
                   role={project.role}
                   period={project.period}
-                  thumbnail={project.thumbnail}
+                  thumbnails={project.thumbnails}
+                  mobileThumbnails={project.mobileThumbnails}
                   preserveThumbnailText={project.slug === "candanta"}
                   href={`/work/${project.slug}`}
                   eager={index === 0}
                   {...getProjectCardTheme(index)}
-                  className="h-card lg:h-card-tall"
+                  wide
+                  className="lg:aspect-video lg:h-auto lg:@container"
                 />
               </div>
               <div className="lg:col-span-1" />

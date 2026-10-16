@@ -43,7 +43,7 @@ Hybrid. 티켓·원인 분석·포스트모텀은 Agent Team으로 진행하고,
 1. `artifacts/bug-team/` 폴더를 확인한다.
 2. 기존 티켓과 중복 여부 판단을 bug-reporter에게 위임한다.
 3. 중복으로 판명되면 기존 티켓 ID를 사용자에게 안내하고 종료한다.
-4. 포스트모텀만 재실행 요청이면 T03(postmortem)부터 시작한다.
+4. 포스트모텀만 재실행 요청이면 T04(postmortem)부터 시작한다.
 
 ## Agent Team 구성
 
@@ -67,7 +67,7 @@ Hybrid. 티켓·원인 분석·포스트모텀은 Agent Team으로 진행하고,
 
 1. 사용자 버그 설명을 수신하고 `artifacts/bug-team/` 폴더를 확인한다.
 2. `TeamCreate`로 4명의 팀원을 구성한다.
-3. `TaskCreate`로 T01~T05를 등록한다.
+3. `TaskCreate`로 T01~T04를 등록한다.
 4. T01(bug-reporter): 중복 확인 후 새 버그이면 티켓을 생성하고 `TaskUpdate(completed)`.
    - 중복이면 사용자에게 기존 티켓 ID를 안내하고 팀을 정리한다.
 5. T02(bug-localizer): 티켓을 받아 코드베이스를 탐색하고 결함 위치를 저장한다.
@@ -86,7 +86,7 @@ Hybrid. 티켓·원인 분석·포스트모텀은 Agent Team으로 진행하고,
 ## 데이터 전달
 
 - Task 진행 상태: `TaskCreate`, `TaskUpdate`, `TaskGet`
-- 팀원 스폰 지시: 지시문에 `필요 도구: Read, Edit, Bash`처럼 지시 수행에 필요한 도구를 한 줄로 선언하고, 스폰 전에 에이전트 목록의 Tools와 대조한다. 없는 도구가 필요하면 스폰하지 않고 사용자에게 보고한다. `require-agent-tool-declaration.sh`가 선언 누락과 정의에 없는 도구 선언을 차단한다.
+- 팀원 스폰 지시: 지시문에 `필요 도구: Read, Edit, Bash`처럼 지시 수행에 필요한 도구를 한 줄로 선언하고, 스폰 전에 에이전트 목록의 Tools와 대조한다. 없는 도구가 필요하면 스폰하지 않고 사용자에게 보고한다. `require-agent-tool-declaration.sh`가 선언 누락과 정의에 없는 도구 선언을 차단하고, 통과하면 선언 줄을 지운 지시문으로 스폰해 subagent에는 전달하지 않는다.
 - 발견 공유: `SendMessage`
 - 산출물: `artifacts/bug-team/` 파일
 

@@ -106,16 +106,37 @@ const formStringList = limitedList(z.object({ value: shortText })).transform(
   (items) => items.map((item) => item.value),
 );
 
-// 비어 있으면 null 저장, 값이 있으면 우리 Blob URL만 허용
-const thumbnail = z
+// DB check(projects_thumbnails_max)와 admin 폼 상한이 같은 값을 씀
+export const THUMBNAIL_LIST_MAX = 10;
+
+const thumbnailUrl = z
   .string()
   .trim()
+  .min(1, "필수 입력입니다")
   .max(URL_MAX, `${URL_MAX}자 이하로 입력해 주세요`)
   .refine(
-    (v) => v === "" || isValidThumbnail(v),
+    isValidThumbnail,
     "등록된 Blob 스토어의 이미지 주소만 입력할 수 있습니다",
+  );
+
+// 순서가 곧 전환 순서라 중복은 임의로 제거하지 않고 거부함
+const hasNoDuplicate = (items: readonly unknown[]) =>
+  new Set(items).size === items.length;
+
+const thumbnailList = z
+  .array(thumbnailUrl)
+  .max(THUMBNAIL_LIST_MAX, `${THUMBNAIL_LIST_MAX}장 이하로 입력해 주세요`)
+  .refine(hasNoDuplicate, "중복된 이미지가 있습니다");
+
+// 폼은 useFieldArray가 { value } 객체를 요구해 검증 뒤 문자열 배열로 되돌림
+const formThumbnailList = z
+  .array(z.object({ value: thumbnailUrl }))
+  .max(THUMBNAIL_LIST_MAX, `${THUMBNAIL_LIST_MAX}장 이하로 입력해 주세요`)
+  .refine(
+    (items) => hasNoDuplicate(items.map((item) => item.value)),
+    "중복된 이미지가 있습니다",
   )
-  .optional();
+  .transform((items) => items.map((item) => item.value));
 
 const optionalHttpUrl = z
   .string()
@@ -195,23 +216,52 @@ const experienceInputSchema = z.strictObject({
     .optional(),
 });
 
-export const projectUpdateInputSchema = z.strictObject({
+const projectInputShape = {
   slug: slugSchema,
   title: shortText,
   period: shortText,
   role: shortText,
   summary: longText,
   link: optionalHttpUrl,
-  thumbnail,
+  thumbnails: thumbnailList.optional(),
+  mobileThumbnails: thumbnailList.optional(),
   techStack: stringList,
   experiences: z
     .array(experienceInputSchema)
     .max(LIST_MAX, `${LIST_MAX}개 이하로 입력해 주세요`),
-});
+};
 
-export const projectCreateInputSchema = projectUpdateInputSchema.extend({
-  slug: slugSchema,
-});
+// 두 목록이 함께 제공된 경우만 판정하고 한쪽만 제공된 요청은 서비스가 기존 행과 합쳐 판정함
+// refine이 붙은 스키마는 extend할 수 없어 최종 export 스키마에만 적용함
+function withThumbnailRules<
+  S extends z.ZodType<{
+    thumbnails?: readonly unknown[];
+    mobileThumbnails?: readonly unknown[];
+  }>,
+>(schema: S) {
+  return schema.superRefine((value, ctx) => {
+    if (
+      value.thumbnails !== undefined &&
+      value.mobileThumbnails !== undefined &&
+      value.mobileThumbnails.length > 0 &&
+      value.thumbnails.length === 0
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["mobileThumbnails"],
+        message: "기본 이미지를 먼저 등록해 주세요",
+      });
+    }
+  });
+}
+
+const projectUpdateObject = z.strictObject(projectInputShape);
+
+export const projectUpdateInputSchema = withThumbnailRules(projectUpdateObject);
+
+export const projectCreateInputSchema = withThumbnailRules(
+  projectUpdateObject.extend({ slug: slugSchema }),
+);
 
 export const talkUpdateInputSchema = z.strictObject({
   slug: slugSchema,
@@ -268,13 +318,22 @@ export const resumeEntryFormSchema = resumeEntryUpdateInputSchema.extend({
   details: formStringList,
 });
 
-export const projectFormSchema = projectUpdateInputSchema.extend({
+const projectFormObject = projectUpdateObject.extend({
+  thumbnails: formThumbnailList,
+  mobileThumbnails: formThumbnailList,
   techStack: formStringList,
 });
 
-// 수정 화면에서 썸네일을 바꾸지 않았으면 서버에 보내지 않으므로 기존 값은 형식을 따지지 않음
-export const projectFormKeepThumbnailSchema = projectFormSchema.extend({
-  thumbnail: z.string().trim(),
+export const projectFormSchema = withThumbnailRules(projectFormObject);
+
+// 수정 화면에서 목록을 바꾸지 않았으면 서버에 보내지 않으므로 기존 값은 형식을 따지지 않고 개수만 제한함
+const keepThumbnailList = z
+  .array(z.object({ value: z.string().trim() }))
+  .max(THUMBNAIL_LIST_MAX, `${THUMBNAIL_LIST_MAX}장 이하로 입력해 주세요`);
+
+export const projectFormKeepThumbnailsSchema = projectFormObject.extend({
+  thumbnails: keepThumbnailList,
+  mobileThumbnails: keepThumbnailList,
 });
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>;

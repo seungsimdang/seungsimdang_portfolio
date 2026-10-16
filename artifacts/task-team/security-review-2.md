@@ -1,51 +1,49 @@
-# Security Review 2 (T08 재리뷰, feature/blog-search)
+# T08 사이클 최종 보안 리뷰 - 프로젝트 썸네일 확장
 
-## 판정
+- 기준: `72f8aa0..8737d25` 및 현재 작업 트리의 썸네일 관련 `src/`, `drizzle/`, 테스트 미커밋 변경
+- 현재 추가 변경: `src/lib/auth/admin-route.ts`, `src/db/schema/portfolio.ts`, `src/services/portfolio/portfolio-admin-service.ts`, `drizzle/0007_jazzy_thunderbird.sql` 및 관련 테스트
+- 정책 입력: `requirements.md` 11·13·14절, `api-spec.md` 부록 및 추가 보완
+- 판정: **보안 통과**. Critical/High 취약점은 확인되지 않았다. 최초 T08의 Low 두 항목은 코드상 해소됐다. 새로 확인한 Low 두 항목은 운영 영향과 복구 한계이며, 현재 계획상 비차단 잔여사항으로 기록한다.
 
-**배포 승인.** Critical/High 없음. S-01(사용자 결정 범위), S-02, S-03 해결 확인. 신규 finding은 Low 1건(S2-01)과 Info 1건(S2-02)이며 배포 차단 사유가 아님. orchestrator 9-1 게이트의 재작업 여부는 S2-01에 대해 orchestrator가 결정.
+## 이전 Low 항목 재검토
 
-## 검토 범위와 한계
+### SEC-T08-01 - Origin scheme 미비교: 해결
 
-- Read로 blog-service.ts, constants/blog.ts, api/blog/posts/route.ts, api/admin/posts/route.ts, pnpm-workspace.yaml, blog-search-results.tsx, blog-search-box.tsx, admin-route.ts(98-101행)를 확인함. package.json은 `next` 16.3.8 한 줄만 grep으로 확인함.
-- Bash 없음. 실행, `pnpm audit`, 실제 DB 동작은 직접 검증하지 못함. set_config 동작(트랜잭션 안에서만 2s, 이후 0 복귀, pg_sleep(3)이 57014로 취소)과 audit "No known vulnerabilities found"는 orchestrator가 보고한 사실을 전제로 함 (미검증, 인용).
-- lockfile의 실제 해석 버전(sharp, source-map-js)은 읽지 않음 (미검증).
+`src/lib/auth/admin-route.ts:45-65`가 허용된 scheme·host·port를 조합한 전체 origin과 요청 `Origin`을 비교한다. 프로토콜이 HTTP/HTTPS가 아니거나 Origin 문자열에 경로 등 origin 외 값이 섞이면 거부한다. 추가 테스트도 HTTP/HTTPS 불일치, 다른 port, 경로가 붙은 Origin을 확인하도록 작성되어 있다(`__tests__/api/admin-route.test.ts`).
 
-## 1차 finding 해결 여부
+### SEC-T08-02 - Blob 참조 확인과 삭제 사이 경합: 핵심 경합 해결
 
-| ID | 결과 | 근거 |
-| --- | --- | --- |
-| S-01 | 사용자 결정 범위 해결, 잔여 위험 수용 | blog-service.ts:37-41 `searchTimeout()`이 `set_config('statement_timeout','2000',true)`를 실행하고, 검색(pattern 있음) 경로의 count(66행)와 목록 쿼리(86행)가 각각 `db.batch([searchTimeout(), query])`로 같은 트랜잭션에서 실행됨. 값은 `String(POST_SEARCH_TIMEOUT_MS)`를 바인딩 파라미터로 전달해 인젝션 여지 없음. 검색어 없는 경로는 타임아웃 미적용이며 인덱스 사용 가능한 단순 쿼리라 의도에 부합. rate limit은 triage-1의 사용자 결정에 따라 백로그. |
-| S-02 | 해결 | route.ts:19-31이 `error.message`를 기록하지 않고 `error.name`과 `cause.code`만 기록. DrizzleQueryError의 params 포함 메시지가 공개 라우트 로그에서 제거됨. 주석도 사실과 일치. |
-| S-03 | 해결 | api/admin/posts/route.ts:17-18에서 핸들러가 직접 `Cache-Control: no-store` 설정. |
+서비스는 삭제 후보 URL을 `READ COMMITTED` 트랜잭션에서 lock `7301004`로 직렬화하고, 아직 프로젝트 목록에서 참조되지 않는 경우에만 `retired_thumbnail_blobs`에 기록한다(`src/services/portfolio/portfolio-admin-service.ts:328-363`). 프로젝트 INSERT와 썸네일 배열 UPDATE trigger도 같은 lock을 얻은 뒤 퇴역 기록을 확인한다(`drizzle/0007_jazzy_thunderbird.sql:5-47`). 따라서 참조 저장이 먼저 커밋되면 삭제 후보 기록이 생기지 않고, 퇴역 기록이 먼저 커밋되면 이후 참조 쓰기가 P1001/P1002로 거부된다.
 
-## 재작업 코드 점검 결과
+이 순서는 서비스가 쓰는 `db.batch`가 Neon HTTP의 여러 쿼리를 하나의 트랜잭션으로 제출하는 구현과 일치한다(설치된 `drizzle-orm@0.45.3`의 `neon-http/session.js:117-132`, Neon serverless API 정의). Trigger는 `VOLATILE`이며, PostgreSQL 문서는 이러한 함수 내부 쿼리가 각각 시작 시점의 새 snapshot을 얻는다고 설명한다([PostgreSQL 함수 변동성 문서](https://www.postgresql.org/docs/current/xfunc-volatility.html)). lock 대기 뒤 확인하는 퇴역 기록이 이전 statement snapshot에 고정되지 않으므로 경합 방어가 성립한다.
 
-- SQL 인젝션: 새 SQL은 `set_config`뿐이며 값이 바인딩 파라미터. 검색 패턴은 기존대로 `ilike` 바인딩. 문제 없음.
-- 타임아웃 범위: `is_local=true`이므로 트랜잭션 종료 시 복귀해 다른 쿼리에 새지 않음 (orchestrator 실측과 일치). 커넥션 풀 세션 오염 경로 없음(neon-http, 요청별 HTTP).
-- 타임아웃 후 동작: 57014는 공개 라우트에서 catch되어 일반 500(`apiErrors.internal()`)만 응답, 내부 정보 노출 없음.
-- 클라이언트 변경(blog-search-results.tsx, blog-search-box.tsx): 검색어는 JSX 텍스트와 `textContent`로만 렌더, `dangerouslySetInnerHTML` 없음. href는 고정 `basePath`와 `encodeURIComponent` 조합. `replaceState`는 `window.location.href` 기반 같은 오리진 경로. 서버 상한은 파서가 강제하므로 클라이언트 `maxLength`에 의존하지 않음. 새 취약점 없음.
-- 의존성: `next` 16.3.8 확인. pnpm-workspace.yaml의 overrides `sharp >=0.35.5`, `source-map-js >=1.2.2`는 triage-1이 보고한 audit 검출 항목을 정확히 대상으로 함. audit 통과는 orchestrator 보고 기준. 범위 연산자(`>=`) override는 향후 major 상승을 허용하는 특성이 있으나 `minimumReleaseAge: 10080`과 `trustPolicy: no-downgrade`가 함께 적용돼 있어 위험은 낮음.
-- allowBuilds `sharp: false`는 기존 설정이며 이번 변경과 무관.
+## 신규 Low 잔여사항
 
-## 신규 Findings
+### SEC-T08-03 - Low: 썸네일 retirement lock이 이력서 생성 lock과 같은 키를 사용함
 
-### S2-01 Low: admin 라우트 오류 로그가 DB 오류 메시지(검색어 포함)를 기록
+- 위치: `src/services/portfolio/portfolio-admin-service.ts:76-78, 338-341, 451-477`
+- 근거: 썸네일 retirement와 trigger는 advisory lock `7_301_004`를 사용하고, 같은 파일의 `RESUME_LOCK_KEY`도 `7_301_004`다. 이력서 생성은 `limitGuard`에서 이 lock을 획득한다.
+- 영향: 프로젝트 생성은 `7301001 → 7301004`, 이력서 생성과 썸네일 정리는 각각 `7301004`를 획득한다. 프로젝트 썸네일 쓰기/정리와 이력서 생성이 서로 다른 데이터 영역인데도 같은 배타 트랜잭션 lock으로 직렬화된다. 현재 경로에는 반대 순서의 다중 lock 획득이 없어 deadlock은 확인하지 못했다. 경합 시 admin 쓰기 지연이 늘어날 수 있고, 향후 새 lock 조합이 추가되면 예기치 않은 lock 결합이 생길 수 있다.
+- 수정 권고: `7301004`는 기존 이력서 락으로 유지하고, 썸네일 retirement에 미사용 고유 키를 배정한다. 새 키의 사용처와 lock 취득 순서를 저장소에서 함께 확인한다.
+- 심각도/판정: Low, 가용성·유지보수 권고. 기존 데이터 손실이나 lock bypass는 발생하지 않는다.
 
-- 위치: `src/lib/auth/admin-route.ts:98-101`
-- 근거: 이 핸들러는 `${error.name}: ${error.message}`를 기록함. `/api/admin/posts?q=...`가 타임아웃(57014) 또는 DB 오류로 실패하면 DrizzleQueryError 메시지(triage-1이 `params: ${params}` 포함을 확인함)가 로그에 남아 관리자가 입력한 검색어가 기록됨. 인증된 관리자 본인 입력이고 응답에는 노출되지 않아 외부 유출 아님. 공개 라우트에서 S-02를 고친 것과 불일치함. 이번 재작업 이전부터 있던 코드이나, 검색 타임아웃 도입으로 이 경로의 오류 발생 가능성이 새로 생김.
-- 제안: admin-route.ts의 로그도 공개 라우트처럼 `error.name`과 `cause.code`만 기록하거나, 검색어 로그 허용을 수용하고 그대로 둠. 다른 admin 라우트 로그 형식에 영향이 있으므로 사용자 판단 권장.
+### SEC-T08-04 - Low: Blob 삭제 실패 후 자동 재시도 경로가 보장되지 않음
 
-### S2-02 Info: SSR `/blog?q=` 타임아웃 시 Next 기본 오류 처리에 위임
+- 위치: `src/services/portfolio/portfolio-admin-service.ts:301-306, 310-320, 328-363`
+- 근거: 퇴역 기록 뒤 `del(url)` 실패는 catch에서 로그만 남기고 저장 성공을 유지한다. 삭제 함수는 업데이트에서 제거된 현재 요청의 이전 목록 또는 삭제된 프로젝트의 목록에서만 호출된다. 첫 요청이 DB 변경과 퇴역 기록을 끝내고 `del`에서 실패하면, 이후 일반 수정은 해당 URL을 이미 DB에서 잃었고 프로젝트 삭제 재시도는 NotFound가 되어 같은 정리 함수에 그 URL을 다시 전달하지 않는다. 별도 worker나 관리용 재시도 호출자도 확인되지 않았다. 같은 helper가 다시 불리면 재시도되는 것은 맞지만, 일반 API 흐름에서 이를 보장하지 않는다.
+- 영향: 일시적인 Blob 서비스 오류 또는 응답이 모호한 실패가 나면 삭제 대상 파일이 public Blob에 남을 수 있다. 퇴역 tombstone은 URL 재사용을 막으므로 프로젝트 참조는 되살아나지 않지만, 고아 객체의 실제 제거는 자동 회복되지 않는다. 현재 썸네일이 공개 자료이므로 기밀 누출로 보지는 않으며, 오래된 공개 파일 잔류와 저장 비용 문제다.
+- 수정 권고: 자동 재시도가 요구되면 퇴역 기록을 내구성 있는 재시도 큐로 취급하는 worker/운영 재시도 경로를 추가한다. 이번 사이클에서 worker를 제외하는 결정을 유지한다면 API 명세의 “같은 정리 경로 재호출은 재시도”를 보장 문구로 해석하지 않도록 한계를 분명히 한다.
+- 심각도/판정: Low, 현재 `api-spec.md`의 best-effort 삭제와 worker 제외 결정에 따른 비차단 잔여사항. 기존 정책도 Blob 삭제 실패를 반환 오류로 승격하지 않았다.
 
-- 위치: `src/services/blog/blog-service.ts:66,86` (호출처 `/blog` 페이지)
-- 근거: 공개 페이지의 서버 렌더에서 57014가 발생하면 `listPosts`가 throw하며 Next 오류 경계가 처리함. 프로덕션에서는 클라이언트에 상세가 노출되지 않는 것이 Next 기본 동작이나, 서버 로그에는 쿼리 파라미터가 포함될 수 있음(Next가 기록하는 형식은 확인하지 못함, 추정). 보안 영향은 낮고 기능 측면은 code-reviewer 범위.
-- 제안: 조치 불필요. 필요하면 S2-01과 함께 로그 정책을 정함.
+## 확인한 통제와 오류 경로
 
-## 잔여 위험 (수용됨)
+- **인증·CSRF:** 프로젝트 쓰기와 업로드 라우트는 `adminRoute`로 감싸져 있고, 세션 GitHub ID allowlist·Origin·관리자별 rate limit을 통과해야 한다. Origin 검사는 이제 정확한 전체 origin을 비교한다.
+- **URL allowlist·입력:** `src/schemas/portfolio.schema.ts:19-43, 109-139`는 정확한 HTTPS Blob hostname/authority와 `/thumbnails/` 경로를 요구하고 credentials, port, query, hash 및 허용 밖 URL을 거부한다. 각 목록 최대 10개, 빈 URL·중복 URL도 서버에서 검증한다. strict 입력 스키마는 미지 필드를 거부한다. 편집 폼의 기존값 보존 경로는 변경하지 않은 목록을 API 본문에서 생략하며, 서버가 새로 전달된 목록에는 같은 URL 검증을 적용한다.
+- **업로드·Blob 보호:** 서버는 단일 multipart 파일, 4MB 한도, signature·확장자·MIME 일치를 확인하고 임의 사용자 파일명을 저장 키에 쓰지 않는다. 생성한 URL을 allowlist로 재검증한다. 삭제 전에 허용 URL만 대상으로 삼고 두 배열 전체의 참조를 검사한다. public Blob 접근은 포트폴리오 공개 이미지 요구에 따른 것이다.
+- **SQL 주입:** 동적 URL은 Drizzle tagged SQL interpolation 또는 query builder 바인딩으로 전달된다. migration trigger 쿼리에는 사용자 입력이 없다. SQL 문자열 연결형 입력 경로를 찾지 못했다.
+- **오류 매핑:** P1001/P1002는 프로젝트 생성·수정 경로에서 각각 `thumbnails`/`mobileThumbnails`의 400 `VALIDATION_FAILED` 필드 오류로 바뀐다. P1003은 트리거가 READ COMMITTED 외 쓰기를 거부할 때 발생하며, 서비스에서 필드 오류로 바꾸지 않아 공통 내부 오류(500)로 실패한다. 잘못된 격리 수준에서 쓰기를 통과시키지 않는 fail-closed 동작이다. 삭제 정리 자체의 DB/Blob 실패는 요청 저장을 실패시키지 않고 로그만 남기는 best-effort 동작이다.
+- **데이터·의존성·시크릿:** 0007은 tombstone 테이블과 trigger만 추가하며 기존 프로젝트 썸네일 행을 삭제하거나 변경하지 않는다. 검토한 변경에 하드코딩된 secret 또는 새 의존성은 없다. 운영 DB는 기존 단일 `thumbnail` 상태이며 운영 변경은 없다는 orchestration 제공 상태를 전제로 했다. 이전 0006 컬럼 제거와 빌드 우선 적용의 알려진 가용성 위험은 사용자 승인 게이트이며 별도 배포 전 재확인이 필요하다.
 
-- 인증 없는 `%q%` ILIKE에 대한 rate limit 부재. 요청당 최대 약 2초 x 2쿼리로 DB 점유 시간은 제한되나 다수 동시 요청에 의한 비용 증가는 가능. triage-1 사용자 결정에 따라 백로그. 규모 확대 시 `pg_trgm` 인덱스 또는 Vercel Firewall rate limit 검토.
+## 검증 경계
 
-## 차단 조건 점검
-
-- Critical 미수정: 없음.
-- 인증 로직 확인 불가: 아님 (이전 리뷰에서 확인, 이번 변경에서 인증 코드 변경 없음).
+코드·migration·테스트 구현을 정적으로 검토했다. Drizzle/Neon 설치 코드로 `db.batch` 트랜잭션 사용을 확인했고, PostgreSQL 공식 문서에서 `VOLATILE` 내부 쿼리의 fresh snapshot 동작을 확인했다. 요청에 공유된 E2E DB의 0007 적용 상태는 이 리뷰에서 DB 접속으로 재검증하지 않았다. 회귀·동시성 테스트는 준비 중으로 전달받았으며 직접 실행하지 않았고, 운영 DB/Blob에는 연결하거나 쓰지 않았다.

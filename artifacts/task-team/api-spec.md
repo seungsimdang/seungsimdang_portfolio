@@ -1,344 +1,306 @@
-# api-spec: 블로그 포스트 검색 (T04)
+# T04 API 명세 - 프로젝트 썸네일 확장
 
-- 입력: `artifacts/task-team/requirements.md` (0장 확정 결정, 6장 도입 검토)
-- 표기: [사실] 이번에 코드에서 읽어 확인, [결정] 이 문서가 확정하는 설계, [권장] 근거 있는 제안, [미확인] 확인하지 못한 항목
-- DB 스키마 변경 없음. 인덱스는 별도 작업.
+- 작업 브랜치: `feature/project-thumbnails`
+- 입력: `artifacts/task-team/requirements.md` (11절 확정 결정 우선)
+- 상태: 명세만 작성함. 코드, DB, 마이그레이션 파일은 아직 만들지 않음.
+- 새 엔드포인트는 없음. 기존 `POST /api/admin/projects`, `PUT /api/admin/projects/[slug]`의 입출력과 공개 조회 타입만 바뀜.
 
-## 0. 확인 한계
+## 1. 핵심 설계 요약
 
-- [미확인] 이 worktree에는 `node_modules`가 없다. `node_modules/next/dist/docs/`를 읽지 못했으므로 아래 Next 16 동작은 문서로 검증하지 못했다: `useSearchParams`와 `window.history.replaceState` 동기화, `router.replace`의 서버 재렌더 여부, `generateMetadata`의 `robots` 렌더링 결과, Route Handler GET 캐싱 기본값, `useSearchParams`의 Suspense 요구 조건.
-- [미확인] `@suspensive/react-query-5`의 정확한 export 이름과 `QueriesHydration` props. requirements 6.1(웹 문서, context7)의 `queries`(각 항목 `queryKey`, `queryFn`)와 선택적 `queryClient`만 근거로 쓴다.
-- [미확인] 새 패키지의 Next 16.3.6 / React 19.3.0 / TypeScript 7.0.2 호환성. 설치 후 `pnpm type-check`와 `pnpm build`로 검증하고, 막히면 대안으로 자동 전환하지 않고 중단 후 보고한다 (0장 6번).
-- [미확인] 통합 전에는 T05와 T06 어느 쪽도 단독으로 type-check가 통과하지 않는다 (8장 의존성 참고).
+- `projects.thumbnail`(text)을 `thumbnails text[]`(기본 목록)와 `mobile_thumbnails text[]`(모바일 목록)로 교체한다. 배열 순서가 전환 순서다.
+- 모바일 목록이 비면 클라이언트가 기본 목록을 쓴다. 이 폴백은 DB가 아니라 표시 계층(`ProjectCard`)의 규칙이다.
+- 마이그레이션은 expand/contract 2단계(0005 추가+이전, 0006 `thumbnail` 제거)로 나눈다. 빌드 시 자동 마이그레이션(`scripts/migrate.mjs --build`) 때문에 한 번에 제거하면 운영 중인 main 코드가 깨진다(2절).
+- Zod: 원소는 `isValidThumbnail`, 목록당 최대 10장, 목록 내 중복은 거부, 모바일만 있고 기본이 빈 저장은 거부(스키마 + 서비스 + DB check 3중).
+- 수정 API는 `thumbnails`, `mobileThumbnails`를 각각 선택 필드로 받는다. 생략하면 해당 목록 유지, 빈 배열이면 비움.
+- 제거된 이미지 Blob 정리는 기존과 같은 방식(저장 성공 후 best-effort, 다른 프로젝트가 참조하지 않을 때만 `del`)을 두 목록의 합집합 차이로 확장한다.
+- OG 이미지는 `thumbnails[0]`, 비면 `images` 생략.
 
-## 1. 코드에서 확인한 사실
+## 2. DB 스키마와 마이그레이션
 
-- [사실] `listPosts(page, pageSize, category?)`는 `cache`로 감싼 `server-only` 함수다. 반환은 `PostPage`(`items, total, page, pageSize, totalPages`).
-- [사실] `parsePageParam`, `normalizeCategoryParam`은 `blog-service.ts`(`server-only`)에서 export된다. 클라이언트가 쓰려면 server-only가 아닌 파일로 옮겨야 한다.
-- [사실] `src/app/api/admin/posts/route.ts`는 `POST`만 export한다. `adminRoute`는 GET에 Origin 검사와 쓰기 쿼터를 적용하지 않고 `requireAdmin`만 호출한다.
-- [사실] `src/proxy.ts` matcher는 `/admin/:path*`, `/api/admin/:path*`. 인증 실패 시 `/api/*`는 401 JSON(`CustomData<ApiErrorBody>`), 통과 시 `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`를 붙인다.
-- [사실] `ok(data, status)`는 헤더 인자가 없다. `fail(error)`는 `ApiError.headers`를 지원한다.
-- [사실] `ApiErrorCode`에 `UNAUTHORIZED`, `FORBIDDEN`, `INTERNAL_ERROR`가 이미 있다. 새 코드 추가 불필요.
-- [사실] `src/app/(public)/blog/page.tsx`는 `export const metadata`를 쓰고 `canonical: "/blog"`를 가진다. 관리자 페이지는 `requireAdminPage()` 후 같은 `listPosts`를 호출한다.
-- [사실] `CategoryTabs`는 링크에 `category`만 붙이고, `Pagination`은 `query` prop으로 쿼리를 유지한다.
-- [사실] 기존 영향 테스트: `__tests__/utils/blog-category-param.test.ts`(`normalizeCategoryParam` import), `__tests__/utils/blog-excerpt-page.test.ts`(`parsePageParam` import), `tests/e2e/blog.spec.ts`(카테고리 탭 링크와 URL).
-
-## 2. 검색어 정규화와 서비스 변경
-
-### 2.1 신규 파일 `src/utils/blog-query-params.ts` (server-only 아님)
-
-서버 페이지, Route Handler, 클라이언트(`useSearchParams`)가 같은 규칙을 공유해 서버 prefetch key와 클라이언트 key가 항상 일치하게 한다. 기존 `parsePageParam`, `normalizeCategoryParam`을 `blog-service.ts`에서 이 파일로 옮긴다(동작 불변). `blog-service.ts`에는 재export를 남기지 않는다(knip).
+### 2.1 목표 스키마 (`src/db/schema/portfolio.ts`, projects)
 
 ```ts
-export function parsePageParam(raw: string | string[] | undefined): number;
-export function normalizeCategoryParam(raw: string | string[] | undefined): string | undefined;
-
-// 첫 값 -> 제어문자/연속 공백을 공백 1개로 축약 -> NFC -> trim -> 100 코드포인트 절단 -> trimEnd
-// 결과가 빈 문자열이면 undefined
-export function normalizeSearchQuery(
-  raw: string | string[] | null | undefined,
-): string | undefined;
-
-// 모든 LIKE 메타문자를 문자 그대로 일치시키기 위한 이스케이프, 순서: 역슬래시 먼저
-// "\" -> "\\", "%" -> "\%", "_" -> "\_"
-export function escapeLikePattern(value: string): string;
-
-export interface BlogListParams {
-  page: number; // parsePageParam 결과, 1 이상
-  category?: string; // normalizeCategoryParam 결과
-  q?: string; // normalizeSearchQuery 결과
-}
-
-// URLSearchParams와 ReadonlyURLSearchParams가 모두 만족하는 구조적 타입
-// get()은 같은 이름이 여러 개여도 첫 값을 돌려주므로 "배열이면 첫 값" 규칙과 일치함
-export function parseBlogListParams(searchParams: {
-  get(name: string): string | null;
-}): BlogListParams;
+thumbnails: text("thumbnails").array().notNull().default(sql`'{}'::text[]`),
+mobileThumbnails: text("mobile_thumbnails").array().notNull().default(sql`'{}'::text[]`),
 ```
 
-규칙 상세 [결정]:
+테이블 check 제약 추가:
 
-1. 입력이 배열이면 첫 요소만 쓴다 (AC4).
-2. `/[\s\u0000-\u001F\u007F]+/g`를 공백 1개로 치환한다. NUL(`\u0000`)은 PostgreSQL text 파라미터에서 오류를 내므로 반드시 제거한다. 탭/개행/NBSP는 공백으로 축약된다.
-3. `.normalize("NFC")` 후 `trim()`. NFC를 절단보다 먼저 적용해 NFD 입력이 부풀려진 길이로 잘리지 않게 한다 (AC5).
-4. 절단은 코드포인트 기준 100 (`Array.from(value).slice(0, POST_SEARCH_MAX).join("")`), 이후 `trimEnd()`. 오류를 내지 않는다 (AC6). 서로게이트 쌍이 중간에서 잘리지 않는다.
-5. 최소 길이 1. 빈 문자열은 `undefined` (AC2, AC18).
-6. 상수 `POST_SEARCH_MAX = 100`을 `src/constants/blog.ts`에 추가한다. 입력창 `maxLength`도 이 상수를 쓴다.
-
-LIKE 이스케이프 [결정]: 이스케이프는 `listPosts` 내부에서만 적용한다. 호출자는 이스케이프되지 않은 정규화 값을 넘긴다. PostgreSQL LIKE/ILIKE의 기본 이스케이프 문자가 역슬래시이므로 별도 `ESCAPE` 절은 필요 없다 [일반 지식, DB로 실행해 확인하지 않음 [미확인]]. 값은 항상 바인딩 파라미터다 (AC8).
-
-### 2.2 `listPosts` 시그니처 (T06, `src/services/blog/blog-service.ts`)
-
-```ts
-export const listPosts = cache(
-  async (
-    page: number,
-    pageSize: number,
-    category?: string,
-    query?: string, // normalizeSearchQuery를 거친 값만 받음
-  ): Promise<PostPage>
-);
-```
-
-- 4번째 인자는 선택이므로 기존 3개 인자 호출은 그대로 동작한다.
-- 조건: `and(categoryCondition, searchCondition)` (`and`는 undefined를 무시). `searchCondition = or(ilike(posts.title, pattern), ilike(posts.content, pattern))`, `pattern = "%" + escapeLikePattern(query) + "%"` (구절 일치). `query`가 없으면 `undefined`.
-- 개수 쿼리와 목록 쿼리에 같은 `where`를 쓴다 (AC10). `content`는 select하지 않는다. 정렬 `published_at desc, slug desc`, 범위 초과 page 보정은 기존 그대로 (AC11).
-- `cache`는 인자 비교로 메모이즈하며 `query`가 인자에 포함되므로 검색어별로 분리된다.
-- [권장] `query`가 비어 있지 않은 문자열이면 방어적으로 `query.trim() === ""`도 검색 없음으로 취급한다.
-
-## 3. 공개 GET 엔드포인트 (T06)
-
-`GET /api/blog/posts` - 파일 `src/app/api/blog/posts/route.ts`. 인증 없음.
-
-### 쿼리 파라미터
-
-| 이름 | 타입 | 해석 |
+| 이름 | 식 | 목적 |
 | --- | --- | --- |
-| `q` | string | `normalizeSearchQuery`. 없거나 정규화 후 빈 값이면 검색 없음 |
-| `category` | string | `normalizeCategoryParam`. 50자 초과/빈 값은 필터 없음 |
-| `page` | string | `parsePageParam`. 잘못된 값은 1, 범위 초과는 마지막 페이지로 보정 |
+| `projects_thumbnails_max` | `cardinality(thumbnails) <= 10 AND cardinality(mobile_thumbnails) <= 10` | 서버 스키마를 우회하는 쓰기 방어 (목록당 10장) |
+| `projects_mobile_requires_base` | `cardinality(mobile_thumbnails) = 0 OR cardinality(thumbnails) > 0` | 모바일만 있는 저장 방어 |
 
-- 같은 이름이 여러 개면 첫 값만 쓴다. 잘못된 값은 400이 아니라 페이지와 같은 관용 규칙(무시/보정)으로 처리해 서버 렌더와 결과를 일치시킨다. 따라서 `VALIDATION_FAILED`는 이 엔드포인트에서 쓰지 않는다.
-- 페이지 크기는 서버 고정 `POST_PAGE_SIZE`(20). 클라이언트가 지정할 수 없다.
+- 상한 10은 `src/schemas/portfolio.schema.ts`의 `THUMBNAIL_LIST_MAX`와 같은 값으로 유지하고, check의 숫자 리터럴 옆에 그 연결을 주석으로 남긴다(resume kind check와 같은 방식).
+- 배열 원소의 URL 형식은 DB에서 강제하지 않는다(기존 `thumbnail` 컬럼도 DB check 없음). 허용 호스트가 환경변수라 DB check로 둘 수 없음.
+- 빈 목록은 `'{}'`이며 NULL을 쓰지 않는다. 읽기 코드가 null 분기를 갖지 않게 하기 위함.
 
-### 응답
+### 2.2 마이그레이션 2단계
 
-`CustomData<PostPage>` (`ok(result)`):
+현재 마이그레이션은 `drizzle/0000`~`0004`이고 `package.json`의 `build`가 `scripts/migrate.mjs --build && next build`를 실행한다. `--build`는 Vercel Preview/Production, CI, `MIGRATE_ON_BUILD=1`에서만 적용된다. 즉 main 배포 빌드가 DB를 먼저 바꾼 뒤 새 코드를 올린다.
 
-```json
-{
-  "data": {
-    "items": [{ "slug": "", "title": "", "publishedAt": "YYYY-MM-DD", "categories": [], "tags": [] }],
-    "total": 0, "page": 1, "pageSize": 20, "totalPages": 1
-  },
-  "status": 200
-}
+운영 main 코드는 `projects.thumbnail`을 읽고 쓴다(`db.select()`는 컬럼 명시 선택이라 컬럼 추가에는 안전하지만, 컬럼 제거 시 즉시 500). 따라서 컬럼 제거를 새 코드 배포와 같은 빌드에 넣으면 빌드 마이그레이션 직후~새 배포 승격 전 구간에 운영 공개 페이지와 admin이 깨진다. E1(이전 후 제거)은 아래 2단계로 지킨다.
+
+| 단계 | 파일 | 내용 | 적용 시점 |
+| --- | --- | --- | --- |
+| 1 (expand) | `drizzle/0005_*.sql` | 컬럼 2개 추가, check 2개 추가, `thumbnail`을 `thumbnails` 첫 장으로 복사 | 이 feature 브랜치 병합 후 첫 빌드 (사용자 승인 후) |
+| 2 (contract) | `drizzle/0006_*.sql` | 재동기화 UPDATE 후 `thumbnail` 컬럼 제거 | 새 코드가 운영(main)에 배포되어 안정화된 뒤, 별도 후속 브랜치/커밋 (사용자 승인 후) |
+
+0005 SQL (drizzle-kit `db:generate`로 DDL을 만들고 데이터 이전 UPDATE는 같은 파일에 `--> statement-breakpoint`로 직접 추가):
+
+```sql
+ALTER TABLE "projects" ADD COLUMN "thumbnails" text[] DEFAULT '{}'::text[] NOT NULL;--> statement-breakpoint
+ALTER TABLE "projects" ADD COLUMN "mobile_thumbnails" text[] DEFAULT '{}'::text[] NOT NULL;--> statement-breakpoint
+UPDATE "projects" SET "thumbnails" = ARRAY["thumbnail"] WHERE "thumbnail" IS NOT NULL AND "thumbnail" <> '';--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_thumbnails_max" CHECK (cardinality("projects"."thumbnails") <= 10 AND cardinality("projects"."mobile_thumbnails") <= 10);--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_mobile_requires_base" CHECK (cardinality("projects"."mobile_thumbnails") = 0 OR cardinality("projects"."thumbnails") > 0);
 ```
 
-- `items`는 `PostSummary`(content 제외)뿐이다. 관리자 전용 정보 없음 (AC32). `posts`에 초안 컬럼이 없으므로 공개와 관리자의 데이터 차이는 페이지 크기와 인증뿐이다.
-- 검색 결과 판정에 잘린 목록 외 별도 필드가 필요하지 않다: `total`이 전체 집합 기준이고 `MAX_*` 상한으로 목록을 자르는 구조가 아니다 (페이지 단위 조회).
+0006 SQL:
 
-### 캐시 정책 [결정]
+```sql
+UPDATE "projects" SET "thumbnails" = ARRAY["thumbnail"] WHERE "thumbnail" IS NOT NULL AND "thumbnail" <> '' AND cardinality("thumbnails") = 0;--> statement-breakpoint
+ALTER TABLE "projects" DROP COLUMN "thumbnail";
+```
 
-- 응답 헤더 `Cache-Control: no-store`. 이유: 서버 prefetch(SSR)는 항상 최신인데 CDN 캐시가 남으면 글 작성 직후 검색 결과가 서로 달라질 수 있고, 클라이언트 중복 요청은 react-query `staleTime`(60초)이 줄인다.
-- 구현: `const response = ok(result); response.headers.set("Cache-Control", "no-store"); return response;` (`ok`에 헤더 인자가 없으므로).
-- [미확인] Next 16 Route Handler GET의 기본 캐싱. `request.url`을 읽으므로 동적으로 취급될 것으로 추정한다. 빌드 출력에서 해당 라우트가 동적(`ƒ`)인지 T06이 확인한다. 정적으로 표시되면 `export const dynamic = "force-dynamic"`을 추가한다.
-- GET 핸들러에 DB write 없음 (`nextjs.md` 6번). 능동 트리거 없음: 호출 주체는 사용자 타이핑뿐 (`nextjs.md` 7번).
+- 0006의 재동기화 UPDATE는 0005 적용 후 새 코드 배포 전 구간에 구 코드 admin이 `thumbnail`만 수정한 경우를 복구한다. `cardinality = 0` 조건으로 새 코드가 이미 채운 목록은 덮지 않는다.
+- 0005 적용~새 코드 배포 사이에 구 코드가 쓴 `thumbnail` 변경은 `thumbnails`에 반영되지 않는다(구 코드는 새 컬럼을 모름). 이 구간에는 admin 썸네일 편집을 하지 않는 것을 운영 규칙으로 둔다. 구 코드가 INSERT하는 신규 프로젝트는 새 컬럼 default(`'{}'`)가 적용되어 안전하다.
+- 마이그레이션 러너는 `entry.when`과 마지막 적용 `created_at`을 비교하므로, 0006 journal 항목의 `when`은 0005보다 커야 한다(drizzle-kit이 자동 생성).
+- 0006을 병합하는 시점은 사용자 지시 사항이다. 이 사이클의 구현 범위(T05/T06)에는 0005와 새 코드까지 포함하고, 0006은 파일 생성까지만 하되 같은 브랜치에 넣으면 위 위험이 생기므로 **0006은 이 브랜치에 포함하지 않고 후속 브랜치에서 만든다**(orchestrator가 배포 순서와 함께 사용자에게 확인). 이 경우 `schema/portfolio.ts`에서 `thumbnail` 컬럼 정의는 이번 사이클에 제거하지 않고 후속 브랜치에서 제거한다. 다만 구 컬럼을 스키마에 남기면 새 코드의 INSERT가 `thumbnail`을 채우지 않으므로 구 컬럼 값은 0005 시점 스냅샷으로 고정된다(0006의 재동기화 조건 `cardinality = 0`과 일치).
+- Preview 주의: `develop` Preview 빌드가 운영과 같은 `DATABASE_URL`을 쓰는지 사전 확인이 필요하다(`scripts/migrate.mjs` 주석상 로컬 `.env.local`의 URL은 Production). 같은 DB를 쓰면 feature 브랜치 Preview 빌드가 0005를 운영 DB에 먼저 적용한다. 0005는 가산적이라 구 코드에 안전하므로 허용되지만, 이 사실을 승인 요청에 포함한다. 0006은 반드시 main 배포 이후에만 어떤 Preview에서도 실행되게 한다.
 
-### 오류 코드
+### 2.3 E2E DB
 
-| 상태 | code | 조건 |
+- `pnpm test:e2e:local`은 빈 DB에 전체 journal을 적용하므로 0005까지 적용된 스키마가 만들어진다(후속 0006 이전까지 `thumbnail` 컬럼은 남아 있되 사용되지 않음).
+- `tests/e2e/fixtures/seed.ts`의 `thumbnail: p.thumbnail ?? null` 행을 `thumbnails: p.thumbnails ?? []`, `mobileThumbnails: p.mobileThumbnails ?? []`로 바꾼다. `FixtureProject`의 `thumbnail?: string` 필드는 `thumbnails?: string[]`, `mobileThumbnails?: string[]`로 바꾼다(타입 정의는 `tests/e2e/fixtures/portfolio.ts`). 단 fixture 이미지 값(`fixtureThumbnailUrl`)을 `tests/e2e/fixtures/thumbnail.png` 기반으로 교체하는 작업은 orchestrator 담당이며, T06은 필드 이름/형태 변경만 한다. 같은 파일을 두 사람이 만지므로 병합 시 충돌 가능성이 있어 orchestrator와 조율한다(구현 범위 6절).
+
+## 3. Zod 스키마 (`src/schemas/portfolio.schema.ts`)
+
+### 3.1 상수와 원소 스키마
+
+```ts
+export const THUMBNAIL_LIST_MAX = 10; // DB check와 admin 폼 상한이 공유
+
+const thumbnailUrl = z
+  .string()
+  .trim()
+  .min(1, "필수 입력입니다")
+  .max(URL_MAX, `${URL_MAX}자 이하로 입력해 주세요`)
+  .refine(isValidThumbnail, "등록된 Blob 스토어의 이미지 주소만 입력할 수 있습니다");
+
+const thumbnailList = z
+  .array(thumbnailUrl)
+  .max(THUMBNAIL_LIST_MAX, `${THUMBNAIL_LIST_MAX}장 이하로 입력해 주세요`)
+  .refine((v) => new Set(v).size === v.length, "중복된 이미지가 있습니다");
+```
+
+- 빈 문자열 원소는 거부한다(`min(1)`). 클라이언트 폼이 저장 전에 빈 칸을 걸러 보내는 것이 정상 경로이고, 서버는 방어만 한다(AC-20).
+- 같은 목록 안의 중복 URL은 조용히 제거하지 않고 필드 오류로 거부한다. 순서가 곧 전환 순서라 임의 제거가 의도를 바꾸기 때문. 서로 다른 목록(기본/모바일)의 같은 URL은 허용한다(E-i).
+- 오류 키: `thumbnails`, `mobileThumbnails`(배열 단위). 원소 오류는 `thumbnails.0` 식 경로로 `parseJsonBody`의 `fieldErrors`에 담긴다.
+
+### 3.2 프로젝트 입력 스키마
+
+기존 `thumbnail` 필드를 제거하고 다음을 추가한다.
+
+```ts
+thumbnails: thumbnailList.optional(),
+mobileThumbnails: thumbnailList.optional(),
+```
+
+- `projectUpdateInputSchema`는 `z.strictObject`라 이전 클라이언트가 `thumbnail`을 보내면 400이 된다. 의도된 동작이며 admin 클라이언트와 서버는 같은 배포로 나간다.
+- 객체 단위 `superRefine`(update/create 공통, 두 필드가 모두 제공된 경우만 판정): `mobileThumbnails.length > 0 && thumbnails.length === 0`이면 `mobileThumbnails` 경로로 "기본 이미지를 먼저 등록해 주세요" 오류. 한쪽만 제공된 요청은 스키마 단계에서 판정할 수 없으므로 서비스가 기존 행과 합쳐서 판정한다(4.2).
+- `projectCreateInputSchema`는 두 필드를 생략하면 빈 배열로 취급한다(서비스에서 `?? []`).
+- 단, `projectUpdateInputSchema`에 `superRefine`을 붙이면 `.extend`가 불가능해진다(Zod 4에서 refinement가 있는 스키마의 `extend`는 제한됨, 현재 코드가 `projectCreateInputSchema = projectUpdateInputSchema.extend(...)`, `projectFormSchema = projectUpdateInputSchema.extend(...)`를 사용). 구현 시 refine은 별도 헬퍼 함수(`withThumbnailRules(schema)`)로 빼서 최종 export 스키마에만 적용하고, `extend` 대상 기반 스키마(`projectBaseShape` 등)는 refine 없는 형태로 둔다. T06이 `extend` 체인이 유지되도록 구조를 정한다.
+
+### 3.3 폼 스키마와 "기존 값 유지" 경로
+
+현재: `projectFormSchema`(strict) / `projectFormKeepThumbnailSchema`(`thumbnail: z.string().trim()`, 형식 무검사). 폼은 `savedThumbnail` ref와 같으면 keep 스키마로 검증하고, 전송 시 `thumbnail`을 body에서 뺀다.
+
+새 설계:
+
+- `useFieldArray`가 `{ value }` 객체를 요구하므로 폼 값 모양은 `thumbnails: { value: string }[]`, `mobileThumbnails: { value: string }[]`. 기존 `formStringList` 패턴처럼 검증 후 `string[]`로 transform하는 `formThumbnailList`를 둔다(`thumbnailList`의 규칙 재사용, 원소 스키마만 `{ value: thumbnailUrl }`).
+- keep 스키마 이름: `projectFormKeepThumbnailsSchema` (복수). 기존 `projectFormKeepThumbnailSchema`는 삭제한다. 정의: `projectFormSchema.extend({ thumbnails: keepList, mobileThumbnails: keepList })`, `keepList = z.array(z.object({ value: z.string().trim() })).max(THUMBNAIL_LIST_MAX)` (형식 무검사, 개수만 제한).
+- 폼 판정(T05 구현): 저장된 값(`savedThumbnails`, `savedMobileThumbnails`, 문자열 배열)과 현재 값이 **배열로 동일**(길이와 각 원소와 순서)한 목록은 "변경 없음"이다.
+  - 두 목록 모두 변경 없음: keep 스키마로 검증.
+  - 하나라도 변경: strict `projectFormSchema`로 검증. 변경 없는 목록에 레거시 값이 있으면 거부될 수 있으나, 12절 선행 작업으로 현재 모든 값이 Blob URL이라 실질 영향 없음. 이 한계를 코드 주석에 이유로 남긴다.
+  - 전송 body: 변경 없는 목록은 필드 자체를 생략한다(서버가 기존 값 유지, AC-21). 변경된 목록은 배열(빈 배열 포함)을 보낸다.
+  - 저장 성공 후 `savedThumbnails`/`savedMobileThumbnails` ref를 응답 값으로 갱신한다.
+- 클라이언트 전송 전 정규화: 원소 `trim` 후 빈 문자열 제거(중복 제거는 하지 않고 서버/폼 검증 오류로 안내).
+
+## 4. 서비스 (`src/services/portfolio/portfolio-admin-service.ts`, `portfolio-service.ts`)
+
+### 4.1 읽기 (`portfolio-service.ts`)
+
+- `ProjectRow`에 `thumbnails`, `mobileThumbnails` 포함. `toProject`:
+  ```ts
+  thumbnails: safeThumbnails(row.thumbnails, raw),
+  mobileThumbnails: safeThumbnails(row.mobileThumbnails, raw),
+  ```
+- `safeThumbnail`을 배열 버전으로 바꾼다(`safeThumbnails`): 원소별로 기존 규칙(raw면 그대로, 아니면 레거시 `/images/` 경로 또는 `isValidThumbnail`)을 적용해 통과한 것만 순서를 유지해 반환. 모두 걸러지면 `[]`.
+- 레거시 `/images/` 허용 패턴(`LEGACY_THUMBNAIL_PATTERN`)은 주석상 "이전 완료 후 삭제" 대상이고 12절에서 `public/images/`가 제거되므로 이번에 함께 삭제한다. 삭제하면 공개 읽기에서 `/images/...` 값은 걸러진다(관련 테스트 갱신 필요, 7절).
+- 모바일 폴백(비면 기본 사용)은 서비스에서 적용하지 않는다. 두 목록을 그대로 내려주고 `ProjectCard`가 `mobileThumbnails.length > 0 ? mobileThumbnails : thumbnails`로 고른다(관리 폼이 원본 모바일 목록을 그대로 편집해야 하기 때문).
+- `raw` 경로(admin 폼)에서도 `thumbnails`가 항상 배열(null 없음).
+
+### 4.2 쓰기
+
+`createProject`
+- insert에 `thumbnails: input.thumbnails ?? []`, `mobileThumbnails: input.mobileThumbnails ?? []`. `thumbnail` 컬럼은 쓰지 않는다(0006 전까지 default null).
+- 모바일만 있는 요청: 스키마 refine이 이미 거부(`thumbnails` 생략 + `mobileThumbnails` 비어있지 않음은 스키마에서 못 잡으므로 서비스에서 `(input.thumbnails ?? []).length === 0 && (input.mobileThumbnails ?? []).length > 0`이면 거부).
+
+`updateProject`
+- 기존 행 조회에 `thumbnails`, `mobileThumbnails`를 추가(`thumbnail` 대신).
+- 유효 상태 계산: `nextThumbnails = input.thumbnails ?? existing.thumbnails`, `nextMobile = input.mobileThumbnails ?? existing.mobileThumbnails`. `nextMobile.length > 0 && nextThumbnails.length === 0`이면 `ApiError("VALIDATION_FAILED", HttpStatusCode.BadRequest, "입력값을 확인해 주세요", { mobileThumbnails: "기본 이미지를 먼저 등록해 주세요" })`를 던진다. `adminRoute`가 `ApiError`를 그대로 응답한다.
+- UPDATE 값: 제공된 필드만 `set`에 포함(`input.thumbnails !== undefined`일 때만 `thumbnails`). 빈 배열은 비우기.
+- DB check 위반(23514) 방어: `PG_CHECK_VIOLATION = "23514"`를 `updateProject`/`createProject` 에러 매핑에서 위와 같은 VALIDATION_FAILED(400)로 변환한다(동시 수정으로 사전 판정과 어긋나는 경우의 안전망).
+- 단일 편집자 전제는 기존 동작과 동일(읽기와 쓰기 사이 경합은 별도 락 없음).
+
+### 4.3 Blob 정리 (E2: 기존과 같은 방식)
+
+기존 동작: 수정 후 조회한 새 값과 비교해, 이전 단일 썸네일이 바뀌었고 `isValidThumbnail`(자체 Blob)이며 다른 프로젝트가 참조하지 않으면 `del`. 삭제 실패는 로그만 남기고 응답에 영향 없음. 프로젝트 삭제 시에도 동일.
+
+확장:
+- 수정: `removed = (existing.thumbnails ∪ existing.mobileThumbnails) − (project.thumbnails ∪ project.mobileThumbnails)`(저장 후 조회한 새 상태 기준, 중복 URL은 집합으로 처리). `removed` 각 원소 중 `isOwnBlobUrl`인 것만 `deleteBlobIfUnused`. `input`에서 목록을 생략해 유지한 경우 `removed`는 자연히 비어 있다.
+- 삭제: `.returning({ id, thumbnails, mobileThumbnails })`로 받은 두 목록의 합집합 각각에 `deleteBlobIfUnused`.
+- `deleteBlobIfUnused(url)`의 참조 검사를 두 배열 컬럼 모두로 확장한다. 같은 프로젝트의 다른 목록에도 쓰이는 URL(E-i)과 다른 프로젝트의 참조(E-k)를 모두 보호한다:
+  ```ts
+  where(or(
+    sql`${url} = any(${projects.thumbnails})`,
+    sql`${url} = any(${projects.mobileThumbnails})`,
+  ))
+  ```
+  파라미터 바인딩으로 SQL injection 없음.
+- `deleteProject` 반환 타입은 현재 `string | null`(썸네일)인데 호출부(`DELETE` 라우트)는 반환값을 쓰지 않는다. `Promise<void>`로 바꾼다.
+- 한 요청에서 `del` 호출 최대 20회까지 가능하므로 `Promise.allSettled`로 병렬 처리하되 개별 실패는 기존처럼 `console.error("Blob thumbnail cleanup failed")`만 남긴다.
+- 업로드 후 저장하지 않고 이탈해 남는 고아 Blob은 기존에도 정리하지 않으며(업로드 API는 Blob만 올림), 이번 범위에서도 동일 수준을 유지한다.
+
+## 5. API 입출력
+
+경로와 인증(`adminRoute`), 응답 형식(`ok`/`fail`, `CustomData<T>`), 본문 크기 상한(256KB)은 변경 없음. 최대 20개 URL(각 2000자 상한)은 상한 안.
+
+### POST `/api/admin/projects` (201)
+
+요청 본문 변경점:
+
+| 필드 | 이전 | 이후 |
 | --- | --- | --- |
-| 200 | - | 정상 (0건도 200, `items: []`) |
-| 500 | `INTERNAL_ERROR` | DB 오류 등. `console.error`에 이름/메시지만 남기고 `fail(apiErrors.internal())` |
-| 405 | - | GET 외 메서드 (Next 기본) |
+| `thumbnail?: string` | 있음 (빈 문자열이면 null) | 제거 (보내면 400, strictObject) |
+| `thumbnails?: string[]` | 없음 | 선택. 생략 시 `[]`. 최대 10, 중복 불가, 각 원소 `isValidThumbnail` |
+| `mobileThumbnails?: string[]` | 없음 | 선택. 생략 시 `[]`. 규칙 동일. 비어있지 않으면 `thumbnails`도 비어있지 않아야 함 |
 
-`adminRoute`를 쓰지 않으므로 핸들러가 직접 `try/catch`로 500 변환한다. 원본 오류 상세는 응답에 포함하지 않는다.
+응답 `data`: `Project`(5.3).
 
-### 위험 [권장, 보안 리뷰 참고]
+### PUT `/api/admin/projects/[slug]` (200)
 
-- 공개 무인증 엔드포인트가 `content` 전문 ILIKE를 실행한다(인덱스 없음, 별도 작업). 완화: 100자 절단, `no-store`지만 클라이언트 debounce, 정규화. 서버 쪽 rate limit은 기존 `rate-limit-service`가 관리자 쓰기 전용이라 이번 범위에 넣지 않았다. 필요 여부는 T08/사용자 판단.
+- `thumbnails`, `mobileThumbnails` 각각 선택. 생략: 해당 목록 유지. `[]`: 비움. 배열: 교체(순서 유지).
+- 유효 상태에서 모바일만 있고 기본이 빈 경우 400 `VALIDATION_FAILED`, `fieldErrors.mobileThumbnails`.
+- 오류 예: 목록 11장 -> `fieldErrors.thumbnails: "10장 이하로 입력해 주세요"`, 원소 형식 오류 -> `fieldErrors["thumbnails.2"]`, 중복 -> `fieldErrors.thumbnails: "중복된 이미지가 있습니다"`.
 
-## 4. 관리자 GET 엔드포인트 (T06)
+### DELETE `/api/admin/projects/[slug]`
 
-[결정] 기존 `src/app/api/admin/posts/route.ts`에 `GET`을 추가한다. 별도 경로(`/api/admin/posts/search` 등)는 만들지 않는다.
+응답 변경 없음 (`{ slug }`). 서비스 시그니처만 4.3대로 변경.
 
-근거:
-- `/api/admin/posts`는 posts 컬렉션이며 REST상 GET 목록 + POST 생성이 같은 경로다.
-- `src/proxy.ts` matcher(`/api/admin/:path*`)가 이미 JWT 1차 인증, `Cache-Control: no-store`, `X-Robots-Tag`를 적용한다. 별도 경로도 같은 이점이지만 새 경로를 만들 이유가 없다.
-- `[slug]/route.ts`와 경로 충돌 없음: 동적 세그먼트는 `/api/admin/posts/{slug}`이고 컬렉션은 `/api/admin/posts`.
-- 공개 핸들러를 재사용하지 않는다(페이지 크기 50, 인증 경계가 다름).
+### POST `/api/admin/uploads/thumbnail`
 
-```ts
-export const GET = adminRoute(async ({ request }) => {
-  const { page, category, q } = parseBlogListParams(new URL(request.url).searchParams);
-  return ok(await listPosts(page, POST_ADMIN_PAGE_SIZE, category, q));
-});
-```
+변경 없음(4MB 이하 PNG/JPG/WebP, Blob `thumbnails/`). 여러 장은 클라이언트가 파일마다 호출한다.
 
-- 인증: 1차 `proxy.ts`(JWT 존재, 미인증 401), 2차 `adminRoute` -> `requireAdmin`(세션 + GitHub allowlist, 401/403). GET은 `MUTATING_METHODS`가 아니므로 Origin 검사와 쓰기 쿼터는 적용되지 않는다 [사실, `admin-route.ts`].
-- 쿼리 파라미터와 응답은 3장과 같다(`CustomData<PostPage>`, `pageSize` 50). 페이지 크기는 서버 고정 `POST_ADMIN_PAGE_SIZE`.
-- 오류: 200 / 401 `UNAUTHORIZED` / 403 `FORBIDDEN` / 500 `INTERNAL_ERROR` (모두 `adminRoute`가 변환).
-- 캐시: 헤더는 proxy가 `no-store`를 이미 붙인다. 핸들러는 추가 헤더 없음.
-- 기존 `POST` 동작은 변경하지 않는다. 같은 파일에 `GET` import(`listPosts`, `POST_ADMIN_PAGE_SIZE`, `parseBlogListParams`)만 추가한다.
-
-## 5. react-query 설계 (T05)
-
-### 5.1 패키지 [결정]
-
-- `@tanstack/react-query` `5.104.3`, `@suspensive/react-query-5` `3.21.4` (requirements 6.1 registry 확인값, 저장소 관례에 맞춰 정확 버전 고정). 설치 시점에 `pnpm view`로 최신 5.104.x / 3.21.x인지 재확인한다.
-- `axios`는 기존 의존성. `package.json`, `pnpm-lock.yaml`은 T05만 수정한다.
-- 설치 전 게이트: peerDependencies가 React 19.3.0과 맞는지 확인하고, 설치 후 `pnpm type-check`/`pnpm build`가 막히면 중단 후 보고한다 (0장 6번).
-- knip: `@suspensive/react-query-5`는 서버 페이지에서 `QueriesHydration`으로, `@tanstack/react-query`는 클라이언트에서 `useQuery`, `keepPreviousData`, `QueryClient`로 모두 실제 사용해야 한다.
-
-### 5.2 구조와 Provider 위치 [결정]
-
-- 루트 `layout.tsx`/`(public)/layout.tsx`/`admin/(console)/layout.tsx`는 수정하지 않는다. `QueryClientProvider`는 검색 목록이 있는 두 페이지(`/blog`, `/admin/blog`)에서만 감싼다. 다른 페이지 번들에 react-query가 들어가지 않는다. `blog/[slug]` 번들에도 들어가지 않도록 `blog/layout.tsx`도 만들지 않는다.
-- 페이지(서버) 구성:
-
-```tsx
-<QueryProvider>                      {/* client, QueryClientProvider */}
-  <QueriesHydration queries={[{ queryKey, queryFn }]}>  {/* server, async */}
-    <PublicBlogList categories={...} />   {/* client, useQuery */}
-  </QueriesHydration>
-</QueryProvider>
-```
-
-  서버 컴포넌트(`QueriesHydration`)를 클라이언트 컴포넌트(`QueryProvider`)의 `children`으로 넘기는 구성이다. `QueriesHydration`의 `queryClient` prop은 생략한다(생략 시 요청마다 새 QueryClient, requirements 6.1). 서버 QueryClient가 요청 간 공유되지 않는다.
-- Provider가 `HydrationBoundary`보다 바깥에 있어야 한다.
-
-### 5.3 `getQueryClient` - `src/lib/query/get-query-client.ts`
+### 5.3 공개/응답 타입 (`src/types/portfolio.ts`)
 
 ```ts
-// 서버는 호출마다 새 클라이언트, 브라우저는 모듈 싱글턴
-export function getQueryClient(): QueryClient;
-```
-
-- `isServer`(`@tanstack/react-query` export)로 분기한다. 서버 분기에서는 매번 `new QueryClient(...)`. 브라우저 분기는 모듈 변수에 보관.
-- 기본 옵션: `queries: { staleTime: 60_000, retry: 1, refetchOnWindowFocus: false }`. SSR hydrate 직후 재요청을 막으려면 `staleTime > 0`이어야 한다 (TanStack Advanced SSR 가이드, requirements 6.1).
-- `server-only`는 붙이지 않는다(클라이언트 `QueryProvider`가 import). 서버 요청 간 공유는 서버 분기가 싱글턴을 쓰지 않으므로 발생하지 않는다.
-- 공개와 관리자가 같은 브라우저 싱글턴을 쓰며 key 네임스페이스로 분리한다. [권장] `suspensive`의 `createGetQueryClient` 사용 가능 여부는 [미확인]이므로 자체 구현을 기본으로 한다.
-
-### 5.4 queryKey 팩토리 - `src/lib/query/blog-posts-keys.ts`
-
-```ts
-import type { BlogListParams } from "@/utils/blog-query-params";
-
-export const blogPostsKeys = {
-  list: (params: BlogListParams) => ["blog-posts", "list", params] as const,
-};
-export const adminBlogPostsKeys = {
-  list: (params: BlogListParams) => ["admin-blog-posts", "list", params] as const,
-};
-```
-
-- `params`는 항상 `parseBlogListParams`/페이지의 정규화 함수를 거친 값이다. `undefined` 필드는 key 해시에서 제외되므로 `category`, `q`가 없을 때 필드를 생략해 서버와 클라이언트 key를 같게 만든다 (`{ page, ...(category && { category }), ...(q && { q }) }` 형태).
-- 이 파일은 `server-only` 모듈을 import하지 않으므로 서버 페이지와 클라이언트 양쪽이 import해도 안전하다.
-
-### 5.5 queryFn 분리 (server-only 차단) [결정]
-
-- 서버 prefetch `queryFn`은 각 `page.tsx`(서버 컴포넌트) 안에 인라인으로 둔다: `queryFn: () => listPosts(params.page, POST_PAGE_SIZE, params.category, params.q)` (관리자는 `POST_ADMIN_PAGE_SIZE`). `blog-service`(server-only)는 `page.tsx`만 import한다. 공용 파일에 서버 queryFn을 두지 않는다.
-- 클라이언트 `queryFn`은 `src/lib/query/blog-posts-queries.ts`(client 번들 가능, `server-only` 미사용)에서 axios로 호출한다:
-
-```ts
-export function publicPostsQueryOptions(params: BlogListParams) {
-  return queryOptions({
-    queryKey: blogPostsKeys.list(params),
-    queryFn: ({ signal }) => fetchPosts("/blog/posts", params, signal),
-    staleTime: 60_000,
-    placeholderData: keepPreviousData,
-  });
-}
-export function adminPostsQueryOptions(params: BlogListParams) { /* "/admin/posts", staleTime 10_000 */ }
-```
-
-- `fetchPosts`는 `apiClient.get<CustomData<PostPage>>(url, { params: { q, category, page: page > 1 ? page : undefined }, signal })` 후 `response.data.data`를 반환한다 (axios는 undefined 파라미터를 직렬화하지 않음).
-- 서버 queryFn 반환(`PostPage`)과 클라이언트 queryFn 반환(`CustomData<PostPage>.data`)이 같은 타입이므로 같은 key로 교체 가능하다. 둘 다 JSON 직렬화 가능한 값만 포함한다.
-- 검증: 클라이언트 번들에서 `server-only` 오류가 나면 위 규칙 위반이다. `pnpm build`로 확인.
-
-### 5.6 클라이언트 사용 [결정]
-
-- 목록 클라이언트 컴포넌트는 `useSearchParams()`로 현재 `page/category/q`를 `parseBlogListParams`에 넘겨 key를 만든 뒤 `useQuery(publicPostsQueryOptions(params))`를 쓴다. 입력 전 서버 prefetch key와 같으므로 첫 렌더는 hydrate된 데이터를 즉시 쓰고 `staleTime` 이내에는 재요청이 없다 (AC21).
-- `useSuspenseQuery`는 쓰지 않는다: `placeholderData`를 지원하지 않아 검색어 변경 시 이전 결과 유지(AC23)와 충돌하고 Suspense fallback으로 목록이 사라진다.
-- 로딩 표시: `isPlaceholderData || isFetching`일 때 이전 목록을 유지한 채 목록 영역에 `aria-busy="true"`. 오류: `isError`일 때 문구 + `refetch()` 버튼, 입력값 유지 (AC24).
-- AbortSignal: 위 `queryFn`의 `{ signal }`을 axios `signal` 옵션으로 전달한다. 키가 바뀌면 react-query가 이전 요청을 취소하고, key 기준으로 최신 입력만 화면에 반영해 오래된 응답이 덮어쓰지 않는다 (AC22). axios는 1.x에서 `signal` 옵션 지원 [일반 지식, 설치 버전으로 확인하지 않음 [미확인]].
-- 페이지/카테고리 변경은 기존 `Link`(서버 이동)이다. 이동하면 서버 페이지가 새 key를 prefetch하고 `HydrationBoundary`가 브라우저 싱글턴에 병합한다.
-
-### 5.7 URL 동기화 방식 [결정, 검증 필요]
-
-- 입력은 debounce(300ms, IME 조합 중 제외)된 값만 URL에 반영한다. URL 갱신은 `router.replace`가 아니라 `window.history.replaceState(null, "", url)`을 권장한다.
-  - 이유: 검색어 변경마다 `router.replace`는 서버 컴포넌트 페이지를 다시 렌더(RSC 요청 + 서버 prefetch)해서, 같은 변경에 대해 axios 요청과 서버 요청이 이중으로 나가고 react-query 클라이언트 요청의 의미가 없어진다 [추정, Next 문서로 확인하지 않음 [미확인]].
-  - Next가 네이티브 `history.replaceState`를 `useSearchParams`와 동기화한다는 문서 내용이 있다고 알려져 있으나 이번에 확인하지 못했다 [미확인]. T05가 구현 전 `node_modules/next/dist/docs/`에서 확인한다.
-- 폴백: `replaceState`가 `useSearchParams`를 갱신하지 않거나 뒤로가기가 깨지면, 자동 전환하지 않고 보고한다. `router.replace`(AC17 "또는 동등한 replace")로 바꾸면 서버 재렌더가 매번 생긴다는 trade-off를 사용자에게 제시한다.
-- 입력값 state는 로컬, URL의 `q` 변화(뒤로/앞으로가기)는 입력값으로 역동기화(조합 중 제외). `q` 변경 시 `page` 파라미터 제거 (AC16), 입력 비움 시 `q` 제거 (AC18), `category` 유지 (AC19).
-- 이 페이지는 `searchParams`를 쓰는 동적 페이지다. `useSearchParams`의 Suspense 경계 요구는 [미확인]이므로 `pnpm build` 경고를 확인하고 필요 시 목록 클라이언트 컴포넌트를 `Suspense`로 감싼다.
-
-## 6. axios 인스턴스 (T05)
-
-`src/lib/http/api-client.ts` (client 번들용, `server-only` 아님):
-
-```ts
-export const apiClient = axios.create({
-  baseURL: "/api",
-  timeout: 10_000,
-  headers: { Accept: "application/json" },
-});
-```
-
-- 같은 오리진 상대 경로이므로 쿠키(next-auth 세션)가 자동 전송된다. 관리자 요청에 별도 `withCredentials` 불필요.
-- 브라우저 전용이다. 서버 컴포넌트에서 이 인스턴스를 쓰지 않는다(`nextjs.md` 5번, 서버는 서비스 직접 호출). 상대 baseURL은 서버에서 동작하지 않는다.
-- 인터셉터는 두지 않는다. 오류는 `isAxiosError(error)`로 `response?.status`와 `response?.data` (`CustomData<ApiErrorBody>`)를 호출부에서 해석한다.
-- 기존 `admin-request.ts`는 변경하지 않는다 (0장 7번, 쓰기 전용 유지).
-
-## 7. noindex (AC37, T05)
-
-공개 `src/app/(public)/blog/page.tsx`의 `export const metadata`를 `generateMetadata({ searchParams })`로 바꾼다.
-
-```ts
-export async function generateMetadata({ searchParams }: BlogPageProps): Promise<Metadata> {
-  const q = normalizeSearchQuery((await searchParams).q);
-  return {
-    title: "blog",
-    description: "개발하며 배운 것과 알고리즘 풀이를 정리한 글 목록",
-    alternates: { canonical: "/blog" },
-    ...(q ? { robots: { index: false, follow: true } } : {}),
-  };
+interface Project {
+  // 기본(PC) 이미지 목록, 순서가 전환 순서. 없으면 빈 배열
+  thumbnails: string[];
+  // 모바일 전용 목록. 비면 표시 계층이 thumbnails를 대신 사용. 없으면 빈 배열
+  mobileThumbnails: string[];
+  ...
 }
 ```
 
-- [결정] `follow: true`: 검색 결과 페이지는 색인하지 않되 글 링크 발견은 허용한다. `canonical`은 `/blog` 유지.
-- `q`가 없거나 공백/제어문자뿐이면 `normalizeSearchQuery`가 `undefined`이므로 `robots`를 넣지 않는다 (현행 메타데이터와 동일).
-- [미확인] Next가 `robots: { index: false, follow: true }`를 `content="noindex, follow"`로 렌더하는지(AC37 문구는 `noindex` 포함 여부로 검증하는 편이 안전), 그리고 스트리밍 메타데이터가 헤더가 아닌 본문에 들어갈 수 있는지. 확인은 T09에서 응답 HTML로 한다.
-- 관리자 페이지는 `proxy.ts`가 이미 `X-Robots-Tag: noindex, nofollow`를 붙이므로 변경 없음.
+- 기존 `thumbnail?: string`은 제거한다. 호출부: `src/app/(public)/page.tsx`, `src/app/(public)/projects/page.tsx`(`ProjectCard` 전달), `work/[id]/page.tsx`(OG), `project-form.tsx`.
+- 항목별 출처 구분이 필요한 병합 배열은 없다(두 목록은 별도 필드이므로 판별 필드 불필요). 상한 절단 응답도 없다(개수 상한은 입력 검증이고, 읽기는 저장된 전체를 반환).
+- 기존 필드 없는 과거 레코드 해석 문제 없음: DB default `'{}'`가 모든 기존 행에 채워진다.
 
-## 8. 파일 변경 목록과 담당
+## 6. OG 규칙 (`src/app/(public)/work/[id]/page.tsx`)
 
-겹치는 파일 없음. 의존성(`package.json`, `pnpm-lock.yaml`)은 T05 단독.
+- `...(project.thumbnails[0] && { images: [project.thumbnails[0]] })`. 기본 목록이 비면 `images` 생략(모바일만 있는 상태는 저장 거부되므로 발생하지 않음).
+- 단일 썸네일 프로젝트는 마이그레이션으로 `thumbnails[0]`이 기존 `thumbnail`과 같으므로 OG 값이 변경 전과 동일하다(AC-25).
 
-### T06 (backend)
+## 7. 영향받는 기존 테스트 (나열만, 작성 담당 미배정)
+
+Unit (`__tests__/`):
+- `utils/portfolio-admin-service.test.ts`: `thumbnail` 단일 값 기준 select/update/delete/Blob 정리 케이스 전반(`row()`의 `thumbnail`, `results.push([{ id, thumbnail }])`, `setCalls[0].thumbnail`, 반환 `project.thumbnail`)이 목록 필드와 합집합 정리 기준으로 갱신 대상.
+- `utils/portfolio-thumbnail-read.test.ts`: 행 `thumbnail`, 결과 `.thumbnail`, 레거시 `/images/` 허용 케이스(레거시 패턴 삭제 시) 갱신 대상.
+- `schemas/portfolio-schema.test.ts`: `thumbnail` 필드 허용/거부/빈 문자열 케이스(156~180행 부근)가 `thumbnails` 기준으로 갱신 대상.
+- `schemas/admin-form-schema.test.ts`: `thumbnail` fixture(48행), `projectFormKeepThumbnailSchema`(12, 138~145행) 케이스가 새 스키마명/모양으로 갱신 대상.
+- `api/thumbnail-upload-route.test.ts`, `api/post-image-upload-route.test.ts`: 업로드 API 자체는 변경 없음. 영향 없을 것으로 예상하나 전체 실행으로 확인.
+- 마이그레이션 journal/스키마를 점검하는 테스트(예: `drizzle` 관련)가 있으면 0005 추가 영향 확인 필요(전체 `pnpm exec vitest run`으로 검증).
+
+E2E (`tests/e2e/`):
+- `fixtures/portfolio.ts`: `FixtureProject.thumbnail`, `fixtureThumbnailUrl` 사용(113행). orchestrator의 fixture 교체와 겹침.
+- `fixtures/seed.ts`: `thumbnail: p.thumbnail ?? null`(82행).
+- `fixtures/test.ts`: 썸네일 route mock(`public/images/projects/globber/thumbnail.png` 경로). orchestrator 교체 범위.
+- `real-project-data.spec.ts`: 썸네일 이미지 표시 확인(60~67행). 값 형태가 목록으로 바뀌어도 단일 장 표시가 유지되는지 확인 대상.
+
+기타:
+- `scripts/migrate-thumbnails.mjs`는 `thumbnail` 컬럼을 직접 참조하는 일회성 이전 스크립트다. `public/images/` 제거(12절)로 의미가 사라지고 0006 이후에는 실행 시 컬럼 부재로 실패하므로 삭제 대상으로 제안한다(`knip`/lint 영향은 구현 시 확인). 삭제 여부는 orchestrator가 사용자에게 확인.
+
+## 8. 구현 파일 범위 분담 (겹치지 않음)
+
+### T06 backend
 
 | 파일 | 변경 |
 | --- | --- |
-| `src/utils/blog-query-params.ts` | 신규. 2.1의 함수/타입. `parsePageParam`, `normalizeCategoryParam`을 이 파일로 이동 |
-| `src/constants/blog.ts` | `POST_SEARCH_MAX = 100` 추가 |
-| `src/services/blog/blog-service.ts` | `listPosts` 4번째 인자 `query`, 검색 조건. 이동한 두 함수와 그 전용 import(`POST_LABEL_MAX`) 제거 |
-| `src/app/api/blog/posts/route.ts` | 신규. 공개 GET |
-| `src/app/api/admin/posts/route.ts` | `GET` 추가 (POST 유지) |
-| `__tests__/utils/blog-category-param.test.ts` | import 경로만 `@/utils/blog-query-params`로 갱신 (`vi.mock("server-only")`, `vi.mock("@/db")`는 그대로 두어도 무방) |
-| `__tests__/utils/blog-excerpt-page.test.ts` | `parsePageParam` import 경로만 갱신 |
+| `src/db/schema/portfolio.ts` | `thumbnails`, `mobileThumbnails` 컬럼, check 2개 추가 (`thumbnail` 컬럼은 0006 후속에서 제거하므로 이번에는 유지) |
+| `drizzle/0005_*.sql`, `drizzle/meta/_journal.json`, `drizzle/meta/0005_snapshot.json` | `pnpm db:generate`로 생성 후 SQL에 데이터 이전 UPDATE 추가. 실행은 하지 않음 |
+| `src/schemas/portfolio.schema.ts` | 상수, `thumbnailList`, 입력/폼/keep 스키마, refine 구조 |
+| `src/services/portfolio/portfolio-service.ts` | `safeThumbnails`, `toProject`, 레거시 패턴 삭제 |
+| `src/services/portfolio/portfolio-admin-service.ts` | create/update/delete, Blob 정리, 23514 매핑 |
+| `src/app/api/admin/projects/route.ts`, `projects/[slug]/route.ts` | 로직 변경은 없고 import만 영향 시 수정 |
+| `src/types/portfolio.ts` | `Project` 타입 |
+| `tests/e2e/fixtures/seed.ts` | 필드 매핑만 변경 |
+| `tests/e2e/fixtures/portfolio.ts` | `FixtureProject` 타입 필드 형태만 변경 (이미지 값 교체는 orchestrator, 병합 시 조율) |
+| 기존 unit 테스트 7절 항목 | 깨지는 것만 의도 유지한 채 갱신 |
 
-### T05 (frontend)
+### T05 frontend
 
 | 파일 | 변경 |
 | --- | --- |
-| `package.json`, `pnpm-lock.yaml` | 5.1의 두 패키지 추가 |
-| `src/lib/http/api-client.ts` | 신규. axios 인스턴스 |
-| `src/lib/query/get-query-client.ts` | 신규 |
-| `src/lib/query/blog-posts-keys.ts` | 신규 |
-| `src/lib/query/blog-posts-queries.ts` | 신규. 클라이언트 queryFn/옵션 |
-| `src/components/common/query-provider.tsx` | 신규. `"use client"`, `QueryClientProvider` |
-| 검색 입력, 목록 클라이언트 컴포넌트 | 신규(공개/관리자 각각). 입력 UI, debounce, IME, replaceState, `useQuery`, 개수/0건/오류 문구 (파일명과 UI는 designer/T05 확정) |
-| `src/components/common/category-tabs.tsx` | `query?: Record<string, string>` prop 추가 (기본 동작 유지) |
-| `src/app/(public)/blog/page.tsx` | `generateMetadata`, `QueryProvider` + `QueriesHydration` + 서버 prefetch queryFn, import 경로를 `@/utils/blog-query-params`로 변경 |
-| `src/app/admin/(console)/blog/page.tsx` | 동일 구조. `requireAdminPage()` 유지, 행 마크업/"새 글" 버튼 불변 (AC33) |
+| `src/components/common/project-card.tsx` | `thumbnails`, `mobileThumbnails` props, `md` 분기, 4초 크로스페이드, 일시정지, reduced-motion |
+| `src/app/(public)/page.tsx`, `src/app/(public)/projects/page.tsx` | `ProjectCard`에 두 목록 전달 (두 호출부 모두) |
+| `src/app/(public)/work/[id]/page.tsx` | OG `images` 규칙 (6절) |
+| `src/components/admin/project-form.tsx` | 목록 필드(`useFieldArray`), 변경 판정, keep 스키마 선택, 전송 body |
+| `src/components/admin/thumbnail-field.tsx` | 단일 업로드 컴포넌트를 목록 편집용으로 확장하거나 목록 컴포넌트 신설 (추가, 삭제, 위/아래 이동, 업로드 중 저장 차단) |
+| 신규 파일(필요 시) | 목록 편집 컴포넌트, 카드 슬라이드 훅 등 (kebab-case) |
 
-### 의존성 [결정]
+경계:
+- T05는 `src/schemas/`, `src/services/`, `src/db/`, `src/types/`, `drizzle/`를 수정하지 않는다. T06이 먼저 스키마 export 이름(`THUMBNAIL_LIST_MAX`, `projectFormSchema`, `projectFormKeepThumbnailsSchema`)과 `Project` 타입을 확정해 두고, T05는 그 이름을 소비한다. 병렬 진행 시 위 이름과 타입을 계약으로 고정한다.
+- `ProjectCard` 새 props 이름은 `thumbnails: string[]`, `mobileThumbnails: string[]`(필수 아님, 기본 `[]`)로 제안하며 T05가 소유한다.
+- 이 사이클에서 건드리지 않는 파일: `src/app/api/admin/uploads/thumbnail/route.ts`(변경 없음), `public/images/`와 E2E 이미지 값 교체(orchestrator).
+- 병렬 스폰은 `git-safety.md`대로 `Agent` 호출을 별도 메시지로 하나씩, `isolation: "worktree"`로.
 
-- T05는 T06이 만드는 `@/utils/blog-query-params`(함수, `BlogListParams`)와 `POST_SEARCH_MAX`, `listPosts` 4번째 인자에 의존한다. 위 시그니처가 계약이다. T05는 계약대로 코드를 쓰고, 병합 후 orchestrator가 `pnpm fix-all && pnpm type-check`와 전체 테스트를 재검증한다.
-- T06이 먼저 끝나면 T05가 병합 기준 브랜치에서 type-check를 돌릴 수 있다. 병렬이면 각 worktree의 단독 type-check는 상대 쪽 심볼 때문에 실패할 수 있다.
-- T05의 `pnpm install` 결과(`node_modules`)는 T06 worktree에 필요 없다(T06은 새 패키지를 import하지 않음).
+## 9. 보안 점검
 
-## 9. 영향받는 기존 테스트 (신규 테스트는 T09 QA 담당)
+- 모든 URL 원소가 서버에서 `isValidThumbnail`(호스트, `/thumbnails/` 경로, https, 자격증명/포트/쿼리/해시 금지)을 거친다. 클라이언트 검증은 UX용.
+- 참조 검사와 UPDATE는 Drizzle 파라미터 바인딩만 사용(문자열 보간 SQL 없음). `= any(column)`에서 URL은 바인딩 값.
+- 엔드포인트는 모두 기존 `adminRoute`(인증, allowlist, Origin 검사, rate limit) 뒤에 있고 새 엔드포인트는 없다.
+- DB check로 서버 스키마 우회 시에도 개수 상한과 모바일 단독 저장을 막는다.
 
-- `__tests__/utils/blog-category-param.test.ts`: import 경로 변경으로 갱신 필요.
-- `__tests__/utils/blog-excerpt-page.test.ts`: import 경로 변경으로 갱신 필요.
-- `tests/e2e/blog.spec.ts`: 카테고리 탭 링크 href와 URL 확인. `q`가 없을 때 링크는 기존과 동일해야 하므로 변경 없이 통과해야 한다 (AC34).
-- [미확인] `tests/e2e/admin-tabs.spec.ts`, `real-project-data.spec.ts`가 `/admin/blog`, `/blog` 목록 마크업에 의존하는지는 읽지 않았다. T05 구현 후 `pnpm test:e2e:local`로 확인한다.
-- `__tests__/api/admin-route*.test.ts`는 `adminRoute` 자체를 검증하며 변경 없음.
+## 10. 확인 필요 (blocking 아님)
 
-## Orchestrator 확인 (main 체크아웃 node_modules 기준, next 16.3.6)
+- 0006(컬럼 제거)을 이번 브랜치에서 제외하고 후속으로 분리하는 안(2.2)에 대한 orchestrator/사용자 확인. 요구사항 E1 "이전 후 제거"의 이행 시점이 후속 배포로 미뤄짐.
+- Preview 빌드의 `DATABASE_URL`이 운영 DB와 같은지(2.2 Preview 주의).
 
-- [사실] `01-app/01-getting-started/04-linking-and-navigating.md` "Native History API": `window.history.pushState`/`replaceState` 호출은 Next.js Router와 통합되어 `usePathname`, `useSearchParams`와 동기화됨. `replaceState` 권장안 채택.
-- [사실] `01-app/01-getting-started/15-route-handlers.md`: Route Handler는 기본적으로 캐시되지 않음. `GET`은 `dynamic = 'force-static'` 같은 설정으로만 캐시 opt-in.
-- [사실] `01-app/03-api-reference/04-functions/generate-metadata.md`: `robots: { index, follow }` 필드 지원.
-- [사실] `01-app/03-api-reference/04-functions/use-search-params.md`: 정적 페이지에서 클라이언트 컴포넌트가 `useSearchParams`를 호출하면 프로덕션 빌드 시 `Suspense` 경계가 필요함. 대상 페이지는 `searchParams`를 읽는 동적 페이지지만, 검색 입력 컴포넌트는 `Suspense` 경계 안에 두는 것을 구현 기준으로 함.
+## 부록. 사용자 결정 반영 (orchestrator, 2026-10-16)
+
+- requirements.md 13절 D1에 따라 `thumbnail` 컬럼 제거(이 문서의 0006)를 이번 브랜치에 포함한다. 데이터 이전과 컬럼 제거를 이번 브랜치의 마이그레이션으로 함께 적용하고, `src/db/schema/portfolio.ts`에서 `thumbnail` 정의를 제거한다. 배포 사이 운영 화면 중단 위험은 사용자가 알고 선택했으며 main 배포 직전 재확인한다.
+- D2에 따라 `scripts/migrate-thumbnails.mjs`와 `LEGACY_THUMBNAIL_PATTERN`을 삭제한다.
+- D4(Candanta PC/모바일 분리)는 데이터 변경이며 스키마·API 설계에는 영향이 없다.
+
+## 리뷰 재개 후 보안 보완 (2026-10-16)
+
+- 사용자가 기존 Origin scheme 미비교 및 Blob 삭제 경합을 이번 사이클 수정에 포함하고, Blob 자동 삭제 유지를 선택함.
+- Origin은 `NEXTAUTH_URL`(없으면 요청 URL)의 scheme과 기존 허용 host·port를 조합한 전체 origin과 비교함. `ADMIN_ALLOWED_HOSTS`의 host 형식은 유지함.
+- 마이그레이션 0007은 `retired_thumbnail_blobs(url PRIMARY KEY)` 및 프로젝트 썸네일 쓰기 trigger를 추가함.
+- 미참조 Blob 삭제 경로는 READ COMMITTED 트랜잭션에서 advisory lock `7301005`(0008에서 이력서 잠금 `7301004`와 분리)를 얻고, 두 목록 전체에서 참조가 없는 URL만 삭제 대상으로 기록함. 기록 커밋 후 외부 Blob 삭제를 실행함.
+- 프로젝트 INSERT 및 두 썸네일 배열 UPDATE trigger도 같은 lock 아래에서 기록을 검사함. 새 참조 저장이 먼저면 삭제 대상 기록을 만들지 않으며, 기록이 먼저면 새 참조 저장을 거부함. Trigger는 READ COMMITTED 외 격리수준을 거부함.
+- 삭제 대상 URL의 재등록은 `VALIDATION_FAILED`(400)와 `thumbnails` 또는 `mobileThumbnails` 필드 오류로 반환하고 재업로드를 안내함.
+- 외부 삭제 실패에도 URL 기록은 유지함. 0008이 `retired_thumbnail_blobs.deleted_at`을 추가하고, 삭제 성공 시에만 값을 기록함. 이후 프로젝트 수정·삭제로 Blob 정리가 실행될 때마다 `deleted_at`이 null인 모든 URL의 삭제를 다시 시도함(사용자 결정: 별도 cron·worker 없이 다음 정리 때 재시도). 관리자 편집이 없으면 재시도도 일어나지 않음.

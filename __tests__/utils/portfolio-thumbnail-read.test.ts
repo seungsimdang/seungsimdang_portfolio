@@ -25,7 +25,8 @@ function row(thumbnail: string | null) {
     techStack: [],
     summary: "s",
     link: null,
-    thumbnail,
+    thumbnails: thumbnail ? [thumbnail] : [],
+    mobileThumbnails: [],
     sortOrder: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -33,7 +34,7 @@ function row(thumbnail: string | null) {
 }
 
 const read = async (value: string | null, raw = false) =>
-  (await loadProjects([row(value)], raw))[0].thumbnail;
+  (await loadProjects([row(value)], raw))[0].thumbnails[0];
 
 beforeEach(() => {
   vi.unstubAllEnvs();
@@ -41,16 +42,13 @@ beforeEach(() => {
 });
 
 describe("공개 읽기 썸네일 필터", () => {
-  it("레거시 /images 경로는 그대로 렌더한다", async () => {
-    expect(await read("/images/a-b_c.png")).toBe("/images/a-b_c.png");
-  });
-
   it("Blob URL은 그대로 렌더한다", async () => {
     const url = `https://${HOST}/thumbnails/x.png`;
     expect(await read(url)).toBe(url);
   });
 
   it.each([
+    "/images/a-b_c.png",
     "/images/../secret.png",
     "/images/a b.png",
     "/other/a.png",
@@ -62,16 +60,11 @@ describe("공개 읽기 썸네일 필터", () => {
     expect(await read(value)).toBeUndefined();
   });
 
-  it("null은 undefined", async () => {
+  it("빈 목록은 첫 장이 없다", async () => {
     expect(await read(null)).toBeUndefined();
   });
 
   it("raw=true는 DB 원값을 유지한다", async () => {
     expect(await read("/other/a.png", true)).toBe("/other/a.png");
-  });
-
-  it("Blob 호스트 환경변수가 없어도 /images는 읽힌다", async () => {
-    vi.stubEnv("NEXT_PUBLIC_BLOB_HOSTNAME", "");
-    expect(await read("/images/a.png")).toBe("/images/a.png");
   });
 });

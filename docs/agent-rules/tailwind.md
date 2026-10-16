@@ -24,7 +24,7 @@ Tailwind **v4**. 설정은 `tailwind.config.*`가 아니라 `src/app/globals.css
 ## 디자인 토큰만 사용
 
 1. 색은 흑백 기본 팔레트(`white`, `black`과 투명도 수식어 `/10`, `/25` 등)와 `globals.css`에 정의된 토큰(`danger`, `background`, `foreground`)만 쓴다. 다른 기본 팔레트 색(`red-500` 등)과 임의 색 값(`[#...]`) 금지.
-   - 간격·크기 토큰: `max-w-content`, `max-w-heading`, `h-header`, `min-h-project-info`, `h-card`, `h-card-tall`, `h-card-stuck` 등.
+   - 간격·크기 토큰: `max-w-content`, `max-w-heading`, `h-header`, `min-h-project-info`, `h-card`, `h-card-stuck` 등.
 2. 새 색/간격 값이 필요하면 인라인 임의 값 대신 `globals.css`의 `@theme`에 토큰을 추가한다.
 3. CSS 커스텀 프로퍼티 참조는 v4 괄호 표기: `bg-(--brand)`, `h-(--x)` (`[var(--x)]` 아님).
 4. **예외로 `[]` 허용**: 소수점 등 완전히 임의의 1회성 값. 그래도 우선은 토큰화를 검토한다.

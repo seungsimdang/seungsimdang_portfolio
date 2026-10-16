@@ -43,7 +43,7 @@ pnpm harness:test
 
 - pre-commit: 작성자 → lint-staged → staged 하네스 동기화 → Knip → React Doctor → Vitest 하네스 검사.
 - pre-push: 타입 → Biome → 하네스 동기화 → Vitest 하네스 검사. 빌드·Playwright E2E는 CI(`.github/workflows/ci.yml`)가 모든 push에서 실행하므로 로컬 훅에서 제외한다.
-- Claude·Codex 런타임 훅은 각 도구의 원본 등록 구조를 유지한다. 동기화 안내는 이 저장소의 생성 원본·결과 검사에 연결한다. 안내 훅은 실행을 차단하지 않는다. `require-single-best-practice.sh`는 best practice 질문에 권장안 하나만 답하라는 조건부 지시를 주입한다. `require-feasibility-verdict.sh`는 가능 여부 질문에 첫 문장에서 가능/불가능을 명시하라는 조건부 지시를 주입한다.
+- Claude·Codex 런타임 훅은 각 도구의 원본 등록 구조를 유지한다. 동기화 안내는 이 저장소의 생성 원본·결과 검사에 연결한다. 안내 훅은 실행을 차단하지 않는다. `require-single-best-practice.sh`는 best practice 질문에 권장안 하나만 답하라는 조건부 지시를 주입한다. `require-feasibility-verdict.sh`는 가능 여부 질문에 답변을 가능합니다 또는 불가능합니다로 시작하라는 조건부 지시를 주입하고, 그 턴의 도구 결과에도 같은 안내를 붙이며, Stop에서 지키지 않은 답변을 막는다. `block-unverified-claims.sh`(Stop)는 추측과 미확인 꼬리표가 한 문장에 있는 답변을 한 번 막는다. UserPromptSubmit 안내 훅은 `user-prompt-text.sh`로 subagent 보고와 붙여넣은 내용을 뺀 사용자 문장만 판정한다.
 - Codex Edit|Write·Agent 훅은 `.codex/hooks/codex-tool-adapter.mjs`를 거쳐 실행한다. 어댑터는 `apply_patch` 패치를 파일별 Write·Edit·Delete 입력으로, `spawn_agent`의 `agent_type`을 `subagent_type`으로 바꾸고, Codex가 지원하지 않는 `ask`를 `deny`로 바꾼다. 훅 스크립트 본문은 Claude와 같게 유지한다. Codex에 대응 도구가 없는 AskUserQuestion·EnterWorktree·isolation·fork 관련 훅은 Claude에만 둔다.
 - `block-reask-after-free-text-answer.sh`(Claude 전용)는 AskUserQuestion 답변에 선택지 밖 직접 입력이 있으면 같은 응답 안의 AskUserQuestion 재호출을 차단한다. 트랜스크립트를 읽지 못하면 통과시킨다.
 

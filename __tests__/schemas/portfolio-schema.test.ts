@@ -157,7 +157,8 @@ describe("썸네일", () => {
   ])("%s 허용", (v) => {
     expect(isValidThumbnail(v)).toBe(true);
     expect(
-      projectCreateInputSchema.safeParse({ ...project, thumbnail: v }).success,
+      projectCreateInputSchema.safeParse({ ...project, thumbnails: [v] })
+        .success,
     ).toBe(true);
   });
   it.each([
@@ -172,12 +173,14 @@ describe("썸네일", () => {
   ])("%s 거부", (v) => {
     expect(isValidThumbnail(v)).toBe(false);
     expect(
-      projectCreateInputSchema.safeParse({ ...project, thumbnail: v }).success,
+      projectCreateInputSchema.safeParse({ ...project, thumbnails: [v] })
+        .success,
     ).toBe(false);
   });
-  it("빈 문자열과 생략 허용", () => {
+  it("빈 배열과 생략 허용", () => {
     expect(
-      projectCreateInputSchema.safeParse({ ...project, thumbnail: "" }).success,
+      projectCreateInputSchema.safeParse({ ...project, thumbnails: [] })
+        .success,
     ).toBe(true);
     expect(projectCreateInputSchema.safeParse(project).success).toBe(true);
   });
