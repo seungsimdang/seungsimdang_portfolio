@@ -14,7 +14,7 @@ export const test = base.extend({
         ),
       (route) =>
         route.fulfill({
-          path: resolve("public/images/projects/globber/thumbnail.png"),
+          path: resolve("tests/e2e/fixtures/thumbnail.png"),
         }),
     );
     await use(page);
