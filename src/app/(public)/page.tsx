@@ -33,7 +33,8 @@ export default async function Home() {
               title={project.title}
               role={project.role}
               period={project.period}
-              thumbnail={project.thumbnail}
+              thumbnails={project.thumbnails}
+              mobileThumbnails={project.mobileThumbnails}
               preserveThumbnailText={project.slug === "candanta"}
               href={`/work/${project.slug}`}
               eager={index === 0}

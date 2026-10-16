@@ -9,7 +9,7 @@ import {
   profileInputSchema,
   profileSectionFormSchema,
   profileUpdateInputSchema,
-  projectFormKeepThumbnailSchema,
+  projectFormKeepThumbnailsSchema,
   projectFormSchema,
   projectUpdateInputSchema,
   resumeEntryFormSchema,
@@ -45,7 +45,12 @@ const project = {
   role: "개발",
   summary: "요약",
   link: "",
-  thumbnail: "https://ci-test.public.blob.vercel-storage.com/thumbnails/a.png",
+  thumbnails: [
+    {
+      value: "https://ci-test.public.blob.vercel-storage.com/thumbnails/a.png",
+    },
+  ],
+  mobileThumbnails: [],
   techStack: [{ value: "Next.js" }],
   experiences: [experience],
 };
@@ -135,14 +140,18 @@ describe("관리자 폼 출력과 서버 입력 스키마 호환", () => {
   });
 
   it("변경하지 않은 기존 썸네일은 제외하면 서버 입력에 호환된다", () => {
-    const output = projectFormKeepThumbnailSchema.parse({
+    const output = projectFormKeepThumbnailsSchema.parse({
       ...project,
-      thumbnail: " legacy-value ",
+      thumbnails: [{ value: " legacy-value " }],
     });
-    expect(output.thumbnail).toBe("legacy-value");
-    const { thumbnail: _thumbnail, ...withoutThumbnail } = output;
-    expect(projectUpdateInputSchema.parse(withoutThumbnail)).toEqual(
-      withoutThumbnail,
+    expect(output.thumbnails).toEqual([{ value: "legacy-value" }]);
+    const {
+      thumbnails: _thumbnails,
+      mobileThumbnails: _mobileThumbnails,
+      ...withoutThumbnails
+    } = output;
+    expect(projectUpdateInputSchema.parse(withoutThumbnails)).toEqual(
+      withoutThumbnails,
     );
   });
 

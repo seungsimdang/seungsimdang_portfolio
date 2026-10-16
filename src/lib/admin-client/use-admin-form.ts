@@ -128,7 +128,8 @@ export function focusAfterRender(id: string) {
 interface UseAdminFormOptions<V extends FieldValues, O, R> {
   resolver: Resolver<V, unknown, O>;
   defaultValues: V;
-  save: (input: O) => Promise<AdminResult<R>>;
+  // values는 검증 전 폼 원본 값, 검증 출력과 모양이 다른 목록을 다시 만들 때 사용
+  save: (input: O, values: V) => Promise<AdminResult<R>>;
   // 저장 성공 후 폼 기준값으로 삼을 값, 화면을 떠나는 경우 undefined
   onSaved: (result: R) => V | undefined;
   listHref: string;
@@ -178,7 +179,7 @@ export function useAdminForm<V extends FieldValues, O, R>({
       savingRef.current = true;
       let result: Awaited<ReturnType<typeof save>>;
       try {
-        result = await save(input);
+        result = await save(input, methods.getValues());
       } finally {
         savingRef.current = false;
       }

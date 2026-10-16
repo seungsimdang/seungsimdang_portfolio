@@ -41,7 +41,7 @@ export async function generateMetadata({
       type: "article",
       locale: "ko_KR",
       url: `/work/${id}`,
-      ...(project.thumbnail && { images: [project.thumbnail] }),
+      ...(project.thumbnails[0] && { images: [project.thumbnails[0]] }),
     },
   };
 }

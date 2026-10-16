@@ -1,6 +1,7 @@
 import "server-only";
 import { del } from "@vercel/blob";
-import { and, eq, type SQL, sql } from "drizzle-orm";
+import { HttpStatusCode } from "axios";
+import { and, eq, or, type SQL, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { z } from "zod";
 import type { ResumeKind } from "@/constants/resume";
@@ -12,6 +13,7 @@ import {
   resumeEntries,
   techTalks,
 } from "@/db/schema/portfolio";
+import { ApiError } from "@/lib/api/api-error";
 import {
   type ExperienceInput,
   isValidThumbnail,
@@ -69,6 +71,7 @@ export class LimitExceededError extends Error {
 
 export const PG_UNIQUE_VIOLATION = "23505";
 const PG_FOREIGN_KEY_VIOLATION = "23503";
+const PG_CHECK_VIOLATION = "23514";
 
 // Neon 직접 에러는 err.code, drizzle 래핑 에러는 err.cause.code에 PG 코드가 있음
 export function getPgErrorCode(error: unknown): string | undefined {
@@ -153,10 +156,21 @@ function limitGuard(
   ];
 }
 
+function mobileWithoutBaseError() {
+  return new ApiError(
+    "VALIDATION_FAILED",
+    HttpStatusCode.BadRequest,
+    "입력값을 확인해 주세요",
+    { mobileThumbnails: "기본 이미지를 먼저 등록해 주세요" },
+  );
+}
+
 function mapCreateError(error: unknown): never {
   const code = getPgErrorCode(error);
   if (code === PG_UNIQUE_VIOLATION) throw new SlugConflictError();
   if (code === PG_DIVISION_BY_ZERO) throw new LimitExceededError();
+  // 사전 판정 이후 동시 수정으로 어긋난 경우의 안전망
+  if (code === PG_CHECK_VIOLATION) throw mobileWithoutBaseError();
   throw error;
 }
 
@@ -164,6 +178,11 @@ export async function createProject(
   input: ProjectCreateInput,
 ): Promise<Project> {
   const id = crypto.randomUUID();
+  const thumbnails = input.thumbnails ?? [];
+  const mobileThumbnails = input.mobileThumbnails ?? [];
+  if (mobileThumbnails.length > 0 && thumbnails.length === 0) {
+    throw mobileWithoutBaseError();
+  }
   const statements: BatchItem<"pg">[] = [
     ...limitGuard(projects, PROJECTS_LOCK_KEY),
     db.insert(projects).values({
@@ -174,7 +193,8 @@ export async function createProject(
       role: input.role,
       summary: input.summary,
       link: blankToNull(input.link),
-      thumbnail: blankToNull(input.thumbnail),
+      thumbnails,
+      mobileThumbnails,
       techStack: input.techStack,
       // 한 문장 안에서 맨 끝 순번을 정해 동시 삽입 사이의 간격을 허용
       sortOrder: sql`(select coalesce(max(${projects.sortOrder}), -1) + 1 from ${projects})`,
@@ -198,10 +218,20 @@ export async function updateProject(
   input: ProjectUpdateInput,
 ): Promise<Project> {
   const [existing] = await db
-    .select({ id: projects.id, thumbnail: projects.thumbnail })
+    .select({
+      id: projects.id,
+      thumbnails: projects.thumbnails,
+      mobileThumbnails: projects.mobileThumbnails,
+    })
     .from(projects)
     .where(eq(projects.slug, slug));
   if (!existing) throw new NotFoundError();
+
+  const nextThumbnails = input.thumbnails ?? existing.thumbnails;
+  const nextMobile = input.mobileThumbnails ?? existing.mobileThumbnails;
+  if (nextMobile.length > 0 && nextThumbnails.length === 0) {
+    throw mobileWithoutBaseError();
+  }
 
   const projectUpdate = {
     slug: input.slug,
@@ -212,8 +242,9 @@ export async function updateProject(
     link: blankToNull(input.link),
     techStack: input.techStack,
     updatedAt: new Date(),
-    ...(input.thumbnail !== undefined
-      ? { thumbnail: blankToNull(input.thumbnail) }
+    ...(input.thumbnails !== undefined ? { thumbnails: input.thumbnails } : {}),
+    ...(input.mobileThumbnails !== undefined
+      ? { mobileThumbnails: input.mobileThumbnails }
       : {}),
   };
   const statements: BatchItem<"pg">[] = [
@@ -237,40 +268,55 @@ export async function updateProject(
     if (getPgErrorCode(error) === PG_FOREIGN_KEY_VIOLATION) {
       throw new NotFoundError();
     }
+    if (getPgErrorCode(error) === PG_CHECK_VIOLATION) {
+      throw mobileWithoutBaseError();
+    }
     throw error;
   }
   const project = await loadProjectById(existing.id);
-  if (
-    existing.thumbnail &&
-    existing.thumbnail !== project.thumbnail &&
-    isOwnBlobUrl(existing.thumbnail)
-  ) {
-    await deleteBlobIfUnused(existing.thumbnail);
-  }
+  const kept = new Set([...project.thumbnails, ...project.mobileThumbnails]);
+  const removed = [...existing.thumbnails, ...existing.mobileThumbnails].filter(
+    (url) => !kept.has(url),
+  );
+  await deleteUnusedBlobs(removed);
   return project;
 }
 
-export async function deleteProject(slug: string): Promise<string | null> {
+export async function deleteProject(slug: string): Promise<void> {
   const rows = await db
     .delete(projects)
     .where(eq(projects.slug, slug))
-    .returning({ id: projects.id, thumbnail: projects.thumbnail });
+    .returning({
+      id: projects.id,
+      thumbnails: projects.thumbnails,
+      mobileThumbnails: projects.mobileThumbnails,
+    });
   if (rows.length === 0) throw new NotFoundError();
-  const thumbnail = rows[0].thumbnail;
-  if (thumbnail && isOwnBlobUrl(thumbnail)) await deleteBlobIfUnused(thumbnail);
-  return thumbnail;
+  await deleteUnusedBlobs([...rows[0].thumbnails, ...rows[0].mobileThumbnails]);
 }
 
 function isOwnBlobUrl(value: string): boolean {
   return isValidThumbnail(value);
 }
 
+// 저장이 끝난 뒤의 정리라 개별 실패는 응답에 영향을 주지 않음
+async function deleteUnusedBlobs(urls: string[]): Promise<void> {
+  const targets = [...new Set(urls)].filter(isOwnBlobUrl);
+  await Promise.allSettled(targets.map(deleteBlobIfUnused));
+}
+
+// 같은 프로젝트의 다른 목록과 다른 프로젝트의 참조를 모두 보호함
 async function deleteBlobIfUnused(url: string): Promise<void> {
   try {
     const [reference] = await db
       .select({ id: projects.id })
       .from(projects)
-      .where(eq(projects.thumbnail, url))
+      .where(
+        or(
+          sql`${url} = any(${projects.thumbnails})`,
+          sql`${url} = any(${projects.mobileThumbnails})`,
+        ),
+      )
       .limit(1);
     if (reference) return;
     await del(url);

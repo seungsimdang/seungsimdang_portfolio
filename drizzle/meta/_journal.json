@@ -36,6 +36,20 @@
       "when": 1792035592183,
       "tag": "0004_polite_miek",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792125934495,
+      "tag": "0005_project_thumbnails_expand",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792125939836,
+      "tag": "0006_project_thumbnails_contract",
+      "breakpoints": true
     }
   ]
 }

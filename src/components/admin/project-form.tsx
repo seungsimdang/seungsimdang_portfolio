@@ -3,7 +3,7 @@
 import { HttpStatusCode } from "axios";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
-import { Controller, FormProvider, type Resolver } from "react-hook-form";
+import { FormProvider, type Resolver } from "react-hook-form";
 import type { z } from "zod";
 import { adminRequest } from "@/lib/admin-client/admin-request";
 import { toExperienceValues, toValueItems } from "@/lib/admin-client/draft";
@@ -13,7 +13,7 @@ import {
   useAdminForm,
 } from "@/lib/admin-client/use-admin-form";
 import {
-  projectFormKeepThumbnailSchema,
+  projectFormKeepThumbnailsSchema,
   projectFormSchema,
 } from "@/schemas/portfolio.schema";
 import type { Project } from "@/types/portfolio";
@@ -23,13 +23,21 @@ import { FormActionBar } from "./form-parts";
 import { LeaveDialog } from "./leave-dialog";
 import { StringListEditor } from "./string-list-editor";
 import { TextAreaField, TextField } from "./text-fields";
-import { ThumbnailField } from "./thumbnail-field";
+import { ThumbnailListField } from "./thumbnail-list-field";
 import { useToast } from "./toast-provider";
 
 const UPLOADING_MESSAGE = "이미지 업로드가 끝난 뒤 저장하세요.";
 
 type ProjectValues = z.input<typeof projectFormSchema>;
 type ProjectInput = z.output<typeof projectFormSchema>;
+
+function toUrls(items: { value: string }[] | undefined): string[] {
+  return (items ?? []).map((item) => item.value.trim()).filter(Boolean);
+}
+
+function isSameUrls(a: string[], b: string[]) {
+  return a.length === b.length && a.every((url, index) => url === b[index]);
+}
 
 function toValues(project?: Project): ProjectValues {
   return {
@@ -39,7 +47,8 @@ function toValues(project?: Project): ProjectValues {
     role: project?.role ?? "",
     summary: project?.summary ?? "",
     link: project?.link ?? "",
-    thumbnail: project?.thumbnail ?? "",
+    thumbnails: toValueItems(project?.thumbnails ?? []),
+    mobileThumbnails: toValueItems(project?.mobileThumbnails ?? []),
     techStack: toValueItems(project?.techStack ?? []),
     experiences: (project?.experiences ?? []).map(toExperienceValues),
   };
@@ -54,7 +63,8 @@ export function ProjectForm({ project }: ProjectFormProps) {
   const { notify } = useToast();
   const isEdit = project !== undefined;
   const savedSlug = useRef(project?.slug ?? "");
-  const savedThumbnail = useRef(project?.thumbnail ?? "");
+  const savedThumbnails = useRef(project?.thumbnails ?? []);
+  const savedMobileThumbnails = useRef(project?.mobileThumbnails ?? []);
   const [deleting, setDeleting] = useState(false);
   const [slugChange, setSlugChange] = useState<{
     from: string;
@@ -62,30 +72,75 @@ export function ProjectForm({ project }: ProjectFormProps) {
   } | null>(null);
   const [uploading, setUploading] = useState(false);
   const uploadingRef = useRef(false);
+  const uploadCountRef = useRef(0);
+
+  // 두 목록의 어느 행이든 업로드 중이면 저장과 행 구조 변경을 막기 위해 진행 중인 업로드 수를 셈
+  function trackUpload(active: boolean) {
+    uploadCountRef.current += active ? 1 : -1;
+    uploadingRef.current = uploadCountRef.current > 0;
+    setUploading(uploadingRef.current);
+  }
+
+  function changedLists(values: {
+    thumbnails?: { value: string }[];
+    mobileThumbnails?: { value: string }[];
+  }) {
+    return {
+      thumbnails: !isSameUrls(
+        toUrls(values.thumbnails),
+        savedThumbnails.current,
+      ),
+      mobileThumbnails: !isSameUrls(
+        toUrls(values.mobileThumbnails),
+        savedMobileThumbnails.current,
+      ),
+    };
+  }
 
   const resolver: Resolver<ProjectValues, unknown, ProjectInput> = (
     values,
     context,
     options,
-  ) =>
-    schemaResolver(
-      isEdit && values.thumbnail?.trim() === savedThumbnail.current
-        ? projectFormKeepThumbnailSchema
-        : projectFormSchema,
-    )(values, context, options);
+  ) => {
+    const changed = changedLists(values);
+    // 하나라도 바뀌면 두 목록 모두 엄격 검증하므로, 안 바뀐 목록의 레거시 값은 거부될 수 있음
+    // 현재 저장된 값은 모두 Blob URL이라 실질 영향은 없음
+    const unchanged =
+      isEdit && !changed.thumbnails && !changed.mobileThumbnails;
+    // keep 스키마의 목록 출력은 { value }[]라 타입이 다르지만, save가 폼 원본 값에서 목록을 따로 만들어 출력 목록은 쓰지 않음
+    const schema = (unchanged
+      ? projectFormKeepThumbnailsSchema
+      : projectFormSchema) as unknown as typeof projectFormSchema;
+    return schemaResolver(schema)(values, context, options);
+  };
 
   const form = useAdminForm({
     resolver,
     defaultValues: toValues(project),
-    save: (input) => {
+    save: (input, values) => {
+      // 검증 경로에 따라 목록 출력 모양이 달라 폼 원본 값에서 다시 만듦
+      const { thumbnails: _t, mobileThumbnails: _m, ...rest } = input;
+      const lists = {
+        thumbnails: toUrls(values.thumbnails),
+        mobileThumbnails: toUrls(values.mobileThumbnails),
+      };
       if (!isEdit)
-        return adminRequest<Project>("POST", "/api/admin/projects", input);
-      // 썸네일을 바꾸지 않았으면 서버에 보내지 않음
-      const { thumbnail, ...rest } = input;
+        return adminRequest<Project>("POST", "/api/admin/projects", {
+          ...rest,
+          ...lists,
+        });
+      // 바꾸지 않은 목록은 서버에 보내지 않아 기존 값을 유지함
+      const changed = changedLists(values);
       return adminRequest<Project>(
         "PUT",
         `/api/admin/projects/${savedSlug.current}`,
-        thumbnail === savedThumbnail.current ? rest : input,
+        {
+          ...rest,
+          ...(changed.thumbnails && { thumbnails: lists.thumbnails }),
+          ...(changed.mobileThumbnails && {
+            mobileThumbnails: lists.mobileThumbnails,
+          }),
+        },
       );
     },
     // 저장 응답으로 폼 기준값을 갱신, 생성 후에는 편집 화면으로 이동
@@ -95,7 +150,8 @@ export function ProjectForm({ project }: ProjectFormProps) {
           savedSlug.current = saved.slug;
           void router.replace(`/admin/projects/${saved.slug}`);
         }
-        savedThumbnail.current = saved.thumbnail ?? "";
+        savedThumbnails.current = saved.thumbnails;
+        savedMobileThumbnails.current = saved.mobileThumbnails;
         return toValues(saved);
       }
       router.push(`/admin/projects/${saved.slug}`);
@@ -103,7 +159,7 @@ export function ProjectForm({ project }: ProjectFormProps) {
     },
     listHref: "/admin/projects",
   });
-  const { watch, getValues, control } = form.methods;
+  const { watch, getValues } = form.methods;
   const slug = watch("slug");
 
   async function remove(): Promise<string | null> {
@@ -173,23 +229,34 @@ export function ProjectForm({ project }: ProjectFormProps) {
           label="프로젝트 링크"
           type="url"
         />
-        <Controller
-          name="thumbnail"
-          control={control}
-          render={({ field }) => (
-            <ThumbnailField
-              value={field.value ?? ""}
-              title={watch("title")}
-              serverError={form.errors.thumbnail?.message}
-              saving={form.saving}
-              onChange={field.onChange}
-              onUploadStateChange={(value) => {
-                uploadingRef.current = value;
-                setUploading(value);
-              }}
-            />
-          )}
-        />
+        <fieldset className="space-y-24">
+          <legend className="text-small">썸네일</legend>
+          <p className="text-small opacity-70">
+            순서가 곧 전환 순서입니다. 2장 이상이면 공개 화면에서 4초마다
+            전환됩니다. 업로드와 제거는 프로젝트 저장 후 반영됩니다.
+          </p>
+          <ThumbnailListField
+            name="thumbnails"
+            legend="기본 썸네일"
+            itemLabel="기본 썸네일"
+            hint="PC 화면에 표시되며, 모바일 썸네일이 없으면 모바일에서도 사용합니다."
+            title={watch("title")}
+            saving={form.saving}
+            locked={uploading}
+            onUploadStateChange={trackUpload}
+          />
+          <ThumbnailListField
+            name="mobileThumbnails"
+            legend="모바일 썸네일"
+            itemLabel="모바일 썸네일"
+            hint="모바일 화면(768px 미만)에 표시됩니다. 비워두면 기본 썸네일을 사용합니다."
+            title={watch("title")}
+            saving={form.saving}
+            locked={uploading}
+            portrait
+            onUploadStateChange={trackUpload}
+          />
+        </fieldset>
         <StringListEditor
           name="techStack"
           legend="기술 스택"
