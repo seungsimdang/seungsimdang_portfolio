@@ -197,7 +197,7 @@
 - A5: SEMT 이미지는 Vercel Blob `thumbnails/`에 원본 그대로 업로드한다.
 - A6: OG 이미지는 기본 목록 첫 장, 비면 생략한다.
 - A7: admin에서 목록별 추가·삭제·위/아래 순서 변경을 지원한다. 드래그 정렬은 제외한다.
-- E1: 이전 후 기존 `thumbnail` 컬럼을 제거한다.
+- E1: 이전 후 기존 `thumbnail` 컬럼을 이번 브랜치에서 함께 제거한다(13절 참고).
 - E2: 제거한 이미지의 Blob 정리는 기존 단일 썸네일과 같은 방식을 따른다.
 - E3: 목록당 최대 10장.
 - E4: 전환 간격은 전역 고정값.
@@ -206,3 +206,10 @@
 
 - Globber 썸네일을 Blob(`thumbnails/globber-JKaiE94xrSJKvR9gD37vdkdVbrEp0d.png`)으로 옮기고 운영 DB 값을 갱신함(사용자 지시, orchestrator 직접 수행). 현재 모든 프로젝트 썸네일이 Blob URL이거나 null.
 - `public/images/` 제거와 E2E 썸네일 fixture를 `tests/e2e/fixtures/thumbnail.png`(작은 PNG)로 교체하는 작업을 이 브랜치에 포함함.
+
+## 13. 추가 확정 결정 (2026-10-16, 설계 검토 후)
+
+- D1. `thumbnail` 컬럼 제거를 이번 브랜치에 포함한다. 빌드 시 마이그레이션이 새 코드보다 먼저 적용되어 배포 사이 운영 화면이 깨질 수 있다는 위험을 사용자가 알고 선택함. main 배포 직전에 다시 확인받는다.
+- D2. `scripts/migrate-thumbnails.mjs`와 `LEGACY_THUMBNAIL_PATTERN`(`/images/` 로컬 경로 허용)을 삭제한다.
+- D3. `/projects` 페이지 lg 이상 카드를 16:9 비율로 바꾼다. 변경된 카드 크기(1440 기준 약 687×386)에 맞는 UI(제목·메타 글자 크기, 패딩, 그라디언트, 요약 칸과의 정렬 등)는 웹 검색으로 확인한 UI best practice를 근거로 설계·구현한다. AC-R2(픽셀 동일)는 이 의도한 변경을 제외하고 적용한다. 홈 카드와 `/projects`의 lg 미만은 그대로 둔다.
+- D4. Candanta 데이터 변경: PC(기본) 목록을 새 이미지 `/Users/leeseunghyun/Downloads/Candanta 썸네일 1920×1080@2x.png`(3840×2160, 3.0MB) 1장으로, 모바일 목록을 기존 썸네일 1장으로 둔다. `preserveThumbnailText`(정사각 가운데 크롭, 상단 정렬)는 모바일 세트에만 적용하고 새 PC 이미지는 일반 `object-cover`로 표시한다. SEMT와 같은 시점에 반영한다.
