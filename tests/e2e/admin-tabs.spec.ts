@@ -191,6 +191,20 @@ test.describe("인증된 관리자 화면", () => {
     ).toBeVisible();
   });
 
+  test("썸네일 목록 행은 미리보기와 교체 버튼을 행 폭에 맞춰 표시한다", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/admin/projects/fixture-alpha");
+    const preview = page
+      .getByRole("img", { name: "Fixture Alpha 썸네일 미리보기" })
+      .first();
+    const replace = page.getByRole("button", { name: "이미지 교체" }).first();
+    await expect(preview).toBeVisible();
+    expect((await preview.boundingBox())?.width).toBeGreaterThanOrEqual(300);
+    expect((await replace.boundingBox())?.height).toBeLessThan(60);
+  });
+
   test("프로필 home 저장 요청은 해당 탭 항목만 전송한다", async ({ page }) => {
     let body: unknown;
     await page.route("**/api/admin/profile", async (route) => {

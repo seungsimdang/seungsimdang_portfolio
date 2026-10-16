@@ -128,7 +128,7 @@ export function ThumbnailField({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 flex-1 space-y-8">
       <label htmlFor={id} className="block text-small">
         {label}
       </label>
@@ -212,7 +212,7 @@ function ThumbnailPreview({
           className="object-cover"
         />
       </div>
-      <div className="flex flex-wrap gap-8 md:flex-col">
+      <div className="flex shrink-0 flex-wrap gap-8 md:flex-col">
         <AdminButton disabled={disabled} onClick={onReplace}>
           이미지 교체
         </AdminButton>
