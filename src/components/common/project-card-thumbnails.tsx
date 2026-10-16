@@ -152,7 +152,7 @@ export function ProjectCardThumbnails({
   const visibleIndex = reduced ? 0 : index;
 
   return (
-    <div ref={rootRef} className="absolute inset-0">
+    <div ref={rootRef} className="absolute inset-0 isolate">
       {images.map((src, frame) => {
         if (failed.has(frame) || (!mounted.has(frame) && frame !== 0))
           return null;
